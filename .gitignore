@@ -76,3 +76,7 @@ fastlane/test_output
 # Editor backups
 *.swp
 *~
+
+CLAUDE.md
+AGENTS.md
+TODO.md
