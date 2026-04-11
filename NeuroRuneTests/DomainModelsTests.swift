@@ -67,3 +67,31 @@ struct ConversationTests {
         #expect(conversation.createdAt == createdAt)
     }
 }
+
+struct LLMModelTests {
+
+    @Test("LLMModel은 id, displayName을 저장한다")
+    func llmModelStoresProperties() {
+        let model = LLMModel(id: "claude-opus-4-6", displayName: "Claude Opus 4.6")
+
+        #expect(model.id == "claude-opus-4-6")
+        #expect(model.displayName == "Claude Opus 4.6")
+    }
+
+    @Test("LLMModel.allSupported는 opus46, sonnet46, haiku45 3개 상수를 포함한다")
+    func llmModelAllSupportedHasThreeModels() {
+        let all = LLMModel.allSupported
+
+        #expect(all.count == 3)
+        #expect(all.contains(LLMModel.opus46))
+        #expect(all.contains(LLMModel.sonnet46))
+        #expect(all.contains(LLMModel.haiku45))
+    }
+
+    @Test("각 상수의 id는 Anthropic API alias 형식이다")
+    func llmModelConstantsUseAnthropicAliases() {
+        #expect(LLMModel.opus46.id == "claude-opus-4-6")
+        #expect(LLMModel.sonnet46.id == "claude-sonnet-4-6")
+        #expect(LLMModel.haiku45.id == "claude-haiku-4-5")
+    }
+}
