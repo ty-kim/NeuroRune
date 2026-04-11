@@ -37,14 +37,14 @@ extension ConversationStore {
             },
             load: { id in
                 let context = ModelContext(container)
-                return try fetchEntity(by: id, in: context)?.toDomain()
+                return try fetchEntity(by: id, in: context).flatMap { try $0.toDomain() }
             },
             loadAll: {
                 let context = ModelContext(container)
                 var descriptor = FetchDescriptor<ConversationEntity>()
                 descriptor.sortBy = [SortDescriptor(\.createdAt, order: .reverse)]
                 let entities = try context.fetch(descriptor)
-                return entities.map { $0.toDomain() }
+                return try entities.map { try $0.toDomain() }
             },
             delete: { id in
                 let context = ModelContext(container)

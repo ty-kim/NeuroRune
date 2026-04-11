@@ -20,13 +20,14 @@ extension ConversationEntity {
         )
     }
 
-    func toDomain() -> Conversation {
-        Conversation(
+    func toDomain() throws -> Conversation {
+        let domainMessages = try messages
+            .sorted { $0.ordinal < $1.ordinal }
+            .map { try $0.toDomain() }
+        return Conversation(
             id: id,
             title: title,
-            messages: messages
-                .sorted { $0.ordinal < $1.ordinal }
-                .map { $0.toDomain() },
+            messages: domainMessages,
             modelId: modelId,
             createdAt: createdAt
         )
@@ -43,9 +44,12 @@ extension MessageEntity {
         )
     }
 
-    func toDomain() -> Message {
-        Message(
-            role: Message.Role(rawValue: roleRaw) ?? .user,
+    func toDomain() throws -> Message {
+        guard let role = Message.Role(rawValue: roleRaw) else {
+            throw PersistenceError.invalidMessageRole(roleRaw)
+        }
+        return Message(
+            role: role,
             content: content,
             createdAt: createdAt
         )
