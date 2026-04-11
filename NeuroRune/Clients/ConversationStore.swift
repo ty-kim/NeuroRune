@@ -20,12 +20,7 @@ extension ConversationStore {
         ConversationStore(
             save: { conversation in
                 let context = ModelContext(container)
-                let targetId = conversation.id
-                let descriptor = FetchDescriptor<ConversationEntity>(
-                    predicate: #Predicate { $0.id == targetId }
-                )
-
-                if let existing = try context.fetch(descriptor).first {
+                if let existing = try fetchEntity(by: conversation.id, in: context) {
                     existing.title = conversation.title
                     existing.modelId = conversation.modelId
                     // replace messages: clear + insert
@@ -40,10 +35,7 @@ extension ConversationStore {
             },
             load: { id in
                 let context = ModelContext(container)
-                let descriptor = FetchDescriptor<ConversationEntity>(
-                    predicate: #Predicate { $0.id == id }
-                )
-                return try context.fetch(descriptor).first?.toDomain()
+                return try fetchEntity(by: id, in: context)?.toDomain()
             },
             loadAll: {
                 let context = ModelContext(container)
@@ -54,16 +46,23 @@ extension ConversationStore {
             },
             delete: { id in
                 let context = ModelContext(container)
-                let descriptor = FetchDescriptor<ConversationEntity>(
-                    predicate: #Predicate { $0.id == id }
-                )
-                if let entity = try context.fetch(descriptor).first {
+                if let entity = try fetchEntity(by: id, in: context) {
                     context.delete(entity)
                     try context.save()
                 }
             }
         )
     }
+}
+
+private nonisolated func fetchEntity(
+    by id: UUID,
+    in context: ModelContext
+) throws -> ConversationEntity? {
+    let descriptor = FetchDescriptor<ConversationEntity>(
+        predicate: #Predicate { $0.id == id }
+    )
+    return try context.fetch(descriptor).first
 }
 
 extension ConversationStore: DependencyKey {
@@ -76,8 +75,7 @@ extension ConversationStore: DependencyKey {
             )
             return .liveBacked(container: container)
         } catch {
-            // Fallback: Phase 11 통합에서 container 초기화 실패 시 테스트 환경과 동일하게 처리
-            return .testValue
+            fatalError("ConversationStore init failed: \(error)")
         }
     }()
 
