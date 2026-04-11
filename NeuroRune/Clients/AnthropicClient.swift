@@ -83,16 +83,15 @@ extension LLMClient {
         model: LLMModel,
         apiKey: String
     ) throws -> URLRequest {
-        let url = URL(string: "https://api.anthropic.com/v1/messages")!
-        var request = URLRequest(url: url)
+        var request = URLRequest(url: AnthropicAPI.endpoint)
         request.httpMethod = "POST"
         request.setValue(apiKey, forHTTPHeaderField: "x-api-key")
-        request.setValue("2023-06-01", forHTTPHeaderField: "anthropic-version")
+        request.setValue(AnthropicAPI.apiVersion, forHTTPHeaderField: "anthropic-version")
         request.setValue("application/json", forHTTPHeaderField: "content-type")
 
         let body = AnthropicRequestBody(
             model: model.id,
-            maxTokens: 4096,
+            maxTokens: AnthropicAPI.defaultMaxTokens,
             messages: messages.map {
                 AnthropicRequestBody.RequestMessage(
                     role: $0.role.rawValue,
@@ -105,6 +104,12 @@ extension LLMClient {
         request.httpBody = try encoder.encode(body)
         return request
     }
+}
+
+private nonisolated enum AnthropicAPI {
+    static let endpoint = URL(string: "https://api.anthropic.com/v1/messages")!
+    static let apiVersion = "2023-06-01"
+    static let defaultMaxTokens = 4096
 }
 
 private nonisolated struct AnthropicRequestBody: Encodable {
