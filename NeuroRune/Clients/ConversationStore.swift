@@ -7,7 +7,7 @@ import Foundation
 import SwiftData
 import Dependencies
 
-struct ConversationStore: Sendable {
+nonisolated struct ConversationStore: Sendable {
     var save: @Sendable (Conversation) async throws -> Void
     var load: @Sendable (UUID) async throws -> Conversation?
     var loadAll: @Sendable () async throws -> [Conversation]

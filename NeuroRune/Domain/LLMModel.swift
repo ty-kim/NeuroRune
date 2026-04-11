@@ -3,7 +3,7 @@
 //  NeuroRune
 //
 
-struct LLMModel: Equatable, Sendable, Identifiable {
+nonisolated struct LLMModel: Equatable, Sendable, Identifiable {
     let id: String
     let displayName: String
 

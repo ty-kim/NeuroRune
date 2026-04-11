@@ -12,7 +12,7 @@ import os
 
 typealias StubResponseHandler = @Sendable (URLRequest) -> (HTTPURLResponse, Data?, Error?)
 
-final class URLProtocolStub: URLProtocol {
+nonisolated final class URLProtocolStub: URLProtocol {
 
     private struct StubState: Sendable {
         var handler: StubResponseHandler?
