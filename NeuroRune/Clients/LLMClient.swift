@@ -6,7 +6,7 @@
 import Foundation
 import Dependencies
 
-struct LLMClient: Sendable {
+nonisolated struct LLMClient: Sendable {
     var sendMessage: @Sendable ([Message], LLMModel) async throws -> Message
 }
 

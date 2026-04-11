@@ -7,7 +7,7 @@
 
 import XCTest
 
-final class NeuroRuneUITestsLaunchTests: XCTestCase {
+nonisolated final class NeuroRuneUITestsLaunchTests: XCTestCase {
 
     override class var runsForEachTargetApplicationUIConfiguration: Bool {
         true

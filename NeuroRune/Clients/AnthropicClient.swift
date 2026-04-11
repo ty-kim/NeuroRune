@@ -40,7 +40,7 @@ extension LLMClient {
         )
     }
 
-    private static func parseSuccessResponse(data: Data) throws -> Message {
+    private nonisolated static func parseSuccessResponse(data: Data) throws -> Message {
         struct AnthropicResponse: Decodable {
             struct Content: Decodable {
                 let type: String
@@ -61,7 +61,7 @@ extension LLMClient {
         return Message(role: .assistant, content: text, createdAt: Date())
     }
 
-    private static func buildRequest(messages: [Message], model: LLMModel, apiKey: String) -> URLRequest {
+    private nonisolated static func buildRequest(messages: [Message], model: LLMModel, apiKey: String) -> URLRequest {
         let url = URL(string: "https://api.anthropic.com/v1/messages")!
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
