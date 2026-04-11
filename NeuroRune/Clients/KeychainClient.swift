@@ -18,7 +18,7 @@ nonisolated enum KeychainError: Error, Equatable {
     case decodingFailed
 }
 
-extension KeychainClient {
+nonisolated extension KeychainClient {
 
     static func liveBacked(service: String) -> KeychainClient {
         KeychainClient(
@@ -35,7 +35,7 @@ extension KeychainClient {
     }
 }
 
-extension KeychainClient: DependencyKey {
+nonisolated extension KeychainClient: DependencyKey {
     static let liveValue = KeychainClient.liveBacked(service: "com.neurorune.default")
 
     static let testValue = KeychainClient(
@@ -46,7 +46,7 @@ extension KeychainClient: DependencyKey {
 }
 
 extension DependencyValues {
-    var keychainClient: KeychainClient {
+    nonisolated var keychainClient: KeychainClient {
         get { self[KeychainClient.self] }
         set { self[KeychainClient.self] = newValue }
     }

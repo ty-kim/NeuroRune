@@ -10,7 +10,7 @@ nonisolated struct LLMClient: Sendable {
     var sendMessage: @Sendable ([Message], LLMModel) async throws -> Message
 }
 
-extension LLMClient: DependencyKey {
+nonisolated extension LLMClient: DependencyKey {
     static let liveValue = LLMClient(
         sendMessage: { _, _ in
             // Phase 5에서 AnthropicClient로 교체
@@ -34,7 +34,7 @@ extension LLMClient: DependencyKey {
 }
 
 extension DependencyValues {
-    var llmClient: LLMClient {
+    nonisolated var llmClient: LLMClient {
         get { self[LLMClient.self] }
         set { self[LLMClient.self] = newValue }
     }
