@@ -75,8 +75,7 @@ extension ConversationStore: DependencyKey {
             )
             return .liveBacked(container: container)
         } catch {
-            // Fallback: Phase 11 통합에서 container 초기화 실패 시 테스트 환경과 동일하게 처리
-            return .testValue
+            fatalError("ConversationStore init failed: \(error)")
         }
     }()
 
