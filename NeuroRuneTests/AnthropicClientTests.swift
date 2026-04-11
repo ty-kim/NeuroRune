@@ -182,6 +182,98 @@ struct AnthropicClientTests {
         }
     }
 
+    @Test("빈 content 배열은 LLMError.decoding으로 throw된다")
+    func mapsEmptyContentToDecodingError() async throws {
+        URLProtocolStub.setHandler { request in
+            let http = HTTPURLResponse(
+                url: request.url!,
+                statusCode: 200,
+                httpVersion: nil,
+                headerFields: ["Content-Type": "application/json"]
+            )!
+            let body: [String: Any] = [
+                "id": "msg_empty",
+                "type": "message",
+                "role": "assistant",
+                "content": [],
+                "model": "claude-opus-4-6",
+                "stop_reason": "end_turn"
+            ]
+            let data = try? JSONSerialization.data(withJSONObject: body)
+            return (http, data, nil)
+        }
+        let client = LLMClient.anthropic(session: Self.makeSession(), apiKey: "sk-test")
+
+        await #expect {
+            _ = try await client.sendMessage([Self.testUserMessage], .opus46)
+        } throws: { error in
+            guard case LLMError.decoding = error else { return false }
+            return true
+        }
+    }
+
+    @Test("content에 text block이 없으면 LLMError.decoding으로 throw된다")
+    func mapsNoTextBlockToDecodingError() async throws {
+        URLProtocolStub.setHandler { request in
+            let http = HTTPURLResponse(
+                url: request.url!,
+                statusCode: 200,
+                httpVersion: nil,
+                headerFields: ["Content-Type": "application/json"]
+            )!
+            let body: [String: Any] = [
+                "id": "msg_tool",
+                "type": "message",
+                "role": "assistant",
+                "content": [
+                    ["type": "tool_use", "id": "tool_1", "name": "calculator", "input": ["x": 1]]
+                ],
+                "model": "claude-opus-4-6",
+                "stop_reason": "tool_use"
+            ]
+            let data = try? JSONSerialization.data(withJSONObject: body)
+            return (http, data, nil)
+        }
+        let client = LLMClient.anthropic(session: Self.makeSession(), apiKey: "sk-test")
+
+        await #expect {
+            _ = try await client.sendMessage([Self.testUserMessage], .opus46)
+        } throws: { error in
+            guard case LLMError.decoding = error else { return false }
+            return true
+        }
+    }
+
+    @Test("content에 여러 text block이 있으면 순서대로 결합된다")
+    func concatenatesMultipleTextBlocks() async throws {
+        URLProtocolStub.setHandler { request in
+            let http = HTTPURLResponse(
+                url: request.url!,
+                statusCode: 200,
+                httpVersion: nil,
+                headerFields: ["Content-Type": "application/json"]
+            )!
+            let body: [String: Any] = [
+                "id": "msg_multi",
+                "type": "message",
+                "role": "assistant",
+                "content": [
+                    ["type": "text", "text": "안녕. "],
+                    ["type": "text", "text": "반갑다."]
+                ],
+                "model": "claude-opus-4-6",
+                "stop_reason": "end_turn"
+            ]
+            let data = try? JSONSerialization.data(withJSONObject: body)
+            return (http, data, nil)
+        }
+        let client = LLMClient.anthropic(session: Self.makeSession(), apiKey: "sk-test")
+
+        let result = try await client.sendMessage([Self.testUserMessage], .opus46)
+
+        #expect(result.content == "안녕. 반갑다.")
+    }
+
     @Test("잘못된 JSON 응답은 LLMError.decoding으로 wrap된다")
     func mapsDecodingError() async throws {
         URLProtocolStub.setHandler { request in
