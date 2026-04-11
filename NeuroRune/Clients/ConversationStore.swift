@@ -23,11 +23,13 @@ extension ConversationStore {
                 if let existing = try fetchEntity(by: conversation.id, in: context) {
                     existing.title = conversation.title
                     existing.modelId = conversation.modelId
-                    // replace messages: clear + insert
+                    // replace messages: clear + insert (ordinal로 입력 순서 보존)
                     for msg in existing.messages {
                         context.delete(msg)
                     }
-                    existing.messages = conversation.messages.map(MessageEntity.from)
+                    existing.messages = conversation.messages.enumerated().map { index, message in
+                        MessageEntity.from(message, ordinal: index)
+                    }
                 } else {
                     context.insert(ConversationEntity.from(conversation))
                 }
