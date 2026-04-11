@@ -6,7 +6,7 @@
 import Foundation
 import Security
 
-struct LiveKeychainClient: KeychainClient {
+nonisolated struct LiveKeychainClient: KeychainClient {
     let service: String
 
     func save(key: String, value: String) throws {

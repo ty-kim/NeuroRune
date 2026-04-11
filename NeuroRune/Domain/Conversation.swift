@@ -5,7 +5,7 @@
 
 import Foundation
 
-struct Conversation: Equatable, Sendable, Identifiable {
+nonisolated struct Conversation: Equatable, Sendable, Identifiable {
     let id: UUID
     var title: String
     var messages: [Message]
