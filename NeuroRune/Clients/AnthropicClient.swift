@@ -49,7 +49,7 @@ extension LLMClient {
         struct AnthropicResponse: Decodable {
             struct Content: Decodable {
                 let type: String
-                let text: String
+                let text: String?
             }
             let content: [Content]
         }
@@ -62,8 +62,20 @@ extension LLMClient {
             throw LLMError.decoding(String(describing: error))
         }
 
-        let text = decoded.content.first?.text ?? ""
-        return Message(role: .assistant, content: text, createdAt: Date())
+        let textBlocks = decoded.content.compactMap { block -> String? in
+            guard block.type == "text" else { return nil }
+            return block.text
+        }
+
+        guard !textBlocks.isEmpty else {
+            throw LLMError.decoding("response contained no text blocks")
+        }
+
+        return Message(
+            role: .assistant,
+            content: textBlocks.joined(),
+            createdAt: Date()
+        )
     }
 
     private nonisolated static func buildRequest(
