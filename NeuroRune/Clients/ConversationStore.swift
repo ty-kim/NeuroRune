@@ -14,7 +14,7 @@ nonisolated struct ConversationStore: Sendable {
     var delete: @Sendable (UUID) async throws -> Void
 }
 
-extension ConversationStore {
+nonisolated extension ConversationStore {
 
     static func liveBacked(container: ModelContainer) -> ConversationStore {
         ConversationStore(
@@ -67,7 +67,7 @@ private nonisolated func fetchEntity(
     return try context.fetch(descriptor).first
 }
 
-extension ConversationStore: DependencyKey {
+nonisolated extension ConversationStore: DependencyKey {
     static let liveValue: ConversationStore = {
         do {
             let config = ModelConfiguration(isStoredInMemoryOnly: false)
@@ -90,7 +90,7 @@ extension ConversationStore: DependencyKey {
 }
 
 extension DependencyValues {
-    var conversationStore: ConversationStore {
+    nonisolated var conversationStore: ConversationStore {
         get { self[ConversationStore.self] }
         set { self[ConversationStore.self] = newValue }
     }
