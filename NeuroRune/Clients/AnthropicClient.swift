@@ -10,7 +10,12 @@ extension LLMClient {
     static func anthropic(session: URLSession, apiKey: String) -> LLMClient {
         LLMClient(
             sendMessage: { messages, model in
-                let request = Self.buildRequest(messages: messages, model: model, apiKey: apiKey)
+                let request: URLRequest
+                do {
+                    request = try Self.buildRequest(messages: messages, model: model, apiKey: apiKey)
+                } catch {
+                    throw LLMError.decoding("request encoding failed: \(error)")
+                }
 
                 let data: Data
                 let response: URLResponse
@@ -61,7 +66,11 @@ extension LLMClient {
         return Message(role: .assistant, content: text, createdAt: Date())
     }
 
-    private nonisolated static func buildRequest(messages: [Message], model: LLMModel, apiKey: String) -> URLRequest {
+    private nonisolated static func buildRequest(
+        messages: [Message],
+        model: LLMModel,
+        apiKey: String
+    ) throws -> URLRequest {
         let url = URL(string: "https://api.anthropic.com/v1/messages")!
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
@@ -69,14 +78,29 @@ extension LLMClient {
         request.setValue("2023-06-01", forHTTPHeaderField: "anthropic-version")
         request.setValue("application/json", forHTTPHeaderField: "content-type")
 
-        let body: [String: Any] = [
-            "model": model.id,
-            "max_tokens": 4096,
-            "messages": messages.map { message in
-                ["role": message.role.rawValue, "content": message.content]
+        let body = AnthropicRequestBody(
+            model: model.id,
+            maxTokens: 4096,
+            messages: messages.map {
+                AnthropicRequestBody.RequestMessage(
+                    role: $0.role.rawValue,
+                    content: $0.content
+                )
             }
-        ]
-        request.httpBody = try? JSONSerialization.data(withJSONObject: body)
+        )
+        let encoder = JSONEncoder()
+        encoder.keyEncodingStrategy = .convertToSnakeCase
+        request.httpBody = try encoder.encode(body)
         return request
     }
+}
+
+private nonisolated struct AnthropicRequestBody: Encodable {
+    struct RequestMessage: Encodable {
+        let role: String
+        let content: String
+    }
+    let model: String
+    let maxTokens: Int
+    let messages: [RequestMessage]
 }
