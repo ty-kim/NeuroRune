@@ -14,7 +14,9 @@ extension ConversationEntity {
             title: conversation.title,
             modelId: conversation.modelId,
             createdAt: conversation.createdAt,
-            messages: conversation.messages.map(MessageEntity.from)
+            messages: conversation.messages.enumerated().map { index, message in
+                MessageEntity.from(message, ordinal: index)
+            }
         )
     }
 
@@ -23,7 +25,7 @@ extension ConversationEntity {
             id: id,
             title: title,
             messages: messages
-                .sorted { $0.createdAt < $1.createdAt }
+                .sorted { $0.ordinal < $1.ordinal }
                 .map { $0.toDomain() },
             modelId: modelId,
             createdAt: createdAt
@@ -32,11 +34,12 @@ extension ConversationEntity {
 }
 
 extension MessageEntity {
-    static func from(_ message: Message) -> MessageEntity {
+    static func from(_ message: Message, ordinal: Int) -> MessageEntity {
         MessageEntity(
             roleRaw: message.role.rawValue,
             content: message.content,
-            createdAt: message.createdAt
+            createdAt: message.createdAt,
+            ordinal: ordinal
         )
     }
 

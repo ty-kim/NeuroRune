@@ -81,6 +81,51 @@ struct ConversationStoreTests {
         #expect(loaded == nil)
     }
 
+    @Test("메시지 순서는 createdAt이 아닌 입력 순서(ordinal)를 따른다")
+    func messagesKeepInsertionOrderIgnoringCreatedAt() async throws {
+        // 입력 순서와 createdAt 순서가 다른 케이스 구성
+        let conversation = Conversation(
+            id: UUID(),
+            title: "order-test",
+            messages: [
+                Message(role: .user, content: "first", createdAt: Date(timeIntervalSince1970: 300)),
+                Message(role: .assistant, content: "second", createdAt: Date(timeIntervalSince1970: 100)),
+                Message(role: .user, content: "third", createdAt: Date(timeIntervalSince1970: 200))
+            ],
+            modelId: "claude-opus-4-6",
+            createdAt: Date(timeIntervalSince1970: 1_000_000)
+        )
+
+        try await store.save(conversation)
+        let loaded = try await store.load(conversation.id)
+
+        #expect(loaded?.messages.map(\.content) == ["first", "second", "third"])
+    }
+
+    @Test("upsert 시에도 messages 순서가 입력 순서를 따른다")
+    func upsertPreservesMessageOrder() async throws {
+        let id = UUID()
+        let original = Self.sampleConversation(id: id)
+        try await store.save(original)
+
+        // 재저장 시 createdAt이 뒤섞인 메시지 배열
+        let updated = Conversation(
+            id: id,
+            title: "updated",
+            messages: [
+                Message(role: .user, content: "a", createdAt: Date(timeIntervalSince1970: 500)),
+                Message(role: .assistant, content: "b", createdAt: Date(timeIntervalSince1970: 100)),
+                Message(role: .user, content: "c", createdAt: Date(timeIntervalSince1970: 300))
+            ],
+            modelId: "claude-opus-4-6",
+            createdAt: original.createdAt
+        )
+        try await store.save(updated)
+
+        let loaded = try await store.load(id)
+        #expect(loaded?.messages.map(\.content) == ["a", "b", "c"])
+    }
+
     @Test("같은 id에 save가 다시 호출되면 기존 Conversation을 업데이트한다")
     func saveOnExistingIdUpdates() async throws {
         let id = UUID()

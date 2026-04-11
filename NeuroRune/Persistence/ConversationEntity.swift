@@ -36,10 +36,14 @@ final class MessageEntity {
     var roleRaw: String
     var content: String
     var createdAt: Date
+    /// Conversation 내에서의 입력 순서. `createdAt`은 동일 시각 / 역순 생성 등으로
+    /// 대화 순서를 보장할 수 없어, 별도의 안정적인 순서 필드를 둔다.
+    var ordinal: Int
 
-    init(roleRaw: String, content: String, createdAt: Date) {
+    init(roleRaw: String, content: String, createdAt: Date, ordinal: Int) {
         self.roleRaw = roleRaw
         self.content = content
         self.createdAt = createdAt
+        self.ordinal = ordinal
     }
 }
