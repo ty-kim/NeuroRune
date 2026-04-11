@@ -1,24 +1,24 @@
 # NeuroRune
 
-External neural runes for your wetware.
-An AI-driven development companion for iOS.
+iOS chat client for Claude with persistent, GitHub-synced memory.
 
-## Philosophy
+## Overview
 
-Ancient runes carved wisdom into stone.
-Modern runes carve thought into markdown.
+NeuroRune is a personal mobile client for the Anthropic Claude API.
+Conversations are stored as Markdown files, synced to a user-owned GitHub
+repository, and injected into future sessions as context — carrying notes,
+decisions, and learnings forward across sessions.
 
-NeuroRune is a cyberdeck for your mind —
-bridging carbon-based wetware (you)
-to silicon-based neuroware (AI),
-through a persistent, memory-aware interface.
+Built as a BYOK (Bring Your Own Key) app: you provide your own Anthropic
+API key, GitHub Personal Access Token, and optionally a Clova Note STT key.
+No API keys are bundled with the app.
 
 ## Inspired by
 
-- William Gibson, *Neuromancer* (1984) — the original cyberdeck
-- Richard Garriott, *Ultima IV* (1985) — Runes of Virtue
-- Dario Amodei, *Machines of Loving Grace* (2024) — the roadmap
-- 김창준, *애자일 이야기* — human-centered development
+Inspired by the Bloodline system from *Infinity Blade* (Epic Games, 2010) —
+where a character's death passes experience and gear to the next generation.
+NeuroRune applies the same pattern to LLM sessions: each conversation adds
+to a memory a future session can inherit from.
 
 ## Roadmap
 
@@ -43,15 +43,15 @@ through a persistent, memory-aware interface.
 
 - Swift 6 Strict Concurrency
 - SwiftUI
-- TCA (Composable Architecture)
-- URLSession (no Alamofire)
+- TCA (The Composable Architecture)
+- URLSession (first-party networking)
 - swift-markdown-ui
 - Keychain Services
 
 ## Requirements
 
 - iOS 17+
-- Anthropic API key (BYOK — Bring Your Own Key)
+- Anthropic API key (BYOK)
 - GitHub Personal Access Token (Sprint 2+)
 
 ## License
