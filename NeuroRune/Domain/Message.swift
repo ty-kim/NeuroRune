@@ -6,7 +6,7 @@
 import Foundation
 
 nonisolated struct Message: Equatable, Sendable {
-    nonisolated enum Role: String, Equatable, Sendable {
+    enum Role: String, Equatable, Sendable {
         case user
         case assistant
     }
