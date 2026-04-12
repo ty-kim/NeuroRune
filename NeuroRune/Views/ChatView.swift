@@ -119,7 +119,7 @@ struct ChatView: View {
             Text(String(localized: "error.prefix") + " " + error.userMessage)
                 .font(.subheadline)
                 .foregroundStyle(.primary)
-                .lineLimit(3)
+                .fixedSize(horizontal: false, vertical: true)
             Spacer()
         }
         .padding(12)
