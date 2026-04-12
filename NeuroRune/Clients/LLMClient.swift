@@ -11,12 +11,18 @@ nonisolated struct LLMClient: Sendable {
 }
 
 nonisolated extension LLMClient: DependencyKey {
-    static let liveValue = LLMClient(
-        sendMessage: { _, _ in
-            // Phase 5에서 AnthropicClient로 교체
-            throw LLMError.unauthorized
-        }
-    )
+    static let liveValue: LLMClient = {
+        let keychainClient = KeychainClient.liveValue
+        return LLMClient(
+            sendMessage: { messages, model in
+                guard let apiKey = try keychainClient.load(OnboardingFeature.anthropicKeyName) else {
+                    throw LLMError.unauthorized
+                }
+                let client = LLMClient.anthropic(session: .shared, apiKey: apiKey)
+                return try await client.sendMessage(messages, model)
+            }
+        )
+    }()
 
     static let testValue = LLMClient(
         sendMessage: unimplemented("LLMClient.sendMessage")
