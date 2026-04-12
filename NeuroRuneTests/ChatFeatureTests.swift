@@ -11,17 +11,27 @@ import ComposableArchitecture
 @MainActor
 struct ChatFeatureTests {
 
+    private static let fixedDate = Date(timeIntervalSince1970: 1_000_000)
+
+    private func makeState(
+        inputText: String = "",
+        isStreaming: Bool = false,
+        error: LLMError? = nil
+    ) -> ChatFeature.State {
+        ChatFeature.State(
+            conversation: Conversation.empty(modelId: LLMModel.opus46.id),
+            inputText: inputText,
+            isStreaming: isStreaming,
+            error: error
+        )
+    }
+
     @Test("State는 conversation, inputText, isStreaming, error 필드를 가진다")
     func stateHasRequiredFields() {
-        let conversation = Conversation.empty(modelId: "claude-opus-4-6")
-        let state = ChatFeature.State(
-            conversation: conversation,
-            inputText: "",
-            isStreaming: false,
-            error: nil
-        )
+        let state = makeState()
 
-        #expect(state.conversation == conversation)
+        #expect(state.conversation.modelId == LLMModel.opus46.id)
+        #expect(state.conversation.messages.isEmpty)
         #expect(state.inputText == "")
         #expect(state.isStreaming == false)
         #expect(state.error == nil)
@@ -29,14 +39,7 @@ struct ChatFeatureTests {
 
     @Test(".inputChanged는 inputText를 업데이트한다")
     func inputChangedUpdatesInputText() async {
-        let store = TestStore(
-            initialState: ChatFeature.State(
-                conversation: Conversation.empty(modelId: "claude-opus-4-6"),
-                inputText: "",
-                isStreaming: false,
-                error: nil
-            )
-        ) {
+        let store = TestStore(initialState: makeState()) {
             ChatFeature()
         }
 
@@ -47,39 +50,23 @@ struct ChatFeatureTests {
 
     @Test("sendTapped는 inputText가 비어있으면 아무 효과 없음")
     func sendTappedNoOpWhenEmpty() async {
-        let store = TestStore(
-            initialState: ChatFeature.State(
-                conversation: Conversation.empty(modelId: "claude-opus-4-6"),
-                inputText: "",
-                isStreaming: false,
-                error: nil
-            )
-        ) {
+        let store = TestStore(initialState: makeState()) {
             ChatFeature()
         }
 
         await store.send(.sendTapped)
-        // State 변화 없음, Effect 없음
     }
 
     @Test("sendTapped는 user Message 추가 + inputText 비움 + isStreaming=true + LLMClient.sendMessage 호출")
     func sendTappedTriggersLLMEffect() async {
-        let fixedDate = Date(timeIntervalSince1970: 1_000_000)
-        let reply = Message(role: .assistant, content: "world", createdAt: fixedDate)
+        let reply = Message(role: .assistant, content: "world", createdAt: Self.fixedDate)
         let calledModelId = LockIsolated<String?>(nil)
         let calledMessagesCount = LockIsolated<Int?>(nil)
 
-        let store = TestStore(
-            initialState: ChatFeature.State(
-                conversation: Conversation.empty(modelId: "claude-opus-4-6"),
-                inputText: "hello",
-                isStreaming: false,
-                error: nil
-            )
-        ) {
+        let store = TestStore(initialState: makeState(inputText: "hello")) {
             ChatFeature()
         } withDependencies: {
-            $0.date = .constant(fixedDate)
+            $0.date = .constant(Self.fixedDate)
             $0.llmClient.sendMessage = { @Sendable messages, model in
                 calledMessagesCount.setValue(messages.count)
                 calledModelId.setValue(model.id)
@@ -90,7 +77,7 @@ struct ChatFeatureTests {
 
         await store.send(.sendTapped) {
             $0.conversation = $0.conversation.appending(
-                Message(role: .user, content: "hello", createdAt: fixedDate)
+                Message(role: .user, content: "hello", createdAt: Self.fixedDate)
             )
             $0.inputText = ""
             $0.isStreaming = true
@@ -104,22 +91,14 @@ struct ChatFeatureTests {
         await store.finish()
 
         #expect(calledMessagesCount.value == 1)
-        #expect(calledModelId.value == "claude-opus-4-6")
+        #expect(calledModelId.value == LLMModel.opus46.id)
     }
 
     @Test("messageReceived는 assistant Message를 추가하고 isStreaming=false로 바꾼다")
     func messageReceivedAppendsAndClearsStreaming() async {
-        let fixedDate = Date(timeIntervalSince1970: 1_000_000)
-        let reply = Message(role: .assistant, content: "world", createdAt: fixedDate)
+        let reply = Message(role: .assistant, content: "world", createdAt: Self.fixedDate)
 
-        let store = TestStore(
-            initialState: ChatFeature.State(
-                conversation: Conversation.empty(modelId: "claude-opus-4-6"),
-                inputText: "",
-                isStreaming: true,
-                error: nil
-            )
-        ) {
+        let store = TestStore(initialState: makeState(isStreaming: true)) {
             ChatFeature()
         } withDependencies: {
             $0.conversationStore.save = { @Sendable _ in }
@@ -135,14 +114,7 @@ struct ChatFeatureTests {
 
     @Test("errorOccurred는 error를 세팅하고 isStreaming=false로 바꾼다")
     func errorOccurredSetsErrorAndClearsStreaming() async {
-        let store = TestStore(
-            initialState: ChatFeature.State(
-                conversation: Conversation.empty(modelId: "claude-opus-4-6"),
-                inputText: "",
-                isStreaming: true,
-                error: nil
-            )
-        ) {
+        let store = TestStore(initialState: makeState(isStreaming: true)) {
             ChatFeature()
         }
 
@@ -154,19 +126,11 @@ struct ChatFeatureTests {
 
     @Test("messageReceived 후 ConversationStore.save가 호출된다")
     func messageReceivedTriggersSave() async {
-        let fixedDate = Date(timeIntervalSince1970: 1_000_000)
-        let reply = Message(role: .assistant, content: "world", createdAt: fixedDate)
+        let reply = Message(role: .assistant, content: "world", createdAt: Self.fixedDate)
         let savedMessagesCount = LockIsolated<Int?>(nil)
         let savedLastContent = LockIsolated<String?>(nil)
 
-        let store = TestStore(
-            initialState: ChatFeature.State(
-                conversation: Conversation.empty(modelId: "claude-opus-4-6"),
-                inputText: "",
-                isStreaming: true,
-                error: nil
-            )
-        ) {
+        let store = TestStore(initialState: makeState(isStreaming: true)) {
             ChatFeature()
         } withDependencies: {
             $0.conversationStore.save = { @Sendable conversation in
