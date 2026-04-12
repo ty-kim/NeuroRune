@@ -27,12 +27,19 @@ each generation passes what it learned to the next.
 
 ## Roadmap
 
-### Sprint 1 — Chat (Apr 11-15)
-- [ ] Claude API integration
-- [ ] Keychain-secured credentials
-- [ ] Persistent chat sessions
-- [ ] Markdown rendering
-- [ ] Session-based model selection
+### Sprint 1 — Chat (Apr 11-15) ✅
+- [x] Claude API integration (AnthropicClient, error parsing)
+- [x] Keychain-secured credentials (save/load/delete + reset UI)
+- [x] Persistent chat sessions (SwiftData, conversation list, delete)
+- [x] Markdown rendering (swift-markdown-ui, code block horizontal scroll)
+- [x] Session-based model selection (model picker sheet)
+- [x] OSLog logging (network, keychain, llm, persistence)
+- [x] Localization (ko, en, zh-Hans, ja)
+- [x] Accessibility (VoiceOver labels, Reduce Motion)
+- [x] Error UI (banner + shake + 401 alert)
+- [x] App icon (ᛗ Mannaz rune), brand colors (amber + dark navy)
+- [x] Launch screen (DarkNavy + Mannaz rune)
+- [x] 61 unit tests, Swift Testing + TCA TestStore
 
 ### Sprint 2 — Memory & Voice (Apr 16-19)
 - [ ] GitHub-backed memory sync
