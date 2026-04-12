@@ -156,12 +156,12 @@ struct AnthropicClientTests {
         }
     }
 
-    @Test("5xx 응답은 LLMError.server(status:)를 throw한다")
+    @Test("5xx 응답은 LLMError.server(status:message:)를 throw한다")
     func mapsServerError() async throws {
-        Self.stubStatus(503, body: #"{"error":{"type":"overloaded_error"}}"#)
+        Self.stubStatus(503, body: #"{"error":{"type":"overloaded_error","message":"Service overloaded"}}"#)
         let client = LLMClient.anthropic(session: Self.makeSession(), apiKey: "sk-test")
 
-        await #expect(throws: LLMError.server(status: 503)) {
+        await #expect(throws: LLMError.server(status: 503, message: "Service overloaded")) {
             _ = try await client.sendMessage([Self.testUserMessage], .opus46)
         }
     }

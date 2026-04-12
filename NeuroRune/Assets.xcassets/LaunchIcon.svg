@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <rect width="1024" height="1024" fill="#1A1A2E"/>
+  <g transform="translate(512, 512)" stroke="none" fill="#D4920B">
+    <!-- Mannaz rune: two vertical lines connected by X in upper half -->
+    <rect x="-220" y="-300" width="52" height="600" />
+    <rect x="168" y="-300" width="52" height="600" />
+    <polygon points="-168,-300 -168,-248 168,0 168,-52" />
+    <polygon points="168,-300 168,-248 -168,0 -168,-52" />
+  </g>
+</svg>
