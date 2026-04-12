@@ -12,4 +12,8 @@ nonisolated struct LLMModel: Equatable, Sendable, Identifiable {
     static let haiku45 = LLMModel(id: "claude-haiku-4-5", displayName: "Claude Haiku 4.5")
 
     static let allSupported: [LLMModel] = [.opus46, .sonnet46, .haiku45]
+
+    static func resolve(id: String) -> LLMModel {
+        allSupported.first { $0.id == id } ?? LLMModel(id: id, displayName: id)
+    }
 }

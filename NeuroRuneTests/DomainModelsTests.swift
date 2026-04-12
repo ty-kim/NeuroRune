@@ -94,4 +94,19 @@ struct LLMModelTests {
         #expect(LLMModel.sonnet46.id == "claude-sonnet-4-6")
         #expect(LLMModel.haiku45.id == "claude-haiku-4-5")
     }
+
+    @Test("resolve(id:)는 allSupported에 있는 id에 대해 해당 상수를 반환한다")
+    func resolveReturnsKnownModel() {
+        #expect(LLMModel.resolve(id: "claude-opus-4-6") == .opus46)
+        #expect(LLMModel.resolve(id: "claude-sonnet-4-6") == .sonnet46)
+        #expect(LLMModel.resolve(id: "claude-haiku-4-5") == .haiku45)
+    }
+
+    @Test("resolve(id:)는 미지의 id에 대해 해당 id로 fallback LLMModel을 만든다")
+    func resolveReturnsFallbackForUnknownId() {
+        let result = LLMModel.resolve(id: "unknown-model")
+
+        #expect(result.id == "unknown-model")
+        #expect(result.displayName == "unknown-model")
+    }
 }
