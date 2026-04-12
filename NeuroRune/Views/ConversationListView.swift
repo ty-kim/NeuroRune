@@ -166,7 +166,7 @@ private struct ConversationRow: View {
         VStack(alignment: .leading, spacing: 8) {
             Text(conversationTitle)
                 .font(.body)
-                .foregroundStyle(.primary)
+                .foregroundStyle(Color("BrandTitle"))
                 .lineLimit(1)
             HStack {
                 Text(LLMModel.resolve(id: conversation.modelId).displayName)
