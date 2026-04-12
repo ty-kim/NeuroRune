@@ -44,10 +44,7 @@ nonisolated struct ChatFeature: Reducer {
             state.isStreaming = true
 
             let messages = state.conversation.messages
-            let model = LLMModel(
-                id: state.conversation.modelId,
-                displayName: ""
-            )
+            let model = LLMModel.resolve(id: state.conversation.modelId)
             return .run { send in
                 do {
                     let reply = try await llmClient.sendMessage(messages, model)
