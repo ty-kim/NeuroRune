@@ -50,8 +50,9 @@ nonisolated extension LLMClient {
                     Logger.network.error("rate limited (429)")
                     throw LLMError.rateLimited
                 default:
-                    Logger.network.error("server error, status: \(http.statusCode)")
-                    throw LLMError.server(status: http.statusCode)
+                    let message = Self.parseErrorMessage(data: data)
+                    Logger.network.error("server error, status: \(http.statusCode), message: \(message)")
+                    throw LLMError.server(status: http.statusCode, message: message)
                 }
             }
         )
@@ -88,6 +89,19 @@ nonisolated extension LLMClient {
             content: textBlocks.joined(),
             createdAt: Date()
         )
+    }
+
+    private nonisolated static func parseErrorMessage(data: Data) -> String {
+        struct ErrorResponse: Decodable {
+            struct ErrorDetail: Decodable {
+                let message: String
+            }
+            let error: ErrorDetail
+        }
+        if let parsed = try? JSONDecoder().decode(ErrorResponse.self, from: data) {
+            return parsed.error.message
+        }
+        return String(data: data, encoding: .utf8) ?? "Unknown error"
     }
 
     private nonisolated static func buildRequest(

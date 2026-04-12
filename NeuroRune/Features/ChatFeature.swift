@@ -57,6 +57,7 @@ nonisolated struct ChatFeature: Reducer {
             state.conversation = state.conversation.appending(userMessage)
             state.inputText = ""
             state.isStreaming = true
+            state.error = nil
 
             let messages = state.conversation.messages
             let model = LLMModel.resolve(id: state.conversation.modelId)

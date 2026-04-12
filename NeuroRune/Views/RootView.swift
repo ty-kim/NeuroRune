@@ -25,7 +25,8 @@ struct RootView: View {
                         )
                     ) {
                         ChatFeature()
-                    }
+                    },
+                    onApiKeyReset: { hasApiKey = false }
                 )
             } else {
                 OnboardingView(

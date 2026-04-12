@@ -8,16 +8,68 @@ import ComposableArchitecture
 
 struct ChatView: View {
     let store: StoreOf<ChatFeature>
+    var onApiKeyReset: () -> Void = {}
+
+    @State private var showResetConfirmation = false
+    @State private var showUnauthorizedAlert = false
+    @State private var errorShakeTrigger = 0
 
     var body: some View {
         WithViewStore(store, observe: { $0 }) { viewStore in
             NavigationStack {
                 VStack(spacing: 0) {
                     messageList(viewStore)
+                    if let error = viewStore.error {
+                        errorBanner(error)
+                            .offset(y: errorShakeTrigger % 2 == 0 ? 0 : -4)
+                            .animation(.default.repeatCount(3, autoreverses: true).speed(6), value: errorShakeTrigger)
+                            .transition(.move(edge: .bottom).combined(with: .opacity))
+                            .animation(.easeInOut(duration: 0.3), value: viewStore.error)
+                    }
                     inputBar(viewStore)
                 }
                 .navigationTitle(String(localized: "chat.title"))
                 .navigationBarTitleDisplayMode(.inline)
+                .onChange(of: viewStore.error) { _, newError in
+                    if let error = newError {
+                        errorShakeTrigger += 1
+                        if error == .unauthorized {
+                            showUnauthorizedAlert = true
+                        }
+                    }
+                }
+                .alert(
+                    String(localized: "error.unauthorized"),
+                    isPresented: $showUnauthorizedAlert
+                ) {
+                    Button(String(localized: "chat.resetApiKey"), role: .destructive) {
+                        let client = KeychainClient.liveValue
+                        try? client.delete(OnboardingFeature.anthropicKeyName)
+                        onApiKeyReset()
+                    }
+                    Button(String(localized: "error.cancel"), role: .cancel) {}
+                }
+                .toolbar {
+                    ToolbarItem(placement: .topBarTrailing) {
+                        Button {
+                            showResetConfirmation = true
+                        } label: {
+                            Image(systemName: "ellipsis.circle")
+                                .font(.title3)
+                        }
+                    }
+                }
+            }
+        }
+        .confirmationDialog(
+            String(localized: "chat.menu.title"),
+            isPresented: $showResetConfirmation,
+            titleVisibility: .hidden
+        ) {
+            Button(String(localized: "chat.resetApiKey"), role: .destructive) {
+                let client = KeychainClient.liveValue
+                try? client.delete(OnboardingFeature.anthropicKeyName)
+                onApiKeyReset()
             }
         }
     }
@@ -55,6 +107,27 @@ struct ChatView: View {
                 }
             }
         }
+    }
+
+    private func errorBanner(_ error: LLMError) -> some View {
+        HStack(spacing: 8) {
+            Image(systemName: "exclamationmark.triangle")
+                .foregroundStyle(.red)
+            Text(String(localized: "error.prefix") + " " + error.userMessage)
+                .font(.subheadline)
+                .foregroundStyle(.primary)
+                .lineLimit(3)
+            Spacer()
+        }
+        .padding(12)
+        .background(Color.red.opacity(0.1))
+        .overlay(
+            RoundedRectangle(cornerRadius: 8)
+                .stroke(Color.red.opacity(0.3), lineWidth: 1)
+        )
+        .clipShape(RoundedRectangle(cornerRadius: 8))
+        .padding(.horizontal)
+        .padding(.vertical, 4)
     }
 
     private func inputBar(_ viewStore: ViewStoreOf<ChatFeature>) -> some View {

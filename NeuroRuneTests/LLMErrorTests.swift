@@ -16,7 +16,7 @@ struct LLMErrorTests {
             .rateLimited,
             .network("timeout"),
             .decoding("invalid json"),
-            .server(status: 500)
+            .server(status: 500, message: "Internal server error")
         ]
 
         #expect(cases.count == 5)
@@ -29,8 +29,8 @@ struct LLMErrorTests {
         #expect(LLMError.network("timeout") == LLMError.network("timeout"))
         #expect(LLMError.network("timeout") != LLMError.network("offline"))
         #expect(LLMError.decoding("bad json") == LLMError.decoding("bad json"))
-        #expect(LLMError.server(status: 500) == LLMError.server(status: 500))
-        #expect(LLMError.server(status: 500) != LLMError.server(status: 503))
+        #expect(LLMError.server(status: 500, message: "Internal server error") == LLMError.server(status: 500, message: "Internal server error"))
+        #expect(LLMError.server(status: 500, message: "Internal server error") != LLMError.server(status: 503, message: "Service unavailable"))
         #expect(LLMError.unauthorized != LLMError.rateLimited)
     }
 }
