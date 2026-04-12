@@ -66,10 +66,10 @@ struct ConversationListView: View {
         VStack(spacing: 16) {
             Image(systemName: "bubble.left.and.bubble.right")
                 .font(.system(size: 48))
-                .foregroundStyle(.secondary)
+                .foregroundStyle(.primary.opacity(0.6))
             Text(String(localized: "list.empty"))
                 .font(.subheadline)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(.primary.opacity(0.6))
             Button(String(localized: "list.newChat")) {
                 showModelPicker = true
             }
@@ -163,21 +163,22 @@ private struct ConversationRow: View {
     let conversation: Conversation
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
+        VStack(alignment: .leading, spacing: 8) {
             Text(conversationTitle)
                 .font(.body)
+                .foregroundStyle(.primary)
                 .lineLimit(1)
             HStack {
                 Text(LLMModel.resolve(id: conversation.modelId).displayName)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .font(.subheadline)
+                    .foregroundStyle(.primary.opacity(0.6))
                 Spacer()
                 Text(conversation.createdAt.formatted(.relative(presentation: .named)))
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .font(.subheadline)
+                    .foregroundStyle(.primary.opacity(0.6))
             }
         }
-        .padding(.vertical, 4)
+        .padding(.vertical, 6)
         .accessibilityElement(children: .combine)
     }
 
