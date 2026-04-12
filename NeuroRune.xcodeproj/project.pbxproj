@@ -202,6 +202,7 @@
 				ko,
 				en,
 				"zh-Hans",
+				"zh-Hant",
 				ja,
 				Base,
 			);
