@@ -4,16 +4,20 @@
 //
 
 import Foundation
+import os
 
 nonisolated extension LLMClient {
 
     static func anthropic(session: URLSession, apiKey: String) -> LLMClient {
         LLMClient(
             sendMessage: { messages, model in
+                Logger.network.info("send request, model: \(model.id, privacy: .public), messages: \(messages.count)")
+
                 let request: URLRequest
                 do {
                     request = try Self.buildRequest(messages: messages, model: model, apiKey: apiKey)
                 } catch {
+                    Logger.network.error("request encoding failed: \(error.localizedDescription)")
                     throw LLMError.decoding("request encoding failed: \(error)")
                 }
 
@@ -22,23 +26,31 @@ nonisolated extension LLMClient {
                 do {
                     (data, response) = try await session.data(for: request)
                 } catch let urlError as URLError {
+                    Logger.network.error("url error: \(urlError.localizedDescription)")
                     throw LLMError.network(urlError.localizedDescription)
                 } catch {
+                    Logger.network.error("network error: \(error.localizedDescription)")
                     throw LLMError.network(error.localizedDescription)
                 }
 
                 guard let http = response as? HTTPURLResponse else {
+                    Logger.network.error("non-http response")
                     throw LLMError.network("non-http response")
                 }
+
+                Logger.network.info("received response, status: \(http.statusCode)")
 
                 switch http.statusCode {
                 case 200..<300:
                     return try Self.parseSuccessResponse(data: data)
                 case 401:
+                    Logger.network.error("unauthorized (401)")
                     throw LLMError.unauthorized
                 case 429:
+                    Logger.network.error("rate limited (429)")
                     throw LLMError.rateLimited
                 default:
+                    Logger.network.error("server error, status: \(http.statusCode)")
                     throw LLMError.server(status: http.statusCode)
                 }
             }
