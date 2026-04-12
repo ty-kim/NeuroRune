@@ -13,7 +13,8 @@ struct RootView: View {
     var body: some View {
         Group {
             if isChecking {
-                ProgressView()
+                Color("DarkNavy")
+                    .ignoresSafeArea()
             } else if hasApiKey {
                 ConversationListView(
                     onApiKeyReset: { hasApiKey = false }
