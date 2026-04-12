@@ -15,17 +15,7 @@ struct RootView: View {
             if isChecking {
                 ProgressView()
             } else if hasApiKey {
-                ChatView(
-                    store: Store(
-                        initialState: ChatFeature.State(
-                            conversation: Conversation.empty(modelId: LLMModel.sonnet46.id),
-                            inputText: "",
-                            isStreaming: false,
-                            error: nil
-                        )
-                    ) {
-                        ChatFeature()
-                    },
+                ConversationListView(
                     onApiKeyReset: { hasApiKey = false }
                 )
             } else {

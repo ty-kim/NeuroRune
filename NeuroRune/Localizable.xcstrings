@@ -285,6 +285,46 @@
         "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "请输入以 sk-ant- 开头的 Anthropic API 密钥" } }
       }
     },
+    "a11y.list.newChat" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "New chat" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "新しいチャット" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "새 대화" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "新聊天" } }
+      }
+    },
+    "list.empty" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "No conversations yet" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "まだ会話がありません" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "대화가 없습니다" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "暂无对话" } }
+      }
+    },
+    "list.newChat" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "New Chat" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "新しいチャット" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "새 대화 시작" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "开始新聊天" } }
+      }
+    },
+    "list.untitled" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Untitled" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "無題" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "제목 없음" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "无标题" } }
+      }
+    },
+    "modelPicker.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Select Model" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "モデルを選択" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "모델 선택" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "选择模型" } }
+      }
+    },
     "chat.inputPlaceholder" : {
       "localizations" : {
         "en" : {
