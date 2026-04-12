@@ -199,7 +199,10 @@
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
+				ko,
 				en,
+				zh-Hans,
+				ja,
 				Base,
 			);
 			mainGroup = FC48E6F02F896D4C00BDAF8F;
