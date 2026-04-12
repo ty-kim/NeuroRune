@@ -293,6 +293,14 @@
         "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "新聊天" } }
       }
     },
+    "list.delete" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Delete" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "削除" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "삭제" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "删除" } }
+      }
+    },
     "list.empty" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "No conversations yet" } },

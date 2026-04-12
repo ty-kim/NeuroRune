@@ -57,7 +57,7 @@ struct ConversationListView: View {
                 )
             }
         }
-        .task {
+        .task(id: selectedConversation) {
             await loadConversations()
         }
     }
@@ -85,7 +85,29 @@ struct ConversationListView: View {
                 } label: {
                     ConversationRow(conversation: conversation)
                 }
+                .contextMenu {
+                    Button(role: .destructive) {
+                        deleteConversation(conversation)
+                    } label: {
+                        Label(String(localized: "list.delete"), systemImage: "trash")
+                    }
+                }
+                .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                    Button(role: .destructive) {
+                        deleteConversation(conversation)
+                    } label: {
+                        Label(String(localized: "list.delete"), systemImage: "trash")
+                    }
+                }
             }
+        }
+    }
+
+    private func deleteConversation(_ conversation: Conversation) {
+        Task {
+            let store = ConversationStore.liveValue
+            try? await store.delete(conversation.id)
+            conversations.removeAll { $0.id == conversation.id }
         }
     }
 
@@ -119,11 +141,14 @@ struct ConversationListView: View {
     private func loadConversations() async {
         let store = ConversationStore.liveValue
         do {
-            conversations = try await store.loadAll()
+            let loaded = try await store.loadAll()
+            conversations = loaded
         } catch {
-            conversations = []
+            if conversations.isEmpty {
+                conversations = []
+            }
         }
-        isLoading = false
+        if isLoading { isLoading = false }
     }
 
     private func startNewConversation(model: LLMModel) {
