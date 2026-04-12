@@ -6,6 +6,7 @@
 import Foundation
 import SwiftData
 import Dependencies
+import os
 
 nonisolated struct ConversationStore: Sendable {
     var save: @Sendable (Conversation) async throws -> Void
@@ -23,27 +24,40 @@ nonisolated extension ConversationStore {
                 if let existing = try fetchEntity(by: conversation.id, in: context) {
                     existing.title = conversation.title
                     existing.modelId = conversation.modelId
-                    // replace messages: clear + insert (ordinal로 입력 순서 보존)
                     for msg in existing.messages {
                         context.delete(msg)
                     }
                     existing.messages = conversation.messages.enumerated().map { index, message in
                         MessageEntity.from(message, ordinal: index)
                     }
+                    Logger.persistence.info("upsert conversation, id: \(conversation.id), messages: \(conversation.messages.count)")
                 } else {
                     context.insert(ConversationEntity.from(conversation))
+                    Logger.persistence.info("save new conversation, id: \(conversation.id), messages: \(conversation.messages.count)")
                 }
-                try context.save()
+                do {
+                    try context.save()
+                } catch {
+                    Logger.persistence.error("save failed, id: \(conversation.id), error: \(error.localizedDescription)")
+                    throw error
+                }
             },
             load: { id in
                 let context = ModelContext(container)
-                return try fetchEntity(by: id, in: context).flatMap { try $0.toDomain() }
+                let entity = try fetchEntity(by: id, in: context)
+                if entity != nil {
+                    Logger.persistence.info("load hit, id: \(id)")
+                } else {
+                    Logger.persistence.info("load miss, id: \(id)")
+                }
+                return try entity.flatMap { try $0.toDomain() }
             },
             loadAll: {
                 let context = ModelContext(container)
                 var descriptor = FetchDescriptor<ConversationEntity>()
                 descriptor.sortBy = [SortDescriptor(\.createdAt, order: .reverse)]
                 let entities = try context.fetch(descriptor)
+                Logger.persistence.info("loadAll, count: \(entities.count)")
                 return try entities.map { try $0.toDomain() }
             },
             delete: { id in
@@ -51,6 +65,9 @@ nonisolated extension ConversationStore {
                 if let entity = try fetchEntity(by: id, in: context) {
                     context.delete(entity)
                     try context.save()
+                    Logger.persistence.info("delete conversation, id: \(id)")
+                } else {
+                    Logger.persistence.info("delete skipped, not found, id: \(id)")
                 }
             }
         )
