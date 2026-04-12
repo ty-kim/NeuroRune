@@ -20,16 +20,31 @@ nonisolated struct ChatFeature: Reducer {
         case sendTapped
         case messageReceived(Message)
         case errorOccurred(LLMError)
+        case newConversationStarted(modelId: String)
     }
 
     func reduce(into state: inout State, action: Action) -> Effect<Action> {
         @Dependency(\.date) var date
+        @Dependency(\.uuid) var uuid
         @Dependency(\.llmClient) var llmClient
         @Dependency(\.conversationStore) var conversationStore
 
         switch action {
         case let .inputChanged(text):
             state.inputText = text
+            return .none
+
+        case let .newConversationStarted(modelId):
+            state.conversation = Conversation(
+                id: uuid(),
+                title: "",
+                messages: [],
+                modelId: modelId,
+                createdAt: date.now
+            )
+            state.inputText = ""
+            state.isStreaming = false
+            state.error = nil
             return .none
 
         case .sendTapped:
