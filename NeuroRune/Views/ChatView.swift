@@ -10,7 +10,6 @@ struct ChatView: View {
     let store: StoreOf<ChatFeature>
     var onApiKeyReset: () -> Void = {}
 
-    @State private var showResetConfirmation = false
     @State private var showUnauthorizedAlert = false
     @State private var errorShakeTrigger = 0
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -50,28 +49,6 @@ struct ChatView: View {
                     }
                     Button(String(localized: "error.cancel"), role: .cancel) {}
                 }
-                .toolbar {
-                    ToolbarItem(placement: .topBarTrailing) {
-                        Button {
-                            showResetConfirmation = true
-                        } label: {
-                            Image(systemName: "ellipsis.circle")
-                                .font(.title3)
-                        }
-                        .accessibilityLabel(String(localized: "a11y.chat.menuButton"))
-                    }
-                }
-            }
-        }
-        .confirmationDialog(
-            String(localized: "chat.menu.title"),
-            isPresented: $showResetConfirmation,
-            titleVisibility: .hidden
-        ) {
-            Button(String(localized: "chat.resetApiKey"), role: .destructive) {
-                let client = KeychainClient.liveValue
-                try? client.delete(OnboardingFeature.anthropicKeyName)
-                onApiKeyReset()
             }
         }
     }

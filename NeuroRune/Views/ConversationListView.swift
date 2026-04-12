@@ -14,6 +14,7 @@ struct ConversationListView: View {
     @State private var selectedConversation: Conversation?
     @State private var showModelPicker = false
     @State private var selectedModel: LLMModel = .sonnet46
+    @State private var showResetConfirmation = false
 
     var body: some View {
         NavigationStack {
@@ -28,6 +29,15 @@ struct ConversationListView: View {
             }
             .navigationTitle("NeuroRune")
             .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button {
+                        showResetConfirmation = true
+                    } label: {
+                        Image(systemName: "gearshape")
+                            .font(.title3)
+                    }
+                    .accessibilityLabel(String(localized: "a11y.chat.menuButton"))
+                }
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {
                         showModelPicker = true
@@ -59,6 +69,17 @@ struct ConversationListView: View {
         }
         .task(id: selectedConversation) {
             await loadConversations()
+        }
+        .confirmationDialog(
+            String(localized: "chat.menu.title"),
+            isPresented: $showResetConfirmation,
+            titleVisibility: .hidden
+        ) {
+            Button(String(localized: "chat.resetApiKey"), role: .destructive) {
+                let client = KeychainClient.liveValue
+                try? client.delete(OnboardingFeature.anthropicKeyName)
+                onApiKeyReset()
+            }
         }
     }
 
@@ -120,6 +141,7 @@ struct ConversationListView: View {
                 } label: {
                     HStack {
                         Text(model.displayName)
+                            .foregroundStyle(Color("BrandTitle"))
                         Spacer()
                     }
                     .contentShape(Rectangle())
