@@ -10,6 +10,7 @@ struct NeuroRuneApp: App {
     var body: some Scene {
         WindowGroup {
             RootView()
+                .background(Color("DarkNavy"))
         }
     }
 }

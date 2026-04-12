@@ -19,6 +19,14 @@ struct MessageView: View {
                 Spacer(minLength: 48)
             }
         }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(accessibilityRolePrefix + message.content)
+    }
+
+    private var accessibilityRolePrefix: String {
+        message.role == .user
+            ? String(localized: "a11y.message.user") + ", "
+            : String(localized: "a11y.message.assistant") + ", "
     }
 
     private var userBubble: some View {

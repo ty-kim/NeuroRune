@@ -8,16 +8,47 @@ import ComposableArchitecture
 
 struct ChatView: View {
     let store: StoreOf<ChatFeature>
+    var onApiKeyReset: () -> Void = {}
+
+    @State private var showUnauthorizedAlert = false
+    @State private var errorShakeTrigger = 0
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         WithViewStore(store, observe: { $0 }) { viewStore in
             NavigationStack {
                 VStack(spacing: 0) {
                     messageList(viewStore)
+                    if let error = viewStore.error {
+                        errorBanner(error)
+                            .offset(y: reduceMotion ? 0 : (errorShakeTrigger % 2 == 0 ? 0 : -4))
+                            .animation(reduceMotion ? nil : .default.repeatCount(3, autoreverses: true).speed(6), value: errorShakeTrigger)
+                            .transition(reduceMotion ? .opacity : .move(edge: .bottom).combined(with: .opacity))
+                            .animation(reduceMotion ? nil : .easeInOut(duration: 0.3), value: viewStore.error)
+                    }
                     inputBar(viewStore)
                 }
-                .navigationTitle("Chat")
+                .navigationTitle(String(localized: "chat.title"))
                 .navigationBarTitleDisplayMode(.inline)
+                .onChange(of: viewStore.error) { _, newError in
+                    if let error = newError {
+                        errorShakeTrigger += 1
+                        if error == .unauthorized {
+                            showUnauthorizedAlert = true
+                        }
+                    }
+                }
+                .alert(
+                    String(localized: "error.unauthorized"),
+                    isPresented: $showUnauthorizedAlert
+                ) {
+                    Button(String(localized: "chat.resetApiKey"), role: .destructive) {
+                        let client = KeychainClient.liveValue
+                        try? client.delete(OnboardingFeature.anthropicKeyName)
+                        onApiKeyReset()
+                    }
+                    Button(String(localized: "error.cancel"), role: .cancel) {}
+                }
             }
         }
     }
@@ -41,6 +72,7 @@ struct ChatView: View {
                             Spacer()
                         }
                         .id("streaming")
+                        .accessibilityLabel(String(localized: "a11y.chat.streaming"))
                     }
                 }
                 .padding()
@@ -57,9 +89,32 @@ struct ChatView: View {
         }
     }
 
+    private func errorBanner(_ error: LLMError) -> some View {
+        HStack(spacing: 8) {
+            Image(systemName: "exclamationmark.triangle")
+                .foregroundStyle(.red)
+            Text(String(localized: "error.prefix") + " " + error.userMessage)
+                .font(.subheadline)
+                .foregroundStyle(.primary)
+                .fixedSize(horizontal: false, vertical: true)
+            Spacer()
+        }
+        .padding(12)
+        .background(Color.red.opacity(0.1))
+        .overlay(
+            RoundedRectangle(cornerRadius: 8)
+                .stroke(Color.red.opacity(0.3), lineWidth: 1)
+        )
+        .clipShape(RoundedRectangle(cornerRadius: 8))
+        .padding(.horizontal)
+        .padding(.vertical, 4)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(String(localized: "error.prefix") + " " + error.userMessage)
+    }
+
     private func inputBar(_ viewStore: ViewStoreOf<ChatFeature>) -> some View {
         HStack(spacing: 8) {
-            TextField("메시지를 입력하세요", text: viewStore.binding(
+            TextField(String(localized: "chat.inputPlaceholder"), text: viewStore.binding(
                 get: \.inputText,
                 send: ChatFeature.Action.inputChanged
             ))
@@ -76,6 +131,7 @@ struct ChatView: View {
                     .font(.title2)
             }
             .disabled(viewStore.inputText.isEmpty || viewStore.isStreaming)
+            .accessibilityLabel(String(localized: "a11y.chat.sendButton"))
         }
         .padding(.horizontal)
         .padding(.vertical, 8)

@@ -23,7 +23,7 @@ struct OnboardingView: View {
                     Text("Anthropic API Key")
                         .font(.title2.bold())
 
-                    Text("메시지를 보내려면 본인의 API 키가 필요합니다.\nanthropic.com에서 발급받을 수 있습니다.")
+                    Text(String(localized: "onboarding.description"))
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                         .multilineTextAlignment(.center)
@@ -37,6 +37,8 @@ struct OnboardingView: View {
                         .textContentType(.password)
                         .autocorrectionDisabled()
                         .textInputAutocapitalization(.never)
+                        .accessibilityLabel(String(localized: "a11y.onboarding.apiKeyField"))
+                        .accessibilityHint(String(localized: "a11y.onboarding.apiKeyHint"))
 
                         if let error = viewStore.error {
                             Text(error)
@@ -53,7 +55,7 @@ struct OnboardingView: View {
                             ProgressView()
                                 .frame(maxWidth: .infinity)
                         } else {
-                            Text("저장")
+                            Text(String(localized: "onboarding.save"))
                                 .frame(maxWidth: .infinity)
                         }
                     }

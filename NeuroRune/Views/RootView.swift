@@ -13,19 +13,11 @@ struct RootView: View {
     var body: some View {
         Group {
             if isChecking {
-                ProgressView()
+                Color("DarkNavy")
+                    .ignoresSafeArea()
             } else if hasApiKey {
-                ChatView(
-                    store: Store(
-                        initialState: ChatFeature.State(
-                            conversation: Conversation.empty(modelId: LLMModel.sonnet46.id),
-                            inputText: "",
-                            isStreaming: false,
-                            error: nil
-                        )
-                    ) {
-                        ChatFeature()
-                    }
+                ConversationListView(
+                    onApiKeyReset: { hasApiKey = false }
                 )
             } else {
                 OnboardingView(
