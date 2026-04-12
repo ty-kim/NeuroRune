@@ -5,7 +5,7 @@
 
 import Foundation
 
-extension LLMClient {
+nonisolated extension LLMClient {
 
     static func anthropic(session: URLSession, apiKey: String) -> LLMClient {
         LLMClient(
