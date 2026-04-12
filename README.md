@@ -56,4 +56,4 @@ to a memory a future session can inherit from.
 
 ## License
 
-Private — personal project by Kim Tae-yeon (ty-kim)
+[MIT](LICENSE)
