@@ -124,6 +124,28 @@ struct ChatFeatureTests {
         }
     }
 
+    @Test("새 Conversation 시작 시 selectedModel.id가 conversation.modelId에 고정된다")
+    func newConversationUsesSelectedModel() async {
+        let fixedUUID = UUID(uuidString: "00000000-0000-0000-0000-000000000001")!
+
+        let store = TestStore(initialState: makeState()) {
+            ChatFeature()
+        } withDependencies: {
+            $0.uuid = .constant(fixedUUID)
+            $0.date = .constant(Self.fixedDate)
+        }
+
+        await store.send(.newConversationStarted(modelId: LLMModel.haiku45.id)) {
+            $0.conversation = Conversation(
+                id: fixedUUID,
+                title: "",
+                messages: [],
+                modelId: LLMModel.haiku45.id,
+                createdAt: Self.fixedDate
+            )
+        }
+    }
+
     @Test("messageReceived 후 ConversationStore.save가 호출된다")
     func messageReceivedTriggersSave() async {
         let reply = Message(role: .assistant, content: "world", createdAt: Self.fixedDate)
