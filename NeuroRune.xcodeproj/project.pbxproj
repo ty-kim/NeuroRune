@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		FC551A022F8B48DE00EB9763 /* MarkdownUI in Frameworks */ = {isa = PBXBuildFile; productRef = FC551A012F8B48DE00EB9763 /* MarkdownUI */; };
 		FC8E07782F8972A8007DBA32 /* ComposableArchitecture in Frameworks */ = {isa = PBXBuildFile; productRef = FC8E07772F8972A8007DBA32 /* ComposableArchitecture */; };
 /* End PBXBuildFile section */
 
@@ -57,6 +58,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				FC8E07782F8972A8007DBA32 /* ComposableArchitecture in Frameworks */,
+				FC551A022F8B48DE00EB9763 /* MarkdownUI in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -118,6 +120,7 @@
 			name = NeuroRune;
 			packageProductDependencies = (
 				FC8E07772F8972A8007DBA32 /* ComposableArchitecture */,
+				FC551A012F8B48DE00EB9763 /* MarkdownUI */,
 			);
 			productName = NeuroRune;
 			productReference = FC48E6F92F896D4C00BDAF8F /* NeuroRune.app */;
@@ -203,6 +206,7 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				FC8E07762F8972A8007DBA32 /* XCRemoteSwiftPackageReference "swift-composable-architecture" */,
+				FC551A002F8B48DE00EB9763 /* XCRemoteSwiftPackageReference "swift-markdown-ui" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = FC48E6FA2F896D4C00BDAF8F /* Products */;
@@ -599,6 +603,14 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
+		FC551A002F8B48DE00EB9763 /* XCRemoteSwiftPackageReference "swift-markdown-ui" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/gonzalezreal/swift-markdown-ui";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.4.1;
+			};
+		};
 		FC8E07762F8972A8007DBA32 /* XCRemoteSwiftPackageReference "swift-composable-architecture" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/pointfreeco/swift-composable-architecture";
@@ -610,6 +622,11 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		FC551A012F8B48DE00EB9763 /* MarkdownUI */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = FC551A002F8B48DE00EB9763 /* XCRemoteSwiftPackageReference "swift-markdown-ui" */;
+			productName = MarkdownUI;
+		};
 		FC8E07772F8972A8007DBA32 /* ComposableArchitecture */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = FC8E07762F8972A8007DBA32 /* XCRemoteSwiftPackageReference "swift-composable-architecture" */;
