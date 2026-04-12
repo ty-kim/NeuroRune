@@ -16,7 +16,7 @@ struct ChatView: View {
                     messageList(viewStore)
                     inputBar(viewStore)
                 }
-                .navigationTitle("Chat")
+                .navigationTitle(String(localized: "chat.title"))
                 .navigationBarTitleDisplayMode(.inline)
             }
         }
@@ -59,7 +59,7 @@ struct ChatView: View {
 
     private func inputBar(_ viewStore: ViewStoreOf<ChatFeature>) -> some View {
         HStack(spacing: 8) {
-            TextField("메시지를 입력하세요", text: viewStore.binding(
+            TextField(String(localized: "chat.inputPlaceholder"), text: viewStore.binding(
                 get: \.inputText,
                 send: ChatFeature.Action.inputChanged
             ))
