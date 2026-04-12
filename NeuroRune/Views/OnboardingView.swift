@@ -37,6 +37,8 @@ struct OnboardingView: View {
                         .textContentType(.password)
                         .autocorrectionDisabled()
                         .textInputAutocapitalization(.never)
+                        .accessibilityLabel(String(localized: "a11y.onboarding.apiKeyField"))
+                        .accessibilityHint(String(localized: "a11y.onboarding.apiKeyHint"))
 
                         if let error = viewStore.error {
                             Text(error)

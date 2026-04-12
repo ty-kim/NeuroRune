@@ -13,6 +13,7 @@ struct ChatView: View {
     @State private var showResetConfirmation = false
     @State private var showUnauthorizedAlert = false
     @State private var errorShakeTrigger = 0
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         WithViewStore(store, observe: { $0 }) { viewStore in
@@ -21,10 +22,10 @@ struct ChatView: View {
                     messageList(viewStore)
                     if let error = viewStore.error {
                         errorBanner(error)
-                            .offset(y: errorShakeTrigger % 2 == 0 ? 0 : -4)
-                            .animation(.default.repeatCount(3, autoreverses: true).speed(6), value: errorShakeTrigger)
-                            .transition(.move(edge: .bottom).combined(with: .opacity))
-                            .animation(.easeInOut(duration: 0.3), value: viewStore.error)
+                            .offset(y: reduceMotion ? 0 : (errorShakeTrigger % 2 == 0 ? 0 : -4))
+                            .animation(reduceMotion ? nil : .default.repeatCount(3, autoreverses: true).speed(6), value: errorShakeTrigger)
+                            .transition(reduceMotion ? .opacity : .move(edge: .bottom).combined(with: .opacity))
+                            .animation(reduceMotion ? nil : .easeInOut(duration: 0.3), value: viewStore.error)
                     }
                     inputBar(viewStore)
                 }
@@ -57,6 +58,7 @@ struct ChatView: View {
                             Image(systemName: "ellipsis.circle")
                                 .font(.title3)
                         }
+                        .accessibilityLabel(String(localized: "a11y.chat.menuButton"))
                     }
                 }
             }
@@ -93,6 +95,7 @@ struct ChatView: View {
                             Spacer()
                         }
                         .id("streaming")
+                        .accessibilityLabel(String(localized: "a11y.chat.streaming"))
                     }
                 }
                 .padding()
@@ -128,6 +131,8 @@ struct ChatView: View {
         .clipShape(RoundedRectangle(cornerRadius: 8))
         .padding(.horizontal)
         .padding(.vertical, 4)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(String(localized: "error.prefix") + " " + error.userMessage)
     }
 
     private func inputBar(_ viewStore: ViewStoreOf<ChatFeature>) -> some View {
@@ -149,6 +154,7 @@ struct ChatView: View {
                     .font(.title2)
             }
             .disabled(viewStore.inputText.isEmpty || viewStore.isStreaming)
+            .accessibilityLabel(String(localized: "a11y.chat.sendButton"))
         }
         .padding(.horizontal)
         .padding(.vertical, 8)
