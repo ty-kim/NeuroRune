@@ -19,7 +19,6 @@ nonisolated struct ChatFeature: Reducer {
     enum Action: Equatable {
         case inputChanged(String)
         case sendTapped
-        case messageReceived(Message)
         case streamChunkReceived(String)
         case streamFinished
         case errorOccurred(LLMError)
@@ -108,18 +107,6 @@ nonisolated struct ChatFeature: Reducer {
             return .none
 
         case .streamFinished:
-            state.isStreaming = false
-            let conversation = state.conversation
-            return .run { send in
-                do {
-                    try await conversationStore.save(conversation)
-                } catch {
-                    await send(.persistenceFailed(error.localizedDescription))
-                }
-            }
-
-        case let .messageReceived(message):
-            state.conversation = state.conversation.appending(message)
             state.isStreaming = false
             let conversation = state.conversation
             return .run { send in

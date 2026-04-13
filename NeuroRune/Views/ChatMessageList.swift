@@ -7,7 +7,6 @@ import SwiftUI
 
 struct ChatMessageList: View {
     let messages: [Message]
-    let isStreaming: Bool
 
     var body: some View {
         ScrollViewReader { proxy in
@@ -19,16 +18,6 @@ struct ChatMessageList: View {
                     ) { index, message in
                         MessageView(message: message)
                             .id(index)
-                    }
-
-                    if isStreaming {
-                        HStack {
-                            ProgressView()
-                                .padding(.leading, 16)
-                            Spacer()
-                        }
-                        .id("streaming")
-                        .accessibilityLabel(String(localized: "a11y.chat.streaming"))
                     }
                 }
                 .padding()
@@ -42,16 +31,18 @@ struct ChatMessageList: View {
                     }
                 }
             }
+            .onChange(of: messages.last?.content) {
+                let lastIndex = messages.count - 1
+                if lastIndex >= 0 {
+                    proxy.scrollTo(lastIndex, anchor: .bottom)
+                }
+            }
         }
     }
 }
 
 #Preview("Empty") {
-    ChatMessageList(messages: [], isStreaming: false)
-}
-
-#Preview("Streaming only") {
-    ChatMessageList(messages: [], isStreaming: true)
+    ChatMessageList(messages: [])
 }
 
 #Preview("With messages") {
@@ -61,17 +52,16 @@ struct ChatMessageList: View {
             Message(role: .assistant, content: "**Actor**는 Swift 동시성 모델에서 데이터 격리를 제공합니다.", createdAt: .now),
             Message(role: .user, content: "예시 좀", createdAt: .now),
             Message(role: .assistant, content: "```swift\nactor Counter { var count = 0 }\n```", createdAt: .now),
-        ],
-        isStreaming: false
+        ]
     )
 }
 
-#Preview("Streaming with history") {
+#Preview("Streaming placeholder") {
     ChatMessageList(
         messages: [
             Message(role: .user, content: "긴 답변 부탁", createdAt: .now),
-        ],
-        isStreaming: true
+            Message(role: .assistant, content: "Answer in progre", createdAt: .now),
+        ]
     )
 }
 
@@ -80,9 +70,7 @@ struct ChatMessageList: View {
         messages: [
             Message(role: .user, content: "다크모드 테스트", createdAt: .now),
             Message(role: .assistant, content: "**Bold** + `code`", createdAt: .now),
-        ],
-        isStreaming: false
+        ]
     )
     .preferredColorScheme(.dark)
 }
-

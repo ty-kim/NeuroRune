@@ -153,24 +153,6 @@ struct ChatFeatureTests {
         #expect(savedMessages.value == 0)
     }
 
-    @Test("messageReceived는 assistant Message를 추가하고 isStreaming=false로 바꾼다")
-    func messageReceivedAppendsAndClearsStreaming() async {
-        let reply = Message(role: .assistant, content: "world", createdAt: Self.fixedDate)
-
-        let store = TestStore(initialState: makeState(isStreaming: true)) {
-            ChatFeature()
-        } withDependencies: {
-            $0.conversationStore.save = { @Sendable _ in }
-        }
-
-        await store.send(.messageReceived(reply)) {
-            $0.conversation = $0.conversation.appending(reply)
-            $0.isStreaming = false
-        }
-
-        await store.finish()
-    }
-
     @Test("errorOccurred는 error를 세팅하고 isStreaming=false로 바꾼다")
     func errorOccurredSetsErrorAndClearsStreaming() async {
         let store = TestStore(initialState: makeState(isStreaming: true)) {
@@ -205,10 +187,8 @@ struct ChatFeatureTests {
         }
     }
 
-    @Test("ConversationStore.save 실패 시 persistenceFailed가 발행되고 persistenceError가 세팅된다")
+    @Test("streamFinished 저장 실패 시 persistenceFailed가 발행된다")
     func saveFailureSurfacesPersistenceError() async {
-        let reply = Message(role: .assistant, content: "world", createdAt: Self.fixedDate)
-
         let store = TestStore(initialState: makeState(isStreaming: true)) {
             ChatFeature()
         } withDependencies: {
@@ -217,8 +197,7 @@ struct ChatFeatureTests {
             }
         }
 
-        await store.send(.messageReceived(reply)) {
-            $0.conversation = $0.conversation.appending(reply)
+        await store.send(.streamFinished) {
             $0.isStreaming = false
         }
 
@@ -290,29 +269,4 @@ struct ChatFeatureTests {
         #expect(llmCalled.value == true)
     }
 
-    @Test("messageReceived 후 ConversationStore.save가 호출된다")
-    func messageReceivedTriggersSave() async {
-        let reply = Message(role: .assistant, content: "world", createdAt: Self.fixedDate)
-        let savedMessagesCount = LockIsolated<Int?>(nil)
-        let savedLastContent = LockIsolated<String?>(nil)
-
-        let store = TestStore(initialState: makeState(isStreaming: true)) {
-            ChatFeature()
-        } withDependencies: {
-            $0.conversationStore.save = { @Sendable conversation in
-                savedMessagesCount.setValue(conversation.messages.count)
-                savedLastContent.setValue(conversation.messages.last?.content)
-            }
-        }
-
-        await store.send(.messageReceived(reply)) {
-            $0.conversation = $0.conversation.appending(reply)
-            $0.isStreaming = false
-        }
-
-        await store.finish()
-
-        #expect(savedMessagesCount.value == 1)
-        #expect(savedLastContent.value == "world")
-    }
 }

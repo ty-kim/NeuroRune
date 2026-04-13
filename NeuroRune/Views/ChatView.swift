@@ -18,10 +18,7 @@ struct ChatView: View {
         WithViewStore(store, observe: { $0 }) { viewStore in
             NavigationStack {
                 VStack(spacing: 0) {
-                    ChatMessageList(
-                        messages: viewStore.conversation.messages,
-                        isStreaming: viewStore.isStreaming
-                    )
+                    ChatMessageList(messages: viewStore.conversation.messages)
                     if let error = viewStore.error {
                         ChatErrorBanner(error: error)
                             .offset(y: reduceMotion ? 0 : (errorShakeTrigger % 2 == 0 ? 0 : -4))
