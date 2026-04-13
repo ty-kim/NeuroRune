@@ -71,11 +71,7 @@ nonisolated struct ChatFeature: Reducer {
             state.error = nil
 
             // 디스크엔 placeholder 없이 저장. placeholder는 UI 전용 스트리밍 타겟.
-            let conversationForDisk: Conversation = {
-                var c = state.conversation
-                c.messages = Array(c.messages.dropLast())
-                return c
-            }()
+            let conversationForDisk = state.conversation.droppingLastMessage()
             let messagesForAPI = conversationForDisk.messages
             let model = LLMModel.resolve(id: state.conversation.modelId)
             return .run { send in
@@ -102,9 +98,7 @@ nonisolated struct ChatFeature: Reducer {
                 content: last.content + chunk,
                 createdAt: last.createdAt
             )
-            var newMessages = state.conversation.messages
-            newMessages[newMessages.count - 1] = updated
-            state.conversation.messages = newMessages
+            state.conversation = state.conversation.replacingLastMessage(with: updated)
             return .none
 
         case .streamFinished:
@@ -121,7 +115,7 @@ nonisolated struct ChatFeature: Reducer {
             // 부분 응답 보존 X — "이게 진짜 답인가" 혼란 방지, 사용자는 재시도.
             let hadTrailingAssistant = state.conversation.messages.last?.role == .assistant
             if hadTrailingAssistant {
-                state.conversation.messages.removeLast()
+                state.conversation = state.conversation.droppingLastMessage()
                 let conversation = state.conversation
                 return .run { send in
                     await Self.save(conversation, using: conversationStore, send: send)
