@@ -8,6 +8,11 @@ import Foundation
 import ComposableArchitecture
 @testable import NeuroRune
 
+private enum SaveTestError: LocalizedError {
+    case failed
+    var errorDescription: String? { "save failed" }
+}
+
 @MainActor
 struct ChatFeatureTests {
 
@@ -153,6 +158,84 @@ struct ChatFeatureTests {
                 createdAt: Self.fixedDate
             )
         }
+    }
+
+    @Test("ConversationStore.save 실패 시 persistenceFailed가 발행되고 persistenceError가 세팅된다")
+    func saveFailureSurfacesPersistenceError() async {
+        let reply = Message(role: .assistant, content: "world", createdAt: Self.fixedDate)
+
+        let store = TestStore(initialState: makeState(isStreaming: true)) {
+            ChatFeature()
+        } withDependencies: {
+            $0.conversationStore.save = { @Sendable _ in
+                throw SaveTestError.failed
+            }
+        }
+
+        await store.send(.messageReceived(reply)) {
+            $0.conversation = $0.conversation.appending(reply)
+            $0.isStreaming = false
+        }
+
+        await store.receive(.persistenceFailed(SaveTestError.failed.localizedDescription)) {
+            $0.persistenceError = SaveTestError.failed.localizedDescription
+        }
+    }
+
+    @Test("persistenceErrorDismissed는 persistenceError를 nil로 만든다")
+    func persistenceErrorDismissedClearsError() async {
+        var state = makeState()
+        state.persistenceError = "saved failed"
+
+        let store = TestStore(initialState: state) {
+            ChatFeature()
+        }
+
+        await store.send(.persistenceErrorDismissed) {
+            $0.persistenceError = nil
+        }
+    }
+
+    @Test("sendTapped 중 save 실패해도 LLM 요청은 진행된다")
+    func sendTappedContinuesLLMDespiteSaveFailure() async {
+        let reply = Message(role: .assistant, content: "world", createdAt: Self.fixedDate)
+        let llmCalled = LockIsolated<Bool>(false)
+
+        let store = TestStore(initialState: makeState(inputText: "hello")) {
+            ChatFeature()
+        } withDependencies: {
+            $0.date = .constant(Self.fixedDate)
+            $0.llmClient.sendMessage = { @Sendable _, _ in
+                llmCalled.setValue(true)
+                return reply
+            }
+            $0.conversationStore.save = { @Sendable _ in
+                throw SaveTestError.failed
+            }
+        }
+
+        await store.send(.sendTapped) {
+            $0.conversation = $0.conversation.appending(
+                Message(role: .user, content: "hello", createdAt: Self.fixedDate)
+            )
+            $0.inputText = ""
+            $0.isStreaming = true
+        }
+
+        await store.receive(.persistenceFailed(SaveTestError.failed.localizedDescription)) {
+            $0.persistenceError = SaveTestError.failed.localizedDescription
+        }
+
+        await store.receive(.messageReceived(reply)) {
+            $0.conversation = $0.conversation.appending(reply)
+            $0.isStreaming = false
+        }
+
+        await store.receive(.persistenceFailed(SaveTestError.failed.localizedDescription))
+
+        await store.finish()
+
+        #expect(llmCalled.value == true)
     }
 
     @Test("messageReceived 후 ConversationStore.save가 호출된다")

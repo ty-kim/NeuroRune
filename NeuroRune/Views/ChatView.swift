@@ -29,6 +29,14 @@ struct ChatView: View {
                             .transition(reduceMotion ? .opacity : .move(edge: .bottom).combined(with: .opacity))
                             .animation(reduceMotion ? nil : .easeInOut(duration: 0.3), value: viewStore.error)
                     }
+                    if let persistenceError = viewStore.persistenceError {
+                        ChatPersistenceBanner(
+                            message: persistenceError,
+                            onDismiss: { viewStore.send(.persistenceErrorDismissed) }
+                        )
+                        .transition(reduceMotion ? .opacity : .move(edge: .bottom).combined(with: .opacity))
+                        .animation(reduceMotion ? nil : .easeInOut(duration: 0.3), value: viewStore.persistenceError)
+                    }
                     ChatInputBar(
                         text: viewStore.binding(
                             get: \.inputText,

@@ -13,6 +13,7 @@ nonisolated struct ChatFeature: Reducer {
         var inputText: String
         var isStreaming: Bool
         var error: LLMError?
+        var persistenceError: String? = nil
     }
 
     enum Action: Equatable {
@@ -20,6 +21,8 @@ nonisolated struct ChatFeature: Reducer {
         case sendTapped
         case messageReceived(Message)
         case errorOccurred(LLMError)
+        case persistenceFailed(String)
+        case persistenceErrorDismissed
         case newConversationStarted(modelId: String)
     }
 
@@ -63,7 +66,11 @@ nonisolated struct ChatFeature: Reducer {
             let messages = conversation.messages
             let model = LLMModel.resolve(id: conversation.modelId)
             return .run { send in
-                try? await conversationStore.save(conversation)
+                do {
+                    try await conversationStore.save(conversation)
+                } catch {
+                    await send(.persistenceFailed(error.localizedDescription))
+                }
                 do {
                     let reply = try await llmClient.sendMessage(messages, model)
                     await send(.messageReceived(reply))
@@ -78,13 +85,25 @@ nonisolated struct ChatFeature: Reducer {
             state.conversation = state.conversation.appending(message)
             state.isStreaming = false
             let conversation = state.conversation
-            return .run { _ in
-                try? await conversationStore.save(conversation)
+            return .run { send in
+                do {
+                    try await conversationStore.save(conversation)
+                } catch {
+                    await send(.persistenceFailed(error.localizedDescription))
+                }
             }
 
         case let .errorOccurred(llmError):
             state.error = llmError
             state.isStreaming = false
+            return .none
+
+        case let .persistenceFailed(message):
+            state.persistenceError = message
+            return .none
+
+        case .persistenceErrorDismissed:
+            state.persistenceError = nil
             return .none
         }
     }
