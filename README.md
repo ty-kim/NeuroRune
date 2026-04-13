@@ -39,7 +39,7 @@ each generation passes what it learned to the next.
 - [x] Error UI (banner + shake + 401 alert)
 - [x] App icon (ᛗ Mannaz rune), brand colors (amber + dark navy)
 - [x] Launch screen (DarkNavy + Mannaz rune)
-- [x] 61 unit tests, Swift Testing + TCA TestStore
+- [x] 140 unit tests, Swift Testing + TCA TestStore
 
 ### Sprint 2 — Memory & Voice (Apr 16-19)
 - [ ] GitHub-backed memory sync
