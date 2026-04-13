@@ -57,6 +57,15 @@ struct ChatFeatureTests {
         await store.send(.sendTapped)
     }
 
+    @Test("sendTapped는 isStreaming 중이면 아무 효과 없음")
+    func sendTappedNoOpWhileStreaming() async {
+        let store = TestStore(initialState: makeState(inputText: "hello", isStreaming: true)) {
+            ChatFeature()
+        }
+
+        await store.send(.sendTapped)
+    }
+
     @Test("sendTapped는 user Message 추가 + inputText 비움 + isStreaming=true + LLMClient.sendMessage 호출")
     func sendTappedTriggersLLMEffect() async {
         let reply = Message(role: .assistant, content: "world", createdAt: Self.fixedDate)
