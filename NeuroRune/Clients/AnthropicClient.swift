@@ -67,7 +67,12 @@ nonisolated extension LLMClient {
                                 case .error(let message):
                                     continuation.finish(throwing: LLMError.server(status: 0, message: message))
                                     return
-                                case .ignored:
+                                case .ignored,
+                                     .toolUseStart,
+                                     .toolUseInputDelta,
+                                     .contentBlockStop,
+                                     .messageDelta:
+                                    // 슬라이스 3a: 파서가 인지만 함. 멀티턴 루프(3b)에서 처리.
                                     continue
                                 }
                             }
