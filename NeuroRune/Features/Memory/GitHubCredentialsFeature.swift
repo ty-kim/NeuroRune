@@ -13,6 +13,7 @@ nonisolated struct GitHubCredentialsFeature: Reducer {
         var owner: String = ""
         var repo: String = ""
         var branch: String = "main"
+        var path: String = ""
         var isSaving: Bool = false
         var error: String?
 
@@ -29,6 +30,7 @@ nonisolated struct GitHubCredentialsFeature: Reducer {
         case ownerChanged(String)
         case repoChanged(String)
         case branchChanged(String)
+        case pathChanged(String)
         case saveTapped
         case saveSucceeded
         case saveFailed(String)
@@ -57,6 +59,11 @@ nonisolated struct GitHubCredentialsFeature: Reducer {
             state.error = nil
             return .none
 
+        case let .pathChanged(v):
+            state.path = v
+            state.error = nil
+            return .none
+
         case .saveTapped:
             guard state.isValid else { return .none }
             state.isSaving = true
@@ -65,7 +72,8 @@ nonisolated struct GitHubCredentialsFeature: Reducer {
                 pat: state.pat.trimmingCharacters(in: .whitespacesAndNewlines),
                 owner: state.owner.trimmingCharacters(in: .whitespacesAndNewlines),
                 repo: state.repo.trimmingCharacters(in: .whitespacesAndNewlines),
-                branch: state.branch.trimmingCharacters(in: .whitespacesAndNewlines)
+                branch: state.branch.trimmingCharacters(in: .whitespacesAndNewlines),
+                path: state.path.trimmingCharacters(in: .whitespacesAndNewlines)
             )
             return .run { send in
                 do {
@@ -98,6 +106,7 @@ nonisolated struct GitHubCredentialsFeature: Reducer {
                 state.owner = creds.owner
                 state.repo = creds.repo
                 state.branch = creds.branch
+                state.path = creds.path
             }
             return .none
         }

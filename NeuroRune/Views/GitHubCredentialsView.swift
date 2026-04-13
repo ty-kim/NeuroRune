@@ -80,6 +80,22 @@ struct GitHubCredentialsView: View {
                         Text(String(localized: "credentials.repo"))
                     }
 
+                    Section {
+                        TextField(
+                            String(localized: "credentials.path.placeholder"),
+                            text: viewStore.binding(
+                                get: \.path,
+                                send: GitHubCredentialsFeature.Action.pathChanged
+                            )
+                        )
+                        .autocorrectionDisabled()
+                        .textInputAutocapitalization(.never)
+                    } header: {
+                        Text(String(localized: "credentials.path"))
+                    } footer: {
+                        Text(String(localized: "credentials.path.footer"))
+                    }
+
                     if let error = viewStore.error {
                         Section {
                             Text(error)

@@ -15,7 +15,6 @@ nonisolated struct MemoryListFeature: Reducer {
         var selectedFile: GitHubFile?
         /// credentials 미설정 시 true. UI에서 설정 화면 유도.
         var credentialsMissing: Bool = false
-        var basePath: String = "memory"
         var config: GitHubRepoConfig?
     }
 
@@ -39,7 +38,6 @@ nonisolated struct MemoryListFeature: Reducer {
         switch action {
         case .task, .refresh:
             state.isLoading = true
-            let basePath = state.basePath
             return .run { send in
                 let loaded = (try? creds.load()) ?? nil
                 guard let loaded else {
@@ -47,9 +45,13 @@ nonisolated struct MemoryListFeature: Reducer {
                     return
                 }
                 let config = loaded.repoConfig
+                let path = loaded.path
                 do {
-                    let files = try await github.listContents(config, basePath)
+                    let files = try await github.listContents(config, path)
                     await send(.filesLoaded(files))
+                } catch GitHubError.notFound {
+                    // 디렉터리가 아직 없음 = 빈 상태
+                    await send(.filesLoaded([]))
                 } catch let error as GitHubError {
                     await send(.loadFailed(errorMessage(for: error)))
                 } catch {
