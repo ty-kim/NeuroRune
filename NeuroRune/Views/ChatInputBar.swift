@@ -29,3 +29,41 @@ struct ChatInputBar: View {
         .background(Color(.systemBackground))
     }
 }
+
+#Preview("Empty") {
+    StatefulPreviewWrapper("") { text in
+        ChatInputBar(text: text, isStreaming: false, onSend: {})
+    }
+}
+
+#Preview("With text") {
+    StatefulPreviewWrapper("Hello Claude") { text in
+        ChatInputBar(text: text, isStreaming: false, onSend: {})
+    }
+}
+
+#Preview("Streaming (disabled)") {
+    StatefulPreviewWrapper("Waiting for reply…") { text in
+        ChatInputBar(text: text, isStreaming: true, onSend: {})
+    }
+}
+
+#Preview("Dark Mode") {
+    StatefulPreviewWrapper("다크모드") { text in
+        ChatInputBar(text: text, isStreaming: false, onSend: {})
+    }
+    .preferredColorScheme(.dark)
+}
+
+private struct StatefulPreviewWrapper<Content: View>: View {
+    @State private var value: String
+    let content: (Binding<String>) -> Content
+
+    init(_ initial: String, @ViewBuilder content: @escaping (Binding<String>) -> Content) {
+        _value = State(initialValue: initial)
+        self.content = content
+    }
+
+    var body: some View { content($value) }
+}
+

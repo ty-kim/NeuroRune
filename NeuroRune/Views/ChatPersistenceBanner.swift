@@ -41,3 +41,34 @@ struct ChatPersistenceBanner: View {
         .accessibilityLabel(String(localized: "error.persistence.title") + ", " + message)
     }
 }
+
+#Preview("Short message") {
+    ChatPersistenceBanner(
+        message: "디스크 공간 부족",
+        onDismiss: {}
+    )
+}
+
+#Preview("Long message") {
+    ChatPersistenceBanner(
+        message: "SwiftData container unavailable: The operation couldn't be completed. (NSCocoaErrorDomain error 134060.)",
+        onDismiss: {}
+    )
+}
+
+#Preview("Dark Mode") {
+    ChatPersistenceBanner(
+        message: "저장 중 오류가 발생했습니다",
+        onDismiss: {}
+    )
+    .preferredColorScheme(.dark)
+}
+
+#Preview("Dynamic Type XXL") {
+    ChatPersistenceBanner(
+        message: "큰 글씨에서도 잘 보이나?",
+        onDismiss: {}
+    )
+    .dynamicTypeSize(.xxxLarge)
+}
+

@@ -45,3 +45,44 @@ struct ChatMessageList: View {
         }
     }
 }
+
+#Preview("Empty") {
+    ChatMessageList(messages: [], isStreaming: false)
+}
+
+#Preview("Streaming only") {
+    ChatMessageList(messages: [], isStreaming: true)
+}
+
+#Preview("With messages") {
+    ChatMessageList(
+        messages: [
+            Message(role: .user, content: "Swift에서 actor는 뭐야?", createdAt: .now),
+            Message(role: .assistant, content: "**Actor**는 Swift 동시성 모델에서 데이터 격리를 제공합니다.", createdAt: .now),
+            Message(role: .user, content: "예시 좀", createdAt: .now),
+            Message(role: .assistant, content: "```swift\nactor Counter { var count = 0 }\n```", createdAt: .now),
+        ],
+        isStreaming: false
+    )
+}
+
+#Preview("Streaming with history") {
+    ChatMessageList(
+        messages: [
+            Message(role: .user, content: "긴 답변 부탁", createdAt: .now),
+        ],
+        isStreaming: true
+    )
+}
+
+#Preview("Dark Mode") {
+    ChatMessageList(
+        messages: [
+            Message(role: .user, content: "다크모드 테스트", createdAt: .now),
+            Message(role: .assistant, content: "**Bold** + `code`", createdAt: .now),
+        ],
+        isStreaming: false
+    )
+    .preferredColorScheme(.dark)
+}
+

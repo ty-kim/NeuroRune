@@ -31,3 +31,30 @@ struct ChatErrorBanner: View {
         .accessibilityLabel(String(localized: "error.prefix") + " " + error.userMessage)
     }
 }
+
+#Preview("Unauthorized") {
+    ChatErrorBanner(error: .unauthorized)
+}
+
+#Preview("Rate Limited") {
+    ChatErrorBanner(error: .rateLimited)
+}
+
+#Preview("Network") {
+    ChatErrorBanner(error: .network("The Internet connection appears to be offline."))
+}
+
+#Preview("Server 500") {
+    ChatErrorBanner(error: .server(status: 500, message: "Internal server error"))
+}
+
+#Preview("Dark Mode") {
+    ChatErrorBanner(error: .rateLimited)
+        .preferredColorScheme(.dark)
+}
+
+#Preview("Dynamic Type XXL") {
+    ChatErrorBanner(error: .network("Very long error message for wrapping verification under large dynamic type"))
+        .dynamicTypeSize(.xxxLarge)
+}
+
