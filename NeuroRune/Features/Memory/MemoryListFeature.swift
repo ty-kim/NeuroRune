@@ -9,6 +9,7 @@ import ComposableArchitecture
 nonisolated struct MemoryListFeature: Reducer {
 
     struct State: Equatable {
+        var role: CredentialsRole = .global
         var files: [GitHubFile] = []
         var isLoading: Bool = true
         var listError: String?
@@ -39,8 +40,9 @@ nonisolated struct MemoryListFeature: Reducer {
         switch action {
         case .task, .refresh:
             state.isLoading = true
+            let role = state.role
             return .run { send in
-                guard let loaded = creds.loadIgnoringError() else {
+                guard let loaded = creds.loadIgnoringError(role: role) else {
                     await send(.credentialsMissing)
                     return
                 }
@@ -70,7 +72,7 @@ nonisolated struct MemoryListFeature: Reducer {
                 .sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
             state.isLoading = false
             state.credentialsMissing = false
-            state.config = loadConfig(creds: creds)
+            state.config = creds.loadIgnoringError(role: state.role)?.repoConfig
             return .none
 
         case let .loadFailed(message):
@@ -89,7 +91,8 @@ nonisolated struct MemoryListFeature: Reducer {
             return .none
 
         case let .deleteTapped(file):
-            guard let loaded = creds.loadIgnoringError() else {
+            let role = state.role
+            guard let loaded = creds.loadIgnoringError(role: role) else {
                 return .send(.credentialsMissing)
             }
             let config = loaded.repoConfig
@@ -131,7 +134,4 @@ nonisolated struct MemoryListFeature: Reducer {
         }
     }
 
-    private func loadConfig(creds: GitHubCredentialsClient) -> GitHubRepoConfig? {
-        creds.loadIgnoringError()?.repoConfig
-    }
 }

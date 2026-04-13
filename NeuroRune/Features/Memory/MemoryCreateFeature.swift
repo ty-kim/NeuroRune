@@ -9,6 +9,7 @@ import ComposableArchitecture
 nonisolated struct MemoryCreateFeature: Reducer {
 
     struct State: Equatable {
+        var role: CredentialsRole = .global
         /// creds.path — repo 안 메모리 디렉터리. 빈 문자열이면 repo 루트.
         var basePath: String = ""
         var filename: String = ""
@@ -59,9 +60,10 @@ nonisolated struct MemoryCreateFeature: Reducer {
             state.error = nil
             let path = state.fullPath
             let content = state.content
+            let role = state.role
             let message = "Create \(URL(fileURLWithPath: path).lastPathComponent)"
             return .run { send in
-                guard let loaded = credsClient.loadIgnoringError() else {
+                guard let loaded = credsClient.loadIgnoringError(role: role) else {
                     await send(.saveFailed(String(localized: "memory.error.unauthorized")))
                     return
                 }

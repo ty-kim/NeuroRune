@@ -25,6 +25,41 @@ private nonisolated enum Fixtures {
 @MainActor
 struct MemoryListFeatureTests {
 
+    @Test(".task는 state.role에 해당하는 creds를 로드한다")
+    func taskUsesRoleSpecificCredentials() async {
+        let receivedRoles = LockIsolated<[CredentialsRole]>([])
+        let localCreds = GitHubCredentials(
+            role: .local,
+            pat: "ghp_local",
+            owner: "ty-kim",
+            repo: "neurorune-memory"
+        )
+
+        var state = MemoryListFeature.State()
+        state.role = .local
+
+        let store = TestStore(initialState: state) {
+            MemoryListFeature()
+        } withDependencies: {
+            $0.githubCredentialsClient.load = { @Sendable role in
+                receivedRoles.withValue { $0.append(role) }
+                return localCreds
+            }
+            $0.githubClient.listContents = { _, _ in [] }
+        }
+
+        await store.send(.task)
+        await store.receive(.filesLoaded([])) {
+            $0.files = []
+            $0.isLoading = false
+            $0.credentialsMissing = false
+            $0.config = localCreds.repoConfig
+        }
+
+        #expect(receivedRoles.value.contains(.local))
+        #expect(!receivedRoles.value.contains(.global))
+    }
+
     @Test(".task는 creds가 있으면 listContents를 호출하고 filesLoaded를 발행한다")
     func taskLoadsFilesWithCreds() async {
         let store = TestStore(initialState: MemoryListFeature.State()) {
