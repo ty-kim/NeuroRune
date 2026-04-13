@@ -15,11 +15,6 @@ nonisolated enum EffortLevel: String, Codable, Sendable, CaseIterable, Identifia
 
     var id: String { rawValue }
 
-    /// 사용자에게 보여줄 라벨 (xcstrings 키)
-    var localizationKey: String {
-        "effort.\(rawValue)"
-    }
-
     var displayName: String {
         rawValue.capitalized
     }
