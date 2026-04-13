@@ -79,10 +79,12 @@ struct MemoryListView: View {
                     )
                 }
                 .sheet(isPresented: $showCreateSheet) {
-                    let basePath: String = (try? GitHubCredentialsClient.liveValue.load(viewStore.role)).flatMap { $0?.path } ?? ""
                     MemoryCreateView(
                         store: Store(
-                            initialState: MemoryCreateFeature.State(role: viewStore.role, basePath: basePath)
+                            initialState: MemoryCreateFeature.State(
+                                role: viewStore.role,
+                                basePath: viewStore.basePath
+                            )
                         ) {
                             MemoryCreateFeature()
                         },

@@ -187,6 +187,7 @@ struct MemoryListFeatureTests {
             $0.isLoading = false
             $0.credentialsMissing = false
             $0.config = credsWithSubPath.repoConfig
+            $0.basePath = "notes"
         }
     }
 
