@@ -5,7 +5,7 @@
 
 import Foundation
 
-nonisolated struct GitHubFile: Equatable, Sendable, Identifiable {
+nonisolated struct GitHubFile: Equatable, Hashable, Sendable, Identifiable {
     let path: String
     let sha: String
     /// Base64 디코딩된 평문. 디렉터리 응답일 땐 빈 문자열.

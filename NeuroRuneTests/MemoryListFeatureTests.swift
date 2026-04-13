@@ -214,6 +214,43 @@ struct MemoryListFeatureTests {
         }
     }
 
+    @Test("fileAdded는 files에 낙관적으로 insert하고 이름순 정렬 유지")
+    func fileAddedInsertsOptimistically() async {
+        var state = MemoryListFeature.State()
+        state.files = [
+            GitHubFile(path: "a.md", sha: "1", content: "", isDirectory: false),
+            GitHubFile(path: "c.md", sha: "2", content: "", isDirectory: false),
+        ]
+        state.isLoading = false
+
+        let store = TestStore(initialState: state) { MemoryListFeature() }
+
+        let newFile = GitHubFile(path: "b.md", sha: "3", content: "", isDirectory: false)
+        await store.send(.fileAdded(newFile)) {
+            $0.files = [
+                GitHubFile(path: "a.md", sha: "1", content: "", isDirectory: false),
+                newFile,
+                GitHubFile(path: "c.md", sha: "2", content: "", isDirectory: false),
+            ]
+        }
+    }
+
+    @Test("fileAdded는 같은 path 기존 항목을 새 sha로 교체한다")
+    func fileAddedReplacesExistingPath() async {
+        var state = MemoryListFeature.State()
+        state.files = [
+            GitHubFile(path: "a.md", sha: "old-sha", content: "", isDirectory: false),
+        ]
+        state.isLoading = false
+
+        let store = TestStore(initialState: state) { MemoryListFeature() }
+
+        let updated = GitHubFile(path: "a.md", sha: "new-sha", content: "new content", isDirectory: false)
+        await store.send(.fileAdded(updated)) {
+            $0.files = [updated]
+        }
+    }
+
     @Test("fileSelected는 selectedFile을 업데이트한다")
     func fileSelectedUpdatesState() async {
         let file = Fixtures.files[0]

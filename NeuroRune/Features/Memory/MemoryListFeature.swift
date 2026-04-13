@@ -27,6 +27,7 @@ nonisolated struct MemoryListFeature: Reducer {
         case deleteTapped(GitHubFile)
         case deleteSucceeded(String /* path */)
         case deleteFailed(String)
+        case fileAdded(GitHubFile)
         case refresh
         case errorDismissed
     }
@@ -111,6 +112,14 @@ nonisolated struct MemoryListFeature: Reducer {
 
         case let .deleteFailed(message):
             state.listError = message
+            return .none
+
+        case let .fileAdded(file):
+            // 중복 방지: 같은 path 이미 있으면 교체, 없으면 추가. 이름순 정렬 유지.
+            var updated = state.files.filter { $0.path != file.path }
+            updated.append(file)
+            state.files = updated
+                .sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
             return .none
 
         case .errorDismissed:

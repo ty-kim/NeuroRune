@@ -86,9 +86,11 @@ struct MemoryListView: View {
                         ) {
                             MemoryCreateFeature()
                         },
-                        onCreated: { _ in
+                        onCreated: { file in
+                            // 낙관적 insert — GitHub eventual consistency 감안해서
+                            // 서버 재조회 없이 즉시 목록에 반영.
+                            viewStore.send(.fileAdded(file))
                             showCreateSheet = false
-                            viewStore.send(.refresh)
                         },
                         onCancel: { showCreateSheet = false }
                     )
