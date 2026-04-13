@@ -15,7 +15,7 @@ nonisolated extension LLMClient {
 
                 let request: URLRequest
                 do {
-                    request = try Self.buildRequest(messages: messages, model: model, apiKey: apiKey)
+                    request = try AnthropicRequestBuilder.build(messages: messages, model: model, apiKey: apiKey)
                 } catch {
                     Logger.network.error("request encoding failed: \(error.localizedDescription)")
                     throw LLMError.decoding("request encoding failed: \(error)")
@@ -42,7 +42,7 @@ nonisolated extension LLMClient {
 
                 switch http.statusCode {
                 case 200..<300:
-                    return try Self.parseSuccessResponse(data: data)
+                    return try AnthropicResponseParser.parseSuccess(data: data)
                 case 401:
                     Logger.network.error("unauthorized (401)")
                     throw LLMError.unauthorized
@@ -50,100 +50,11 @@ nonisolated extension LLMClient {
                     Logger.network.error("rate limited (429)")
                     throw LLMError.rateLimited
                 default:
-                    let message = Self.parseErrorMessage(data: data)
+                    let message = AnthropicResponseParser.parseErrorMessage(data: data)
                     Logger.network.error("server error, status: \(http.statusCode), message: \(message)")
                     throw LLMError.server(status: http.statusCode, message: message)
                 }
             }
         )
     }
-
-    private nonisolated static func parseSuccessResponse(data: Data) throws -> Message {
-        struct AnthropicResponse: Decodable {
-            struct Content: Decodable {
-                let type: String
-                let text: String?
-            }
-            let content: [Content]
-        }
-
-        let decoder = JSONDecoder()
-        let decoded: AnthropicResponse
-        do {
-            decoded = try decoder.decode(AnthropicResponse.self, from: data)
-        } catch {
-            throw LLMError.decoding(String(describing: error))
-        }
-
-        let textBlocks = decoded.content.compactMap { block -> String? in
-            guard block.type == "text" else { return nil }
-            return block.text
-        }
-
-        guard !textBlocks.isEmpty else {
-            throw LLMError.decoding("response contained no text blocks")
-        }
-
-        return Message(
-            role: .assistant,
-            content: textBlocks.joined(),
-            createdAt: Date()
-        )
-    }
-
-    private nonisolated static func parseErrorMessage(data: Data) -> String {
-        struct ErrorResponse: Decodable {
-            struct ErrorDetail: Decodable {
-                let message: String
-            }
-            let error: ErrorDetail
-        }
-        if let parsed = try? JSONDecoder().decode(ErrorResponse.self, from: data) {
-            return parsed.error.message
-        }
-        return String(data: data, encoding: .utf8) ?? "Unknown error"
-    }
-
-    private nonisolated static func buildRequest(
-        messages: [Message],
-        model: LLMModel,
-        apiKey: String
-    ) throws -> URLRequest {
-        var request = URLRequest(url: AnthropicAPI.endpoint)
-        request.httpMethod = "POST"
-        request.setValue(apiKey, forHTTPHeaderField: "x-api-key")
-        request.setValue(AnthropicAPI.apiVersion, forHTTPHeaderField: "anthropic-version")
-        request.setValue("application/json", forHTTPHeaderField: "content-type")
-
-        let body = AnthropicRequestBody(
-            model: model.id,
-            maxTokens: AnthropicAPI.defaultMaxTokens,
-            messages: messages.map {
-                AnthropicRequestBody.RequestMessage(
-                    role: $0.role.rawValue,
-                    content: $0.content
-                )
-            }
-        )
-        let encoder = JSONEncoder()
-        encoder.keyEncodingStrategy = .convertToSnakeCase
-        request.httpBody = try encoder.encode(body)
-        return request
-    }
-}
-
-private nonisolated enum AnthropicAPI {
-    static let endpoint = URL(string: "https://api.anthropic.com/v1/messages")!
-    static let apiVersion = "2023-06-01"
-    static let defaultMaxTokens = 4096
-}
-
-private nonisolated struct AnthropicRequestBody: Encodable {
-    struct RequestMessage: Encodable {
-        let role: String
-        let content: String
-    }
-    let model: String
-    let maxTokens: Int
-    let messages: [RequestMessage]
 }

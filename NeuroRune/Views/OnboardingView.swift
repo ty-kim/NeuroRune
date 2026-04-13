@@ -27,6 +27,8 @@ struct OnboardingView: View {
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                         .multilineTextAlignment(.center)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .padding(.horizontal)
 
                     VStack(alignment: .leading, spacing: 8) {
                         TextField("sk-ant-...", text: viewStore.binding(
