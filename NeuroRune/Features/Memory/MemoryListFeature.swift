@@ -99,6 +99,9 @@ nonisolated struct MemoryListFeature: Reducer {
                 do {
                     try await github.deleteFile(config, path, sha, "Delete \(path)")
                     await send(.deleteSucceeded(path))
+                } catch GitHubError.notFound {
+                    // 서버에 이미 없음 = 사실상 삭제 상태. 로컬도 정리.
+                    await send(.deleteSucceeded(path))
                 } catch let error as GitHubError {
                     await send(.deleteFailed(error.localizedMessage))
                 } catch {
