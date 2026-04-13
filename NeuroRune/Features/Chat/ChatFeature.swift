@@ -14,6 +14,15 @@ nonisolated struct ChatFeature: Reducer {
         var isStreaming: Bool
         var error: LLMError?
         var persistenceError: String? = nil
+        /// 진행 중인 tool 호출. 칩으로 표시되고 완료 시 제거.
+        var activeToolCalls: [ToolCallStatus] = []
+    }
+
+    /// 사용자에게 보여줄 tool 호출 정보 (id로 lifecycle 추적).
+    nonisolated struct ToolCallStatus: Equatable, Sendable, Identifiable {
+        let id: String
+        let name: String
+        let input: [String: String]
     }
 
     enum Action: Equatable {
@@ -25,6 +34,8 @@ nonisolated struct ChatFeature: Reducer {
         case persistenceFailed(String)
         case persistenceErrorDismissed
         case newConversationStarted(modelId: String)
+        case toolUseRequested(id: String, name: String, input: [String: String])
+        case toolUseCompleted(id: String)
     }
 
     func reduce(into state: inout State, action: Action) -> Effect<Action> {
@@ -119,12 +130,14 @@ nonisolated struct ChatFeature: Reducer {
                         var resultBlocks: [APIContentBlock] = []
                         for tool in roundToolUses {
                             let input = Self.parseToolInput(tool.inputJSON) ?? [:]
+                            await send(.toolUseRequested(id: tool.id, name: tool.name, input: input))
                             let result = await Self.executeTool(
                                 name: tool.name,
                                 input: input,
                                 github: githubClient,
                                 creds: githubCredentialsClient
                             )
+                            await send(.toolUseCompleted(id: tool.id))
                             resultBlocks.append(.toolResult(toolUseID: tool.id, content: result))
                         }
                         roundMessages.append(APIMessage(role: "user", content: .blocks(resultBlocks)))
@@ -177,6 +190,14 @@ nonisolated struct ChatFeature: Reducer {
 
         case .persistenceErrorDismissed:
             state.persistenceError = nil
+            return .none
+
+        case let .toolUseRequested(id, name, input):
+            state.activeToolCalls.append(ToolCallStatus(id: id, name: name, input: input))
+            return .none
+
+        case let .toolUseCompleted(id):
+            state.activeToolCalls.removeAll { $0.id == id }
             return .none
         }
     }

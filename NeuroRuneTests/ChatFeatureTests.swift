@@ -222,6 +222,101 @@ struct ChatFeatureTests {
         #expect(!system.contains("## Local Memory"))
     }
 
+    @Test("toolUseRequested 액션은 activeToolCalls에 추가된다")
+    func toolUseRequestedAddsToActive() async {
+        let store = TestStore(initialState: makeState()) {
+            ChatFeature()
+        }
+
+        await store.send(.toolUseRequested(id: "t1", name: "read_memory", input: ["path": "MEMORY.md"])) {
+            $0.activeToolCalls = [
+                ChatFeature.ToolCallStatus(id: "t1", name: "read_memory", input: ["path": "MEMORY.md"])
+            ]
+        }
+    }
+
+    @Test("toolUseCompleted 액션은 activeToolCalls에서 제거한다")
+    func toolUseCompletedRemovesFromActive() async {
+        var state = makeState()
+        state.activeToolCalls = [
+            ChatFeature.ToolCallStatus(id: "t1", name: "read_memory", input: ["path": "a.md"]),
+            ChatFeature.ToolCallStatus(id: "t2", name: "read_memory", input: ["path": "b.md"]),
+        ]
+        let store = TestStore(initialState: state) {
+            ChatFeature()
+        }
+
+        await store.send(.toolUseCompleted(id: "t1")) {
+            $0.activeToolCalls = [
+                ChatFeature.ToolCallStatus(id: "t2", name: "read_memory", input: ["path": "b.md"])
+            ]
+        }
+    }
+
+    @Test("멀티턴 루프는 tool 실행 전 toolUseRequested, 완료 후 toolUseCompleted 발행")
+    func multiTurnDispatchesToolUseLifecycleActions() async {
+        let callCount = LockIsolated<Int>(0)
+
+        let store = TestStore(initialState: makeState(inputText: "hi")) {
+            ChatFeature()
+        } withDependencies: {
+            $0.date = .constant(Self.fixedDate)
+            $0.llmClient.streamMessage = { @Sendable _, _, _, _, _ in
+                let n = callCount.value
+                callCount.setValue(n + 1)
+                return AsyncThrowingStream { continuation in
+                    if n == 0 {
+                        continuation.yield(.toolUseRequest(
+                            id: "t1",
+                            name: "read_memory",
+                            inputJSON: #"{"role":"global","path":"x.md"}"#
+                        ))
+                    } else {
+                        continuation.yield(.textDelta("done"))
+                    }
+                    continuation.finish()
+                }
+            }
+            $0.githubClient.loadFile = { @Sendable _, _ in
+                GitHubFile(path: "x.md", sha: "s", content: "x", isDirectory: false)
+            }
+            $0.githubCredentialsClient.load = { @Sendable role in
+                GitHubCredentials(role: role, pat: "p", owner: "o", repo: "r")
+            }
+            $0.conversationStore.save = { @Sendable _ in }
+        }
+
+        await store.send(.sendTapped) {
+            $0.conversation = $0.conversation
+                .appending(Message(role: .user, content: "hi", createdAt: Self.fixedDate))
+                .appending(Message(role: .assistant, content: "", createdAt: Self.fixedDate))
+            $0.inputText = ""
+            $0.isStreaming = true
+        }
+
+        await store.receive(.toolUseRequested(
+            id: "t1",
+            name: "read_memory",
+            input: ["role": "global", "path": "x.md"]
+        )) {
+            $0.activeToolCalls = [
+                ChatFeature.ToolCallStatus(id: "t1", name: "read_memory", input: ["role": "global", "path": "x.md"])
+            ]
+        }
+        await store.receive(.toolUseCompleted(id: "t1")) {
+            $0.activeToolCalls = []
+        }
+        await store.receive(.streamChunkReceived("done")) {
+            var msgs = $0.conversation.messages
+            msgs[msgs.count - 1] = Message(role: .assistant, content: "done", createdAt: Self.fixedDate)
+            $0.conversation.messages = msgs
+        }
+        await store.receive(.streamFinished) {
+            $0.isStreaming = false
+        }
+        await store.finish()
+    }
+
     @Test("sendTapped는 toolUseRequest 받으면 read_memory 실행하고 다음 라운드로 이어감")
     func multiTurnExecutesReadMemoryAndContinues() async {
         let callCount = LockIsolated<Int>(0)
@@ -276,6 +371,20 @@ struct ChatFeatureTests {
             var msgs = $0.conversation.messages
             msgs[msgs.count - 1] = Message(role: .assistant, content: "checking", createdAt: Self.fixedDate)
             $0.conversation.messages = msgs
+        }
+
+        // tool lifecycle
+        await store.receive(.toolUseRequested(
+            id: "t1",
+            name: "read_memory",
+            input: ["role": "global", "path": "runes/profile.md"]
+        )) {
+            $0.activeToolCalls = [
+                ChatFeature.ToolCallStatus(id: "t1", name: "read_memory", input: ["role": "global", "path": "runes/profile.md"])
+            ]
+        }
+        await store.receive(.toolUseCompleted(id: "t1")) {
+            $0.activeToolCalls = []
         }
 
         // Round 2 text (after tool execution + new turn)
