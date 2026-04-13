@@ -1,0 +1,128 @@
+//
+//  ConversationListFeature.swift
+//  NeuroRune
+//
+
+import Foundation
+import ComposableArchitecture
+
+nonisolated struct ConversationListFeature: Reducer {
+
+    struct State: Equatable {
+        var conversations: [Conversation] = []
+        var isLoading: Bool = true
+        var selectedConversation: Conversation?
+        var showModelPicker: Bool = false
+        var showResetConfirmation: Bool = false
+        var thinkingEnabled: Bool = false
+        var listError: String?
+    }
+
+    enum Action: Equatable {
+        case task
+        case conversationsLoaded([Conversation])
+        case loadFailed
+        case deleteTapped(Conversation)
+        case deleteSucceeded(UUID)
+        case deleteFailed
+        case conversationSelected(Conversation?)
+        case newConversationTapped
+        case modelPickerDismissed
+        case modelSelected(LLMModel)
+        case thinkingToggled(Bool)
+        case resetApiKeyTapped
+        case resetConfirmationDismissed
+        case resetApiKeyConfirmed
+        case errorDismissed
+    }
+
+    func reduce(into state: inout State, action: Action) -> Effect<Action> {
+        @Dependency(\.conversationStore) var store
+        @Dependency(\.keychainClient) var keychain
+
+        switch action {
+        case .task:
+            return .run { send in
+                do {
+                    let loaded = try await store.loadAll()
+                    await send(.conversationsLoaded(loaded))
+                } catch {
+                    await send(.loadFailed)
+                }
+            }
+
+        case let .conversationsLoaded(conversations):
+            state.conversations = conversations
+            state.isLoading = false
+            return .none
+
+        case .loadFailed:
+            state.isLoading = false
+            state.listError = String(localized: "list.loadFailed")
+            return .none
+
+        case let .deleteTapped(conversation):
+            let id = conversation.id
+            return .run { send in
+                do {
+                    try await store.delete(id)
+                    await send(.deleteSucceeded(id))
+                } catch {
+                    await send(.deleteFailed)
+                }
+            }
+
+        case let .deleteSucceeded(id):
+            state.conversations.removeAll { $0.id == id }
+            return .none
+
+        case .deleteFailed:
+            state.listError = String(localized: "list.deleteFailed")
+            return .none
+
+        case let .conversationSelected(conversation):
+            state.selectedConversation = conversation
+            return .none
+
+        case .newConversationTapped:
+            state.showModelPicker = true
+            return .none
+
+        case .modelPickerDismissed:
+            state.showModelPicker = false
+            return .none
+
+        case let .modelSelected(model):
+            state.showModelPicker = false
+            let supportsThinking = model.thinkingBudgetTokens != nil
+            state.selectedConversation = Conversation.empty(
+                modelId: model.id,
+                thinkingEnabled: state.thinkingEnabled && supportsThinking
+            )
+            return .none
+
+        case let .thinkingToggled(enabled):
+            state.thinkingEnabled = enabled
+            return .none
+
+        case .resetApiKeyTapped:
+            state.showResetConfirmation = true
+            return .none
+
+        case .resetConfirmationDismissed:
+            state.showResetConfirmation = false
+            return .none
+
+        case .resetApiKeyConfirmed:
+            state.showResetConfirmation = false
+            let client = keychain
+            return .run { _ in
+                try? client.delete(OnboardingFeature.anthropicKeyName)
+            }
+
+        case .errorDismissed:
+            state.listError = nil
+            return .none
+        }
+    }
+}

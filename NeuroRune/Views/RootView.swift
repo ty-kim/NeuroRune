@@ -20,6 +20,9 @@ struct RootView: View {
                 StorageErrorView()
             } else if hasApiKey {
                 ConversationListView(
+                    store: Store(initialState: ConversationListFeature.State()) {
+                        ConversationListFeature()
+                    },
                     onApiKeyReset: { hasApiKey = false }
                 )
             } else {
