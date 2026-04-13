@@ -153,6 +153,85 @@ struct ChatFeatureTests {
         #expect(savedMessages.value == 0)
     }
 
+    @Test("sendTapped 초기 save는 placeholder(빈 assistant)를 제외한다")
+    func sendTappedInitialSaveExcludesPlaceholder() async {
+        let allSaves = LockIsolated<[[Message]]>([])
+
+        let store = TestStore(initialState: makeState(inputText: "hello")) {
+            ChatFeature()
+        } withDependencies: {
+            $0.date = .constant(Self.fixedDate)
+            $0.llmClient.streamMessage = { @Sendable _, _ in
+                AsyncThrowingStream { continuation in
+                    continuation.yield("resp")
+                    continuation.finish()
+                }
+            }
+            $0.conversationStore.save = { @Sendable conversation in
+                allSaves.withValue { $0.append(conversation.messages) }
+            }
+        }
+
+        await store.send(.sendTapped) {
+            $0.conversation = $0.conversation
+                .appending(Message(role: .user, content: "hello", createdAt: Self.fixedDate))
+                .appending(Message(role: .assistant, content: "", createdAt: Self.fixedDate))
+            $0.inputText = ""
+            $0.isStreaming = true
+        }
+
+        await store.receive(.streamChunkReceived("resp")) {
+            var msgs = $0.conversation.messages
+            msgs[msgs.count - 1] = Message(role: .assistant, content: "resp", createdAt: Self.fixedDate)
+            $0.conversation.messages = msgs
+        }
+
+        await store.receive(.streamFinished) {
+            $0.isStreaming = false
+        }
+
+        await store.finish()
+
+        let saves = allSaves.value
+        #expect(saves.count == 2)
+        // 초기 save: [user]만, placeholder 없음
+        #expect(saves[0].count == 1)
+        #expect(saves[0].first?.role == .user)
+        // streamFinished save: [user, assistant]
+        #expect(saves[1].count == 2)
+        #expect(saves[1].last?.content == "resp")
+    }
+
+    @Test("errorOccurred는 trailing assistant placeholder/부분응답 제거 + save 호출")
+    func errorOccurredRemovesPlaceholderAndSaves() async {
+        let savedMessages = LockIsolated<[Message]?>(nil)
+        var state = makeState(isStreaming: true)
+        state.conversation = state.conversation
+            .appending(Message(role: .user, content: "hi", createdAt: Self.fixedDate))
+            .appending(Message(role: .assistant, content: "partial", createdAt: Self.fixedDate))
+
+        let store = TestStore(initialState: state) {
+            ChatFeature()
+        } withDependencies: {
+            $0.conversationStore.save = { @Sendable conversation in
+                savedMessages.setValue(conversation.messages)
+            }
+        }
+
+        await store.send(.errorOccurred(.rateLimited)) {
+            $0.error = .rateLimited
+            $0.isStreaming = false
+            $0.conversation.messages = [
+                Message(role: .user, content: "hi", createdAt: Self.fixedDate)
+            ]
+        }
+
+        await store.finish()
+
+        #expect(savedMessages.value?.count == 1)
+        #expect(savedMessages.value?.first?.role == .user)
+    }
+
     @Test("errorOccurred는 error를 세팅하고 isStreaming=false로 바꾼다")
     func errorOccurredSetsErrorAndClearsStreaming() async {
         let store = TestStore(initialState: makeState(isStreaming: true)) {

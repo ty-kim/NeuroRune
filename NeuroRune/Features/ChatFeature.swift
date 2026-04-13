@@ -70,12 +70,17 @@ nonisolated struct ChatFeature: Reducer {
             state.isStreaming = true
             state.error = nil
 
-            let conversation = state.conversation
-            let messagesForAPI = Array(conversation.messages.dropLast())
-            let model = LLMModel.resolve(id: conversation.modelId)
+            // 디스크엔 placeholder 없이 저장. placeholder는 UI 전용 스트리밍 타겟.
+            let conversationForDisk: Conversation = {
+                var c = state.conversation
+                c.messages = Array(c.messages.dropLast())
+                return c
+            }()
+            let messagesForAPI = conversationForDisk.messages
+            let model = LLMModel.resolve(id: state.conversation.modelId)
             return .run { send in
                 do {
-                    try await conversationStore.save(conversation)
+                    try await conversationStore.save(conversationForDisk)
                 } catch {
                     await send(.persistenceFailed(error.localizedDescription))
                 }
@@ -120,6 +125,20 @@ nonisolated struct ChatFeature: Reducer {
         case let .errorOccurred(llmError):
             state.error = llmError
             state.isStreaming = false
+            // 스트리밍 중 실패면 trailing assistant(placeholder/부분응답) 제거 + 재저장.
+            // 부분 응답 보존 X — "이게 진짜 답인가" 혼란 방지, 사용자는 재시도.
+            let hadTrailingAssistant = state.conversation.messages.last?.role == .assistant
+            if hadTrailingAssistant {
+                state.conversation.messages.removeLast()
+                let conversation = state.conversation
+                return .run { send in
+                    do {
+                        try await conversationStore.save(conversation)
+                    } catch {
+                        await send(.persistenceFailed(error.localizedDescription))
+                    }
+                }
+            }
             return .none
 
         case let .persistenceFailed(message):
