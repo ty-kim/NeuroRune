@@ -18,15 +18,25 @@ struct ChatView: View {
         WithViewStore(store, observe: { $0 }) { viewStore in
             NavigationStack {
                 VStack(spacing: 0) {
-                    messageList(viewStore)
+                    ChatMessageList(
+                        messages: viewStore.conversation.messages,
+                        isStreaming: viewStore.isStreaming
+                    )
                     if let error = viewStore.error {
-                        errorBanner(error)
+                        ChatErrorBanner(error: error)
                             .offset(y: reduceMotion ? 0 : (errorShakeTrigger % 2 == 0 ? 0 : -4))
                             .animation(reduceMotion ? nil : .default.repeatCount(3, autoreverses: true).speed(6), value: errorShakeTrigger)
                             .transition(reduceMotion ? .opacity : .move(edge: .bottom).combined(with: .opacity))
                             .animation(reduceMotion ? nil : .easeInOut(duration: 0.3), value: viewStore.error)
                     }
-                    inputBar(viewStore)
+                    ChatInputBar(
+                        text: viewStore.binding(
+                            get: \.inputText,
+                            send: ChatFeature.Action.inputChanged
+                        ),
+                        isStreaming: viewStore.isStreaming,
+                        onSend: { viewStore.send(.sendTapped) }
+                    )
                 }
                 .navigationTitle(String(localized: "chat.title"))
                 .navigationBarTitleDisplayMode(.inline)
@@ -51,91 +61,6 @@ struct ChatView: View {
                 }
             }
         }
-    }
-
-    private func messageList(_ viewStore: ViewStoreOf<ChatFeature>) -> some View {
-        ScrollViewReader { proxy in
-            ScrollView {
-                LazyVStack(spacing: 12) {
-                    ForEach(
-                        Array(viewStore.conversation.messages.enumerated()),
-                        id: \.offset
-                    ) { index, message in
-                        MessageView(message: message)
-                            .id(index)
-                    }
-
-                    if viewStore.isStreaming {
-                        HStack {
-                            ProgressView()
-                                .padding(.leading, 16)
-                            Spacer()
-                        }
-                        .id("streaming")
-                        .accessibilityLabel(String(localized: "a11y.chat.streaming"))
-                    }
-                }
-                .padding()
-            }
-            .scrollDismissesKeyboard(.interactively)
-            .onChange(of: viewStore.conversation.messages.count) {
-                withAnimation {
-                    let lastIndex = viewStore.conversation.messages.count - 1
-                    if lastIndex >= 0 {
-                        proxy.scrollTo(lastIndex, anchor: .bottom)
-                    }
-                }
-            }
-        }
-    }
-
-    private func errorBanner(_ error: LLMError) -> some View {
-        HStack(spacing: 8) {
-            Image(systemName: "exclamationmark.triangle")
-                .foregroundStyle(.red)
-            Text(String(localized: "error.prefix") + " " + error.userMessage)
-                .font(.subheadline)
-                .foregroundStyle(.primary)
-                .fixedSize(horizontal: false, vertical: true)
-            Spacer()
-        }
-        .padding(12)
-        .background(Color.red.opacity(0.1))
-        .overlay(
-            RoundedRectangle(cornerRadius: 8)
-                .stroke(Color.red.opacity(0.3), lineWidth: 1)
-        )
-        .clipShape(RoundedRectangle(cornerRadius: 8))
-        .padding(.horizontal)
-        .padding(.vertical, 4)
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel(String(localized: "error.prefix") + " " + error.userMessage)
-    }
-
-    private func inputBar(_ viewStore: ViewStoreOf<ChatFeature>) -> some View {
-        HStack(spacing: 8) {
-            TextField(String(localized: "chat.inputPlaceholder"), text: viewStore.binding(
-                get: \.inputText,
-                send: ChatFeature.Action.inputChanged
-            ))
-            .textFieldStyle(.roundedBorder)
-            .submitLabel(.send)
-            .onSubmit {
-                viewStore.send(.sendTapped)
-            }
-
-            Button {
-                viewStore.send(.sendTapped)
-            } label: {
-                Image(systemName: "arrow.up.circle.fill")
-                    .font(.title2)
-            }
-            .disabled(viewStore.inputText.isEmpty || viewStore.isStreaming)
-            .accessibilityLabel(String(localized: "a11y.chat.sendButton"))
-        }
-        .padding(.horizontal)
-        .padding(.vertical, 8)
-        .background(Color(.systemBackground))
     }
 }
 
