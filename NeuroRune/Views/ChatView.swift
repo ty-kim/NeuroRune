@@ -43,8 +43,20 @@ struct ChatView: View {
                         onSend: { viewStore.send(.sendTapped) }
                     )
                 }
-                .navigationTitle(String(localized: "chat.title"))
                 .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .principal) {
+                        HStack(spacing: 4) {
+                            Text(LLMModel.resolve(id: viewStore.conversation.modelId).displayName)
+                                .font(.headline)
+                            if viewStore.conversation.thinkingEnabled {
+                                Image(systemName: "brain")
+                                    .foregroundStyle(.purple)
+                                    .accessibilityLabel(String(localized: "a11y.chat.thinkingEnabled"))
+                            }
+                        }
+                    }
+                }
                 .onChange(of: viewStore.error) { _, newError in
                     if let error = newError {
                         errorShakeTrigger += 1

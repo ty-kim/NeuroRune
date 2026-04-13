@@ -16,6 +16,7 @@ struct ConversationListView: View {
     @State private var selectedModel: LLMModel = .sonnet46
     @State private var showResetConfirmation = false
     @State private var listError: String?
+    @State private var thinkingEnabled = false
 
     var body: some View {
         NavigationStack {
@@ -153,17 +154,43 @@ struct ConversationListView: View {
 
     private var modelPickerSheet: some View {
         NavigationStack {
-            List(LLMModel.allSupported) { model in
-                Button {
-                    showModelPicker = false
-                    startNewConversation(model: model)
-                } label: {
-                    HStack {
-                        Text(model.displayName)
-                            .foregroundStyle(Color("BrandTitle"))
-                        Spacer()
+            List {
+                Section {
+                    Toggle(isOn: $thinkingEnabled) {
+                        Label {
+                            Text(String(localized: "modelPicker.thinking.label"))
+                        } icon: {
+                            Image(systemName: "brain")
+                                .foregroundStyle(.purple)
+                        }
                     }
-                    .contentShape(Rectangle())
+                } footer: {
+                    Text(String(localized: "modelPicker.thinking.footer"))
+                }
+
+                Section {
+                    ForEach(LLMModel.allSupported) { model in
+                        Button {
+                            showModelPicker = false
+                            let supportsThinking = model.thinkingBudgetTokens != nil
+                            startNewConversation(
+                                model: model,
+                                thinkingEnabled: thinkingEnabled && supportsThinking
+                            )
+                        } label: {
+                            HStack {
+                                Text(model.displayName)
+                                    .foregroundStyle(Color("BrandTitle"))
+                                Spacer()
+                                if model.thinkingBudgetTokens != nil {
+                                    Image(systemName: "brain")
+                                        .foregroundStyle(.purple.opacity(0.7))
+                                        .accessibilityLabel(String(localized: "a11y.modelPicker.thinkingSupported"))
+                                }
+                            }
+                            .contentShape(Rectangle())
+                        }
+                    }
                 }
             }
             .navigationTitle(String(localized: "modelPicker.title"))
@@ -191,8 +218,11 @@ struct ConversationListView: View {
         if isLoading { isLoading = false }
     }
 
-    private func startNewConversation(model: LLMModel) {
-        let conversation = Conversation.empty(modelId: model.id)
+    private func startNewConversation(model: LLMModel, thinkingEnabled: Bool = false) {
+        let conversation = Conversation.empty(
+            modelId: model.id,
+            thinkingEnabled: thinkingEnabled
+        )
         selectedConversation = conversation
     }
 }

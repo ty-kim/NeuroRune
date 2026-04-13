@@ -17,7 +17,8 @@ nonisolated enum AnthropicRequestBuilder {
         messages: [Message],
         model: LLMModel,
         apiKey: String,
-        stream: Bool = false
+        stream: Bool = false,
+        thinkingBudgetTokens: Int? = nil
     ) throws -> URLRequest {
         var request = URLRequest(url: AnthropicAPI.endpoint)
         request.httpMethod = "POST"
@@ -34,7 +35,10 @@ nonisolated enum AnthropicRequestBuilder {
                     content: $0.content
                 )
             },
-            stream: stream ? true : nil
+            stream: stream ? true : nil,
+            thinking: thinkingBudgetTokens.map {
+                AnthropicRequestBody.Thinking(type: "enabled", budgetTokens: $0)
+            }
         )
         let encoder = JSONEncoder()
         encoder.keyEncodingStrategy = .convertToSnakeCase
@@ -48,13 +52,18 @@ private nonisolated struct AnthropicRequestBody: Encodable {
         let role: String
         let content: String
     }
+    struct Thinking: Encodable {
+        let type: String
+        let budgetTokens: Int
+    }
     let model: String
     let maxTokens: Int
     let messages: [RequestMessage]
     let stream: Bool?
+    let thinking: Thinking?
 
     enum CodingKeys: String, CodingKey {
-        case model, maxTokens, messages, stream
+        case model, maxTokens, messages, stream, thinking
     }
 
     func encode(to encoder: Encoder) throws {
@@ -63,5 +72,6 @@ private nonisolated struct AnthropicRequestBody: Encodable {
         try container.encode(maxTokens, forKey: .maxTokens)
         try container.encode(messages, forKey: .messages)
         try container.encodeIfPresent(stream, forKey: .stream)
+        try container.encodeIfPresent(thinking, forKey: .thinking)
     }
 }

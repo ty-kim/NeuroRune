@@ -12,6 +12,8 @@ final class ConversationEntity {
     var title: String
     var modelId: String
     var createdAt: Date
+    /// Default false — SwiftData lightweight migration이 기존 row에 이 값을 채움.
+    var thinkingEnabled: Bool = false
 
     @Relationship(deleteRule: .cascade)
     var messages: [MessageEntity]
@@ -21,12 +23,14 @@ final class ConversationEntity {
         title: String,
         modelId: String,
         createdAt: Date,
+        thinkingEnabled: Bool,
         messages: [MessageEntity]
     ) {
         self.id = id
         self.title = title
         self.modelId = modelId
         self.createdAt = createdAt
+        self.thinkingEnabled = thinkingEnabled
         self.messages = messages
     }
 }

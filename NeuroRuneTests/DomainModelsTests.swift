@@ -47,6 +47,18 @@ struct ConversationTests {
         #expect(updated.modelId == original.modelId)
     }
 
+    @Test("Conversation.thinkingEnabled 기본값은 false")
+    func conversationThinkingEnabledDefaultsFalse() {
+        let conversation = Conversation.empty(modelId: "claude-opus-4-6")
+        #expect(conversation.thinkingEnabled == false)
+    }
+
+    @Test("Conversation.empty(thinkingEnabled:)로 초기값 설정 가능")
+    func conversationEmptyAcceptsThinkingFlag() {
+        let conversation = Conversation.empty(modelId: "claude-opus-4-6", thinkingEnabled: true)
+        #expect(conversation.thinkingEnabled == true)
+    }
+
     @Test("Conversation은 id, title, messages, modelId, createdAt을 저장한다")
     func conversationStoresProperties() {
         let id = UUID()
@@ -108,5 +120,16 @@ struct LLMModelTests {
 
         #expect(result.id == "unknown-model")
         #expect(result.displayName == "unknown-model")
+    }
+
+    @Test("opus46/sonnet46는 thinkingBudgetTokens 값을 가진다")
+    func extendedThinkingSupportedModelsHaveBudget() {
+        #expect(LLMModel.opus46.thinkingBudgetTokens != nil)
+        #expect(LLMModel.sonnet46.thinkingBudgetTokens != nil)
+    }
+
+    @Test("haiku45는 thinkingBudgetTokens가 nil이다 (extended thinking 미지원)")
+    func haiku45HasNoThinkingBudget() {
+        #expect(LLMModel.haiku45.thinkingBudgetTokens == nil)
     }
 }

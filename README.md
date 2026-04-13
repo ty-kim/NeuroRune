@@ -47,10 +47,6 @@ each generation passes what it learned to the next.
 - [ ] Memory context injection
 - [ ] File editing + commit
 
-### Sprint 3 — Multi-LLM (Future)
-- [ ] OpenAI (GPT-5, Codex)
-- [ ] Provider-neutral LLMClient protocol
-
 ## Stack
 
 - Swift 6 Strict Concurrency

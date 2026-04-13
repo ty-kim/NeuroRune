@@ -37,4 +37,22 @@ struct EntityMappingTests {
         #expect(message.role == .assistant)
         #expect(message.content == "hi")
     }
+
+    @Test("ConversationEntity ↔ Domain은 thinkingEnabled을 보존한다")
+    func thinkingEnabledRoundtrip() throws {
+        let conversation = Conversation(
+            id: UUID(),
+            title: "t",
+            messages: [],
+            modelId: "claude-opus-4-6",
+            createdAt: Date(timeIntervalSince1970: 1_000),
+            thinkingEnabled: true
+        )
+
+        let entity = ConversationEntity.from(conversation)
+        #expect(entity.thinkingEnabled == true)
+
+        let roundtrip = try entity.toDomain()
+        #expect(roundtrip.thinkingEnabled == true)
+    }
 }
