@@ -48,7 +48,7 @@ nonisolated struct ChatFeature: Reducer {
             return .none
 
         case .sendTapped:
-            guard !state.inputText.isEmpty else { return .none }
+            guard !state.inputText.isEmpty, !state.isStreaming else { return .none }
             let userMessage = Message(
                 role: .user,
                 content: state.inputText,

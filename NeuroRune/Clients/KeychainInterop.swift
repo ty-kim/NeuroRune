@@ -15,21 +15,42 @@ nonisolated enum KeychainInterop {
             throw KeychainError.decodingFailed
         }
 
-        let query: [String: Any] = [
+        let lookupQuery: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: service,
-            kSecAttrAccount as String: key,
-            kSecValueData as String: data
+            kSecAttrAccount as String: key
         ]
 
-        SecItemDelete(query as CFDictionary)
+        let lookupStatus = SecItemCopyMatching(lookupQuery as CFDictionary, nil)
 
-        let status = SecItemAdd(query as CFDictionary, nil)
-        guard status == errSecSuccess else {
-            Logger.keychain.fault("save failed, key: \(key, privacy: .public), OSStatus: \(status)")
-            throw KeychainError.unhandled(status: status)
+        switch lookupStatus {
+        case errSecSuccess:
+            let updateAttrs: [String: Any] = [
+                kSecValueData as String: data,
+                kSecAttrAccessible as String: kSecAttrAccessibleWhenUnlockedThisDeviceOnly
+            ]
+            let status = SecItemUpdate(lookupQuery as CFDictionary, updateAttrs as CFDictionary)
+            guard status == errSecSuccess else {
+                Logger.keychain.fault("update failed, key: \(key, privacy: .public), OSStatus: \(status)")
+                throw KeychainError.unhandled(status: status)
+            }
+            Logger.keychain.info("update succeeded, key: \(key, privacy: .public)")
+
+        case errSecItemNotFound:
+            var addQuery = lookupQuery
+            addQuery[kSecValueData as String] = data
+            addQuery[kSecAttrAccessible as String] = kSecAttrAccessibleWhenUnlockedThisDeviceOnly
+            let status = SecItemAdd(addQuery as CFDictionary, nil)
+            guard status == errSecSuccess else {
+                Logger.keychain.fault("add failed, key: \(key, privacy: .public), OSStatus: \(status)")
+                throw KeychainError.unhandled(status: status)
+            }
+            Logger.keychain.info("add succeeded, key: \(key, privacy: .public)")
+
+        default:
+            Logger.keychain.fault("lookup failed, key: \(key, privacy: .public), OSStatus: \(lookupStatus)")
+            throw KeychainError.unhandled(status: lookupStatus)
         }
-        Logger.keychain.info("save succeeded, key: \(key, privacy: .public)")
     }
 
     static func load(service: String, key: String) throws -> String? {
