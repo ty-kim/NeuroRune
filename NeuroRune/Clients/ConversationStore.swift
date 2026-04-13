@@ -112,6 +112,7 @@ nonisolated extension ConversationStore: DependencyKey {
 
     /// SwiftData 기본 store 파일을 삭제한다. 앱 재실행 시 fresh 컨테이너 시도.
     /// 사용자 "스토리지 초기화" 플로우에서 호출.
+    /// 파일별 삭제 실패가 하나라도 있으면 `PersistenceError.resetFailed`를 throw.
     static func resetDefaultStorage() throws {
         let appSupport = try FileManager.default.url(
             for: .applicationSupportDirectory,
@@ -119,11 +120,37 @@ nonisolated extension ConversationStore: DependencyKey {
             appropriateFor: nil,
             create: false
         )
-        for name in ["default.store", "default.store-shm", "default.store-wal"] {
-            let url = appSupport.appendingPathComponent(name)
-            try? FileManager.default.removeItem(at: url)
+        try resetStorage(in: appSupport)
+    }
+
+    /// `default.store*` 패턴의 파일을 디렉토리에서 enumerate해서 모두 삭제.
+    /// 하드코딩된 3개(-shm/-wal) 외에도 SwiftData가 만들 수 있는 부속 파일을 포괄.
+    /// 파일 단위 실패는 누적해서 한 번에 throw.
+    static func resetStorage(in directory: URL, fileManager: FileManager = .default) throws {
+        let contents = (try? fileManager.contentsOfDirectory(
+            at: directory,
+            includingPropertiesForKeys: nil
+        )) ?? []
+        let targets = contents.filter { $0.lastPathComponent.hasPrefix("default.store") }
+
+        var failures: [(name: String, error: Error)] = []
+        for url in targets {
+            do {
+                try fileManager.removeItem(at: url)
+            } catch {
+                failures.append((url.lastPathComponent, error))
+            }
         }
-        Logger.persistence.info("default storage reset; restart app for fresh container")
+
+        if failures.isEmpty {
+            Logger.persistence.info("default storage reset; deleted \(targets.count) file(s); restart app for fresh container")
+        } else {
+            let summary = failures
+                .map { "\($0.name): \($0.error.localizedDescription)" }
+                .joined(separator: "; ")
+            Logger.persistence.error("storage reset failed: \(summary)")
+            throw PersistenceError.resetFailed(summary)
+        }
     }
 
     static let testValue = ConversationStore(

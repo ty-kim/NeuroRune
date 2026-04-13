@@ -62,6 +62,15 @@ each generation passes what it learned to the next.
 - Anthropic API key (BYOK)
 - GitHub Personal Access Token (Sprint 2+)
 
+## Known Limitations
+
+- **Markdown rendering is unbounded.** Assistant responses are passed
+  directly to MarkdownUI without length/depth caps or a render timeout.
+  In a single-user BYOK app the threat model is narrow (your own LLM
+  reply on your own device), but a pathological response can still hang
+  the UI. Use lower `effort` levels to keep responses bounded, and watch
+  swift-cmark for parser CVEs.
+
 ## License
 
 [MIT](LICENSE)
