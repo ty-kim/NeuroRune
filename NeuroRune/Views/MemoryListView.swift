@@ -79,7 +79,7 @@ struct MemoryListView: View {
                     )
                 }
                 .sheet(isPresented: $showCreateSheet) {
-                    let basePath: String = (try? GitHubCredentialsClient.liveValue.load()).flatMap { $0?.path } ?? ""
+                    let basePath: String = (try? GitHubCredentialsClient.liveValue.load(.global)).flatMap { $0?.path } ?? ""
                     MemoryCreateView(
                         store: Store(
                             initialState: MemoryCreateFeature.State(basePath: basePath)

@@ -69,7 +69,7 @@ struct MemoryCreateFeatureTests {
         let store = TestStore(initialState: state) {
             MemoryCreateFeature()
         } withDependencies: {
-            $0.githubCredentialsClient.load = { CreateFixtures.creds }
+            $0.githubCredentialsClient.load = { _ in CreateFixtures.creds }
             $0.githubClient.saveFile = { _, path, _, sha, message in
                 capturedSha.setValue(sha)
                 capturedMessage.setValue(message)
@@ -117,7 +117,7 @@ struct MemoryCreateFeatureTests {
         let store = TestStore(initialState: state) {
             MemoryCreateFeature()
         } withDependencies: {
-            $0.githubCredentialsClient.load = { CreateFixtures.creds }
+            $0.githubCredentialsClient.load = { _ in CreateFixtures.creds }
             $0.githubClient.saveFile = { _, _, _, _, _ in
                 throw GitHubError.conflict
             }

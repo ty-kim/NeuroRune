@@ -110,7 +110,7 @@ struct GitHubCredentialsFeatureTests {
         let store = TestStore(initialState: GitHubCredentialsFeature.State()) {
             GitHubCredentialsFeature()
         } withDependencies: {
-            $0.githubCredentialsClient.load = { existing }
+            $0.githubCredentialsClient.load = { _ in existing }
         }
 
         await store.send(.loadExisting)

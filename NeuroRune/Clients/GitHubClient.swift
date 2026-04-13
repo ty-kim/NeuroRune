@@ -19,8 +19,8 @@ nonisolated struct GitHubClient: Sendable {
 }
 
 nonisolated extension GitHubClient: DependencyKey {
-    /// liveValue는 호출 시점에 Keychain에서 PAT를 로드해 요청을 발행한다.
-    /// PAT 미설정 시 `.unauthorized` throw.
+    /// liveValue는 호출 시점에 .global credentials의 PAT를 로드한다.
+    /// .local role을 쓰려는 호출부는 `GitHubClient.live(session:pat:)`를 직접 구성.
     static let liveValue: GitHubClient = {
         let credsClient = GitHubCredentialsClient.liveValue
         return GitHubClient(
@@ -44,7 +44,7 @@ nonisolated extension GitHubClient: DependencyKey {
     }()
 
     private static func loadPAT(_ credsClient: GitHubCredentialsClient) throws -> String {
-        guard let creds = try credsClient.load() else {
+        guard let creds = try credsClient.load(.global) else {
             throw GitHubError.unauthorized
         }
         return creds.pat

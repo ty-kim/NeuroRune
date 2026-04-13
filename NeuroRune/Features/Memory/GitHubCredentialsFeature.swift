@@ -96,7 +96,7 @@ nonisolated struct GitHubCredentialsFeature: Reducer {
 
         case .loadExisting:
             return .run { send in
-                let creds = try? client.load()
+                let creds = try? client.load(.global)
                 await send(.existingLoaded(creds ?? nil))
             }
 

@@ -22,14 +22,14 @@ struct GitHubCredentialsClientTests {
         let creds = GitHubCredentials(pat: "ghp_abc", owner: "alice", repo: "memory", branch: "dev")
 
         try client.save(creds)
-        let loaded = try client.load()
+        let loaded = try client.load(.global)
 
         #expect(loaded == creds)
     }
 
     @Test("저장 없이 로드 시 nil")
     func loadWhenEmptyReturnsNil() throws {
-        let loaded = try client.load()
+        let loaded = try client.load(.global)
         #expect(loaded == nil)
     }
 
@@ -38,9 +38,9 @@ struct GitHubCredentialsClientTests {
         let creds = GitHubCredentials(pat: "ghp_abc", owner: "alice", repo: "memory")
         try client.save(creds)
 
-        try client.clear()
+        try client.clear(.global)
 
-        #expect(try client.load() == nil)
+        #expect(try client.load(.global) == nil)
     }
 
     @Test("save는 기존 값을 덮어쓴다")
@@ -48,7 +48,7 @@ struct GitHubCredentialsClientTests {
         try client.save(GitHubCredentials(pat: "old", owner: "o1", repo: "r1"))
         try client.save(GitHubCredentials(pat: "new", owner: "o2", repo: "r2", branch: "dev"))
 
-        let loaded = try client.load()
+        let loaded = try client.load(.global)
 
         #expect(loaded?.pat == "new")
         #expect(loaded?.owner == "o2")

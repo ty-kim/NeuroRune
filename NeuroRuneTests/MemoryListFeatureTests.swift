@@ -30,7 +30,7 @@ struct MemoryListFeatureTests {
         let store = TestStore(initialState: MemoryListFeature.State()) {
             MemoryListFeature()
         } withDependencies: {
-            $0.githubCredentialsClient.load = { Fixtures.creds }
+            $0.githubCredentialsClient.load = { _ in Fixtures.creds }
             $0.githubClient.listContents = { _, _ in Fixtures.files }
         }
 
@@ -49,7 +49,7 @@ struct MemoryListFeatureTests {
         let store = TestStore(initialState: MemoryListFeature.State()) {
             MemoryListFeature()
         } withDependencies: {
-            $0.githubCredentialsClient.load = { nil }
+            $0.githubCredentialsClient.load = { _ in nil }
         }
 
         await store.send(.task)
@@ -65,7 +65,7 @@ struct MemoryListFeatureTests {
         let store = TestStore(initialState: MemoryListFeature.State()) {
             MemoryListFeature()
         } withDependencies: {
-            $0.githubCredentialsClient.load = { Fixtures.creds }
+            $0.githubCredentialsClient.load = { _ in Fixtures.creds }
             $0.githubClient.listContents = { _, _ in throw GitHubError.unauthorized }
         }
 
@@ -86,7 +86,7 @@ struct MemoryListFeatureTests {
         let store = TestStore(initialState: state) {
             MemoryListFeature()
         } withDependencies: {
-            $0.githubCredentialsClient.load = { Fixtures.creds }
+            $0.githubCredentialsClient.load = { _ in Fixtures.creds }
             $0.githubClient.deleteFile = { _, _, _, _ in }
         }
 
@@ -106,7 +106,7 @@ struct MemoryListFeatureTests {
         let store = TestStore(initialState: state) {
             MemoryListFeature()
         } withDependencies: {
-            $0.githubCredentialsClient.load = { Fixtures.creds }
+            $0.githubCredentialsClient.load = { _ in Fixtures.creds }
             $0.githubClient.deleteFile = { _, _, _, _ in throw GitHubError.conflict }
         }
 
@@ -142,7 +142,7 @@ struct MemoryListFeatureTests {
         let store = TestStore(initialState: MemoryListFeature.State()) {
             MemoryListFeature()
         } withDependencies: {
-            $0.githubCredentialsClient.load = { credsWithSubPath }
+            $0.githubCredentialsClient.load = { _ in credsWithSubPath }
             $0.githubClient.listContents = { _, _ in throw GitHubError.notFound }
         }
 
@@ -167,7 +167,7 @@ struct MemoryListFeatureTests {
         let store = TestStore(initialState: MemoryListFeature.State()) {
             MemoryListFeature()
         } withDependencies: {
-            $0.githubCredentialsClient.load = { credsRootPath }
+            $0.githubCredentialsClient.load = { _ in credsRootPath }
             $0.githubClient.listContents = { _, _ in throw GitHubError.notFound }
         }
 
@@ -190,7 +190,7 @@ struct MemoryListFeatureTests {
         let store = TestStore(initialState: MemoryListFeature.State()) {
             MemoryListFeature()
         } withDependencies: {
-            $0.githubCredentialsClient.load = { Fixtures.creds }
+            $0.githubCredentialsClient.load = { _ in Fixtures.creds }
             $0.githubClient.listContents = { _, _ in unsorted }
         }
 

@@ -8,46 +8,66 @@ import Dependencies
 import os
 
 nonisolated struct GitHubCredentialsClient: Sendable {
-    var load: @Sendable () throws -> GitHubCredentials?
+    var load: @Sendable (CredentialsRole) throws -> GitHubCredentials?
     var save: @Sendable (GitHubCredentials) throws -> Void
-    var clear: @Sendable () throws -> Void
+    var clear: @Sendable (CredentialsRole) throws -> Void
 }
 
 nonisolated extension GitHubCredentialsClient {
-    static let keychainKey = "github_credentials"
+    /// 구버전 단일 키. 존재하면 role=.global로 마이그레이션.
+    static let legacyKeychainKey = "github_credentials"
+
+    static func keychainKey(for role: CredentialsRole) -> String {
+        "github_credentials_\(role.rawValue)"
+    }
 
     static func keychainBacked(keychain: KeychainClient) -> GitHubCredentialsClient {
         GitHubCredentialsClient(
-            load: {
-                guard let json = try keychain.load(keychainKey) else {
-                    return nil
+            load: { role in
+                if let json = try keychain.load(keychainKey(for: role)) {
+                    return try decode(json)
                 }
-                guard let data = json.data(using: .utf8) else {
-                    throw KeychainError.decodingFailed
+                // 마이그레이션: legacy 키 읽어 .global로 저장
+                if role == .global, let legacy = try keychain.load(legacyKeychainKey) {
+                    let creds = try decode(legacy)
+                    try save(creds, keychain: keychain)
+                    try keychain.delete(legacyKeychainKey)
+                    Logger.keychain.info("migrated legacy github_credentials → role=global")
+                    return creds
                 }
-                return try JSONDecoder().decode(GitHubCredentials.self, from: data)
+                return nil
             },
             save: { credentials in
-                let data = try JSONEncoder().encode(credentials)
-                guard let json = String(data: data, encoding: .utf8) else {
-                    throw KeychainError.decodingFailed
-                }
-                try keychain.save(keychainKey, json)
-                Logger.keychain.info("github credentials saved")
+                try save(credentials, keychain: keychain)
             },
-            clear: {
-                try keychain.delete(keychainKey)
-                Logger.keychain.info("github credentials cleared")
+            clear: { role in
+                try keychain.delete(keychainKey(for: role))
+                Logger.keychain.info("github credentials cleared, role: \(role.rawValue, privacy: .public)")
             }
         )
+    }
+
+    private static func save(_ credentials: GitHubCredentials, keychain: KeychainClient) throws {
+        let data = try JSONEncoder().encode(credentials)
+        guard let json = String(data: data, encoding: .utf8) else {
+            throw KeychainError.decodingFailed
+        }
+        try keychain.save(keychainKey(for: credentials.role), json)
+        Logger.keychain.info("github credentials saved, role: \(credentials.role.rawValue, privacy: .public)")
+    }
+
+    private static func decode(_ json: String) throws -> GitHubCredentials {
+        guard let data = json.data(using: .utf8) else {
+            throw KeychainError.decodingFailed
+        }
+        return try JSONDecoder().decode(GitHubCredentials.self, from: data)
     }
 }
 
 nonisolated extension GitHubCredentialsClient {
     /// 로드 실패(Keychain 에러 등)와 미설정을 모두 nil로 통합.
-    /// UI 레이어에서 "credentials 있음/없음"만 관심 있을 때 사용.
-    func loadIgnoringError() -> GitHubCredentials? {
-        (try? load()) ?? nil
+    func loadIgnoringError(role: CredentialsRole = .global) -> GitHubCredentials? {
+        (try? load(role)) ?? nil
     }
 }
 
@@ -61,11 +81,16 @@ nonisolated extension GitHubCredentialsClient: DependencyKey {
     )
 
     static let previewValue = GitHubCredentialsClient(
-        load: {
-            GitHubCredentials(pat: "ghp_preview", owner: "ty-kim", repo: "memory")
+        load: { role in
+            switch role {
+            case .global:
+                return GitHubCredentials(role: .global, pat: "ghp_preview", owner: "ty-kim", repo: "global-memory")
+            case .local:
+                return GitHubCredentials(role: .local, pat: "ghp_preview", owner: "ty-kim", repo: "neurorune-memory")
+            }
         },
         save: { _ in },
-        clear: {}
+        clear: { _ in }
     )
 }
 
