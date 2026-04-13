@@ -94,6 +94,46 @@ struct AnthropicRequestBuilderTests {
         #expect(body["system"] == nil)
     }
 
+    @Test("tools 인자가 있으면 body의 tools 배열에 직렬화")
+    func toolsFieldEncodedWhenProvided() throws {
+        let tool = LLMTool(
+            name: "read_memory",
+            description: "Load a memory file by path.",
+            inputSchema: LLMTool.InputSchema(
+                properties: ["path": LLMTool.Property(type: "string", description: "File path")],
+                required: ["path"]
+            )
+        )
+        let request = try AnthropicRequestBuilder.build(
+            messages: [Self.testMessage],
+            model: .opus46,
+            apiKey: "sk-test",
+            tools: [tool]
+        )
+
+        let body = try decodeBody(request)
+        let tools = body["tools"] as? [[String: Any]]
+        #expect(tools?.count == 1)
+        let first = tools?.first
+        #expect(first?["name"] as? String == "read_memory")
+        #expect(first?["description"] as? String == "Load a memory file by path.")
+        let schema = first?["input_schema"] as? [String: Any]
+        #expect(schema?["type"] as? String == "object")
+        #expect((schema?["required"] as? [String]) == ["path"])
+    }
+
+    @Test("tools 미지정 시 body에 tools 필드가 없다")
+    func toolsOmittedWhenNil() throws {
+        let request = try AnthropicRequestBuilder.build(
+            messages: [Self.testMessage],
+            model: .opus46,
+            apiKey: "sk-test"
+        )
+
+        let body = try decodeBody(request)
+        #expect(body["tools"] == nil)
+    }
+
     @Test("supportsEffort=false 모델은 effort를 지정해도 thinking/output_config omit")
     func effortOmittedForUnsupportedModel() throws {
         let request = try AnthropicRequestBuilder.build(
