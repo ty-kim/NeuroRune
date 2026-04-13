@@ -80,7 +80,7 @@ struct ChatFeatureTests {
             ChatFeature()
         } withDependencies: {
             $0.date = .constant(Self.fixedDate)
-            $0.llmClient.streamMessage = { @Sendable messages, model in
+            $0.llmClient.streamMessage = { @Sendable messages, model, _ in
                 calledMessagesCount.setValue(messages.count)
                 calledModelId.setValue(model.id)
                 return AsyncThrowingStream { continuation in
@@ -161,7 +161,7 @@ struct ChatFeatureTests {
             ChatFeature()
         } withDependencies: {
             $0.date = .constant(Self.fixedDate)
-            $0.llmClient.streamMessage = { @Sendable _, _ in
+            $0.llmClient.streamMessage = { @Sendable _, _, _ in
                 AsyncThrowingStream { continuation in
                     continuation.yield("resp")
                     continuation.finish()
@@ -307,7 +307,7 @@ struct ChatFeatureTests {
             ChatFeature()
         } withDependencies: {
             $0.date = .constant(Self.fixedDate)
-            $0.llmClient.streamMessage = { @Sendable _, _ in
+            $0.llmClient.streamMessage = { @Sendable _, _, _ in
                 llmCalled.setValue(true)
                 return AsyncThrowingStream { continuation in
                     continuation.yield("ok")

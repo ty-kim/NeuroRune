@@ -8,17 +8,17 @@ import Dependencies
 import os
 
 nonisolated struct LLMClient: Sendable {
-    var streamMessage: @Sendable ([Message], LLMModel) async throws -> AsyncThrowingStream<String, Error>
+    var streamMessage: @Sendable ([Message], LLMModel, Bool) async throws -> AsyncThrowingStream<String, Error>
 }
 
 nonisolated extension LLMClient: DependencyKey {
     static let liveValue: LLMClient = {
         LLMClient(
-            streamMessage: { messages, model in
+            streamMessage: { messages, model, useThinking in
                 let apiKey = try loadAnthropicAPIKey()
-                Logger.llm.info("stream, model: \(model.id, privacy: .public), messages: \(messages.count)")
+                Logger.llm.info("stream, model: \(model.id, privacy: .public), messages: \(messages.count), thinking: \(useThinking)")
                 let client = LLMClient.anthropic(session: .shared, apiKey: apiKey)
-                return try await client.streamMessage(messages, model)
+                return try await client.streamMessage(messages, model, useThinking)
             }
         )
     }()
@@ -36,7 +36,7 @@ nonisolated extension LLMClient: DependencyKey {
     )
 
     static let previewValue = LLMClient(
-        streamMessage: { _, _ in
+        streamMessage: { _, _, _ in
             AsyncThrowingStream { continuation in
                 Task {
                     for chunk in ["Preview ", "response ", "from ", "Claude."] {

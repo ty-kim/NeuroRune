@@ -109,4 +109,15 @@ struct LLMModelTests {
         #expect(result.id == "unknown-model")
         #expect(result.displayName == "unknown-model")
     }
+
+    @Test("opus46/sonnet46는 thinkingBudgetTokens 값을 가진다")
+    func extendedThinkingSupportedModelsHaveBudget() {
+        #expect(LLMModel.opus46.thinkingBudgetTokens != nil)
+        #expect(LLMModel.sonnet46.thinkingBudgetTokens != nil)
+    }
+
+    @Test("haiku45는 thinkingBudgetTokens가 nil이다 (extended thinking 미지원)")
+    func haiku45HasNoThinkingBudget() {
+        #expect(LLMModel.haiku45.thinkingBudgetTokens == nil)
+    }
 }
