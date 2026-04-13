@@ -92,11 +92,38 @@ nonisolated extension ConversationStore: DependencyKey {
                 for: ConversationEntity.self, MessageEntity.self,
                 configurations: config
             )
+            Logger.persistence.info("container init succeeded")
             return .liveBacked(container: container)
         } catch {
-            fatalError("ConversationStore init failed: \(error)")
+            Logger.persistence.fault("container init failed: \(error.localizedDescription); falling back to failing store")
+            return .failing
         }
     }()
+
+    /// 모든 연산이 `PersistenceError.containerUnavailable`을 throw하는 store.
+    /// 컨테이너 초기화 실패 시 liveValue 자리에 들어간다.
+    static let failing = ConversationStore(
+        save: { _ in throw PersistenceError.containerUnavailable },
+        load: { _ in throw PersistenceError.containerUnavailable },
+        loadAll: { throw PersistenceError.containerUnavailable },
+        delete: { _ in throw PersistenceError.containerUnavailable }
+    )
+
+    /// SwiftData 기본 store 파일을 삭제한다. 앱 재실행 시 fresh 컨테이너 시도.
+    /// 사용자 "스토리지 초기화" 플로우에서 호출.
+    static func resetDefaultStorage() throws {
+        let appSupport = try FileManager.default.url(
+            for: .applicationSupportDirectory,
+            in: .userDomainMask,
+            appropriateFor: nil,
+            create: false
+        )
+        for name in ["default.store", "default.store-shm", "default.store-wal"] {
+            let url = appSupport.appendingPathComponent(name)
+            try? FileManager.default.removeItem(at: url)
+        }
+        Logger.persistence.info("default storage reset; restart app for fresh container")
+    }
 
     static let testValue = ConversationStore(
         save: unimplemented("ConversationStore.save"),
