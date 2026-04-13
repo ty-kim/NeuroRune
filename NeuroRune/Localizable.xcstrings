@@ -1372,6 +1372,33 @@
         }
       }
     },
+    "memory.edit.discardTitle" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Discard unsaved changes?" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "未保存の変更を破棄しますか?" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "저장되지 않은 변경 사항을 버리시겠습니까?" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "放弃未保存的更改?" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "放棄未儲存的變更?" } }
+      }
+    },
+    "memory.edit.discardMessage" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Your edits will be lost." } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "編集内容が失われます。" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "편집 내용이 사라집니다." } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "您的编辑将会丢失。" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "您的編輯將會遺失。" } }
+      }
+    },
+    "memory.edit.discardConfirm" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Discard" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "破棄" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "버리기" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "放弃" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "放棄" } }
+      }
+    },
     "memory.error.unauthorized" : {
       "localizations" : {
         "en" : {

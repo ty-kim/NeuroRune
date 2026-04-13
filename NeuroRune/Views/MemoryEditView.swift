@@ -9,6 +9,9 @@ import ComposableArchitecture
 struct MemoryEditView: View {
     let store: StoreOf<MemoryEditFeature>
 
+    @Environment(\.dismiss) private var dismiss
+    @State private var showDiscardConfirm = false
+
     var body: some View {
         WithViewStore(store, observe: { $0 }) { viewStore in
             Group {
@@ -25,15 +28,40 @@ struct MemoryEditView: View {
                     .textInputAutocapitalization(.never)
                 }
             }
-            .navigationTitle(viewStore.file.name)
+            .navigationTitle(viewStore.hasUnsavedChanges ? "• \(viewStore.file.name)" : viewStore.file.name)
             .navigationBarTitleDisplayMode(.inline)
+            .navigationBarBackButtonHidden(viewStore.hasUnsavedChanges)
             .toolbar {
+                if viewStore.hasUnsavedChanges {
+                    ToolbarItem(placement: .topBarLeading) {
+                        Button {
+                            showDiscardConfirm = true
+                        } label: {
+                            HStack(spacing: 4) {
+                                Image(systemName: "chevron.backward")
+                                Text(String(localized: "memory.title"))
+                            }
+                        }
+                    }
+                }
                 ToolbarItem(placement: .topBarTrailing) {
                     Button(String(localized: "onboarding.save")) {
                         viewStore.send(.saveTapped)
                     }
                     .disabled(!viewStore.hasUnsavedChanges || viewStore.isSaving)
                 }
+            }
+            .confirmationDialog(
+                String(localized: "memory.edit.discardTitle"),
+                isPresented: $showDiscardConfirm,
+                titleVisibility: .visible
+            ) {
+                Button(String(localized: "memory.edit.discardConfirm"), role: .destructive) {
+                    dismiss()
+                }
+                Button(String(localized: "error.cancel"), role: .cancel) {}
+            } message: {
+                Text(String(localized: "memory.edit.discardMessage"))
             }
             .task {
                 await viewStore.send(.task).finish()
