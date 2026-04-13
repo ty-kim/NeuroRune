@@ -222,6 +222,80 @@ struct ChatFeatureTests {
         #expect(!system.contains("## Local Memory"))
     }
 
+    @Test("sendTapped는 toolUseRequest 받으면 read_memory 실행하고 다음 라운드로 이어감")
+    func multiTurnExecutesReadMemoryAndContinues() async {
+        let callCount = LockIsolated<Int>(0)
+        let secondRoundMessageCount = LockIsolated<Int?>(nil)
+        let toolFetchPath = LockIsolated<String?>(nil)
+
+        let store = TestStore(initialState: makeState(inputText: "hi")) {
+            ChatFeature()
+        } withDependencies: {
+            $0.date = .constant(Self.fixedDate)
+            $0.llmClient.streamMessage = { @Sendable msgs, _, _, _, tools in
+                let n = callCount.value
+                callCount.setValue(n + 1)
+                if n == 1 {
+                    secondRoundMessageCount.setValue(msgs.count)
+                }
+                return AsyncThrowingStream { continuation in
+                    if n == 0 {
+                        continuation.yield(.textDelta("checking"))
+                        continuation.yield(.toolUseRequest(
+                            id: "t1",
+                            name: "read_memory",
+                            inputJSON: #"{"role":"global","path":"runes/profile.md"}"#
+                        ))
+                    } else {
+                        continuation.yield(.textDelta(" done"))
+                    }
+                    _ = tools
+                    continuation.finish()
+                }
+            }
+            $0.githubClient.loadFile = { @Sendable _, path in
+                toolFetchPath.setValue(path)
+                return GitHubFile(path: path, sha: "s", content: "fetched body", isDirectory: false)
+            }
+            $0.githubCredentialsClient.load = { @Sendable role in
+                GitHubCredentials(role: role, pat: "p", owner: "o", repo: "r-\(role.rawValue)")
+            }
+            $0.conversationStore.save = { @Sendable _ in }
+        }
+
+        await store.send(.sendTapped) {
+            $0.conversation = $0.conversation
+                .appending(Message(role: .user, content: "hi", createdAt: Self.fixedDate))
+                .appending(Message(role: .assistant, content: "", createdAt: Self.fixedDate))
+            $0.inputText = ""
+            $0.isStreaming = true
+        }
+
+        // Round 1 text
+        await store.receive(.streamChunkReceived("checking")) {
+            var msgs = $0.conversation.messages
+            msgs[msgs.count - 1] = Message(role: .assistant, content: "checking", createdAt: Self.fixedDate)
+            $0.conversation.messages = msgs
+        }
+
+        // Round 2 text (after tool execution + new turn)
+        await store.receive(.streamChunkReceived(" done")) {
+            var msgs = $0.conversation.messages
+            msgs[msgs.count - 1] = Message(role: .assistant, content: "checking done", createdAt: Self.fixedDate)
+            $0.conversation.messages = msgs
+        }
+
+        await store.receive(.streamFinished) {
+            $0.isStreaming = false
+        }
+
+        await store.finish()
+        #expect(callCount.value == 2)
+        #expect(toolFetchPath.value == "runes/profile.md")
+        // Round 2: [user text, assistant(text+tool_use), user(tool_result)] = 3
+        #expect(secondRoundMessageCount.value == 3)
+    }
+
     @Test("sendTapped는 isStreaming 중이면 아무 효과 없음")
     func sendTappedNoOpWhileStreaming() async {
         let store = TestStore(initialState: makeState(inputText: "hello", isStreaming: true)) {

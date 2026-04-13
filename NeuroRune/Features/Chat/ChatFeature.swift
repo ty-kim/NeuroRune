@@ -83,18 +83,51 @@ nonisolated struct ChatFeature: Reducer {
                         github: githubClient,
                         creds: githubCredentialsClient
                     )
-                    let apiMessages = messagesForAPI.map {
+                    var roundMessages: [APIMessage] = messagesForAPI.map {
                         APIMessage.text(role: $0.role.rawValue, content: $0.content)
                     }
-                    let stream = try await llmClient.streamMessage(apiMessages, model, conversationForDisk.effort, system, nil)
-                    for try await event in stream {
-                        switch event {
-                        case .textDelta(let text):
-                            await send(.streamChunkReceived(text))
-                        case .toolUseRequest:
-                            // 슬라이스 3c에서 멀티턴 루프로 처리. 현재는 무시.
-                            continue
+                    let tools: [LLMTool] = [.readMemory]
+                    let maxRounds = 5
+                    for _ in 0..<maxRounds {
+                        var roundText = ""
+                        var roundToolUses: [(id: String, name: String, inputJSON: String)] = []
+                        let stream = try await llmClient.streamMessage(
+                            roundMessages, model, conversationForDisk.effort, system, tools
+                        )
+                        for try await event in stream {
+                            switch event {
+                            case .textDelta(let text):
+                                roundText += text
+                                await send(.streamChunkReceived(text))
+                            case let .toolUseRequest(id, name, inputJSON):
+                                roundToolUses.append((id, name, inputJSON))
+                            }
                         }
+                        if roundToolUses.isEmpty { break }
+
+                        // 다음 라운드: 이번 round의 assistant content + tool_result blocks
+                        var assistantBlocks: [APIContentBlock] = []
+                        if !roundText.isEmpty {
+                            assistantBlocks.append(.text(roundText))
+                        }
+                        for tool in roundToolUses {
+                            let input = Self.parseToolInput(tool.inputJSON) ?? [:]
+                            assistantBlocks.append(.toolUse(id: tool.id, name: tool.name, input: input))
+                        }
+                        roundMessages.append(APIMessage(role: "assistant", content: .blocks(assistantBlocks)))
+
+                        var resultBlocks: [APIContentBlock] = []
+                        for tool in roundToolUses {
+                            let input = Self.parseToolInput(tool.inputJSON) ?? [:]
+                            let result = await Self.executeTool(
+                                name: tool.name,
+                                input: input,
+                                github: githubClient,
+                                creds: githubCredentialsClient
+                            )
+                            resultBlocks.append(.toolResult(toolUseID: tool.id, content: result))
+                        }
+                        roundMessages.append(APIMessage(role: "user", content: .blocks(resultBlocks)))
                     }
                     await send(.streamFinished)
                 } catch let error as LLMError {
@@ -145,6 +178,50 @@ nonisolated struct ChatFeature: Reducer {
         case .persistenceErrorDismissed:
             state.persistenceError = nil
             return .none
+        }
+    }
+
+    /// Claude의 tool_use input JSON을 [String:String]로 파싱.
+    /// read_memory 같은 string-only 파라미터 tool 한정.
+    private static func parseToolInput(_ json: String) -> [String: String]? {
+        guard let data = json.data(using: .utf8) else { return nil }
+        return try? JSONDecoder().decode([String: String].self, from: data)
+    }
+
+    /// tool 이름별 dispatch. 알 수 없는 tool은 에러 텍스트 반환 (멀티턴 계속 진행).
+    private static func executeTool(
+        name: String,
+        input: [String: String],
+        github: GitHubClient,
+        creds: GitHubCredentialsClient
+    ) async -> String {
+        switch name {
+        case "read_memory":
+            return await executeReadMemory(input: input, github: github, creds: creds)
+        default:
+            return "Error: unknown tool '\(name)'"
+        }
+    }
+
+    private static func executeReadMemory(
+        input: [String: String],
+        github: GitHubClient,
+        creds: GitHubCredentialsClient
+    ) async -> String {
+        guard let roleStr = input["role"], let role = CredentialsRole(rawValue: roleStr) else {
+            return "Error: missing or invalid 'role' (expected 'global' or 'local')"
+        }
+        guard let path = input["path"] else {
+            return "Error: missing 'path'"
+        }
+        guard let credentials = try? creds.load(role) else {
+            return "Error: \(role.rawValue) credentials not configured"
+        }
+        do {
+            let file = try await github.loadFile(credentials.repoConfig, path)
+            return file.content
+        } catch {
+            return "Error: \(error.localizedDescription)"
         }
     }
 
