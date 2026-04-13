@@ -45,6 +45,15 @@ struct ChatView: View {
                 }
                 .navigationTitle(String(localized: "chat.title"))
                 .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    if viewStore.conversation.thinkingEnabled {
+                        ToolbarItem(placement: .topBarTrailing) {
+                            Image(systemName: "brain")
+                                .foregroundStyle(.purple)
+                                .accessibilityLabel(String(localized: "a11y.chat.thinkingEnabled"))
+                        }
+                    }
+                }
                 .onChange(of: viewStore.error) { _, newError in
                     if let error = newError {
                         errorShakeTrigger += 1
