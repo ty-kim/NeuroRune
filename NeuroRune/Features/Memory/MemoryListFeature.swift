@@ -49,8 +49,13 @@ nonisolated struct MemoryListFeature: Reducer {
                     let files = try await github.listContents(config, path)
                     await send(.filesLoaded(files))
                 } catch GitHubError.notFound {
-                    // 디렉터리가 아직 없음 = 빈 상태
-                    await send(.filesLoaded([]))
+                    // 서브디렉터리 404 = 아직 비어있음으로 해석.
+                    // repo 루트(path="")조차 404면 repo 설정 문제 → 명시적 에러.
+                    if path.isEmpty {
+                        await send(.loadFailed(GitHubError.notFound.localizedMessage))
+                    } else {
+                        await send(.filesLoaded([]))
+                    }
                 } catch let error as GitHubError {
                     await send(.loadFailed(error.localizedMessage))
                 } catch {

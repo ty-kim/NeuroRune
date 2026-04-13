@@ -136,6 +136,54 @@ struct MemoryListFeatureTests {
         }
     }
 
+    @Test("서브디렉터리 404는 빈 상태로 해석된다")
+    func subdirectoryNotFoundBecomesEmpty() async {
+        let credsWithSubPath = GitHubCredentials(
+            pat: "ghp_test",
+            owner: "ty-kim",
+            repo: "memory",
+            path: "notes"
+        )
+
+        let store = TestStore(initialState: MemoryListFeature.State()) {
+            MemoryListFeature()
+        } withDependencies: {
+            $0.githubCredentialsClient.load = { credsWithSubPath }
+            $0.githubClient.listContents = { _, _ in throw GitHubError.notFound }
+        }
+
+        await store.send(.task) { $0.isLoading = true }
+        await store.receive(.filesLoaded([])) {
+            $0.files = []
+            $0.isLoading = false
+            $0.credentialsMissing = false
+            $0.config = credsWithSubPath.repoConfig
+        }
+    }
+
+    @Test("repo 루트 404는 loadFailed로 에러 노출")
+    func rootNotFoundBecomesError() async {
+        let credsRootPath = GitHubCredentials(
+            pat: "ghp_test",
+            owner: "ty-kim",
+            repo: "nonexistent",
+            path: ""
+        )
+
+        let store = TestStore(initialState: MemoryListFeature.State()) {
+            MemoryListFeature()
+        } withDependencies: {
+            $0.githubCredentialsClient.load = { credsRootPath }
+            $0.githubClient.listContents = { _, _ in throw GitHubError.notFound }
+        }
+
+        await store.send(.task) { $0.isLoading = true }
+        await store.receive(.loadFailed(GitHubError.notFound.localizedMessage)) {
+            $0.isLoading = false
+            $0.listError = GitHubError.notFound.localizedMessage
+        }
+    }
+
     @Test("filesLoaded는 이름 알파벳 순으로 정렬한다 (numeric-aware)")
     func filesLoadedSortsByName() async {
         let unsorted = [
