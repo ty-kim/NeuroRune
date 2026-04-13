@@ -85,6 +85,18 @@ nonisolated struct ConversationListFeature: Reducer {
 
         case let .conversationSelected(conversation):
             state.selectedConversation = conversation
+            // ChatView에서 pop으로 돌아오면 (nil) 목록을 다시 로드.
+            // 그 사이 새 메시지가 저장됐을 수 있음.
+            if conversation == nil {
+                return .run { send in
+                    do {
+                        let loaded = try await store.loadAll()
+                        await send(.conversationsLoaded(loaded))
+                    } catch {
+                        await send(.loadFailed)
+                    }
+                }
+            }
             return .none
 
         case .newConversationTapped:
