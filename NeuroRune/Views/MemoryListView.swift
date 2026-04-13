@@ -105,9 +105,11 @@ struct MemoryListView: View {
                 VStack(alignment: .leading, spacing: 4) {
                     Text(file.name)
                         .font(.body)
-                    Text(file.path)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                    if file.path != file.name {
+                        Text(file.path)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
                 }
                 .swipeActions(edge: .trailing, allowsFullSwipe: false) {
                     Button(role: .destructive) {
