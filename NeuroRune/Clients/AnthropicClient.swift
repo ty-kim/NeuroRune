@@ -10,8 +10,8 @@ nonisolated extension LLMClient {
 
     static func anthropic(session: URLSession, apiKey: String) -> LLMClient {
         LLMClient(
-            streamMessage: { messages, model, effort in
-                Logger.network.info("stream request, model: \(model.id, privacy: .public), messages: \(messages.count), effort: \(effort?.rawValue ?? "default", privacy: .public)")
+            streamMessage: { messages, model, effort, system in
+                Logger.network.info("stream request, model: \(model.id, privacy: .public), messages: \(messages.count), effort: \(effort?.rawValue ?? "default", privacy: .public), system: \(system != nil ? "yes(\(system!.count))" : "no", privacy: .public)")
 
                 let request: URLRequest
                 do {
@@ -20,7 +20,8 @@ nonisolated extension LLMClient {
                         model: model,
                         apiKey: apiKey,
                         stream: true,
-                        effort: effort
+                        effort: effort,
+                        system: system
                     )
                 } catch {
                     Logger.network.error("stream request encoding failed: \(error.localizedDescription)")
