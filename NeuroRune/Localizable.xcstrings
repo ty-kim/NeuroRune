@@ -788,6 +788,24 @@
         }
       }
     },
+    "list.deleteFailed" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Couldn't delete the conversation. Please try again." } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "会話を削除できませんでした。もう一度お試しください。" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "대화 삭제에 실패했습니다. 다시 시도해 주세요." } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "无法删除对话。请重试。" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "無法刪除對話。請再試一次。" } }
+      }
+    },
+    "list.loadFailed" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Couldn't load conversations." } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "会話を読み込めませんでした。" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "대화 목록을 불러올 수 없습니다." } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "无法加载对话。" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "無法載入對話。" } }
+      }
+    },
     "list.empty" : {
       "localizations" : {
         "en" : {
