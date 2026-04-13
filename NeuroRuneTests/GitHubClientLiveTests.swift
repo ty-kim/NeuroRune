@@ -42,6 +42,19 @@ struct GitHubClientLiveTests {
         #expect(result[2].isDirectory == true)
     }
 
+    @Test("파일명의 공백/한글은 URL 경로에서 percent-encoding된다")
+    func pathWithSpecialCharsIsPercentEncoded() async throws {
+        stubStatus(200, body: "[]")
+        let client = GitHubClient.live(session: Self.makeSession(), pat: "ghp_test")
+
+        _ = try await client.listContents(Self.config, "memory/my note 한글.md")
+
+        let url = URLProtocolStub.lastRequest?.url?.absoluteString
+        #expect(url?.contains("%20") == true) // space → %20
+        #expect(url?.contains(" ") == false)  // literal space 없어야 함
+        #expect(url?.contains("한글") == false) // 한글 literal도 인코딩됨
+    }
+
     @Test("listContents: Authorization 헤더에 Bearer <pat>이 설정된다")
     func listContentsSetsBearerAuth() async throws {
         stubStatus(200, body: "[]")

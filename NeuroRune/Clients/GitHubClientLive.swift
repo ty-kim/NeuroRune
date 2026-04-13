@@ -98,7 +98,7 @@ private nonisolated func makeRequest(
     var components = URLComponents()
     components.scheme = "https"
     components.host = "api.github.com"
-    components.path = "/repos/\(config.owner)/\(config.repo)/contents/\(path)"
+    components.percentEncodedPath = encodeContentsPath(config: config, path: path)
     if method == "GET" {
         components.queryItems = [URLQueryItem(name: "ref", value: config.branch)]
     }
@@ -111,6 +111,18 @@ private nonisolated func makeRequest(
     request.setValue("application/json", forHTTPHeaderField: "Content-Type")
     request.httpBody = body
     return request
+}
+
+/// `/repos/{owner}/{repo}/contents/{path}`의 각 segment를 percent-encoding.
+/// 공백/한글/괄호 등 GitHub가 허용하는 특수문자 파일명에서 404 방지.
+private nonisolated func encodeContentsPath(config: GitHubRepoConfig, path: String) -> String {
+    let fixedSegments = ["repos", config.owner, config.repo, "contents"]
+    let pathSegments = path.split(separator: "/").map(String.init)
+    let allSegments = fixedSegments + pathSegments
+    let encoded = allSegments.map {
+        $0.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? $0
+    }
+    return "/" + encoded.joined(separator: "/")
 }
 
 // MARK: - Response types
