@@ -52,27 +52,37 @@ nonisolated extension LLMClient {
                     throw LLMError.server(status: http.statusCode, message: "stream request failed")
                 }
 
-                return AsyncThrowingStream<String, Error> { continuation in
+                return AsyncThrowingStream<LLMStreamEvent, Error> { continuation in
                     let task = Task {
                         do {
+                            // tool_use 블록 조립 상태: index → (id, name, partialJSON)
+                            var pendingToolUses: [Int: (id: String, name: String, partial: String)] = [:]
                             for try await line in bytes.lines {
                                 guard line.hasPrefix("data:") else { continue }
                                 let payload = String(line.dropFirst("data:".count))
                                 switch AnthropicSSEParser.parseDataLine(payload) {
                                 case .textDelta(let text):
-                                    continuation.yield(text)
+                                    continuation.yield(.textDelta(text))
+                                case let .toolUseStart(index, id, name):
+                                    pendingToolUses[index] = (id, name, "")
+                                case let .toolUseInputDelta(index, partial):
+                                    if var tool = pendingToolUses[index] {
+                                        tool.partial += partial
+                                        pendingToolUses[index] = tool
+                                    }
+                                case let .contentBlockStop(index):
+                                    if let tool = pendingToolUses.removeValue(forKey: index) {
+                                        continuation.yield(.toolUseRequest(id: tool.id, name: tool.name, inputJSON: tool.partial))
+                                    }
+                                case .messageDelta:
+                                    continue
                                 case .stop:
                                     continuation.finish()
                                     return
                                 case .error(let message):
                                     continuation.finish(throwing: LLMError.server(status: 0, message: message))
                                     return
-                                case .ignored,
-                                     .toolUseStart,
-                                     .toolUseInputDelta,
-                                     .contentBlockStop,
-                                     .messageDelta:
-                                    // 슬라이스 3a: 파서가 인지만 함. 멀티턴 루프(3b)에서 처리.
+                                case .ignored:
                                     continue
                                 }
                             }

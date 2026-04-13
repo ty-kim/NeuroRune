@@ -244,7 +244,7 @@ struct ChatFeatureTests {
                 calledMessagesCount.setValue(messages.count)
                 calledModelId.setValue(model.id)
                 return AsyncThrowingStream { continuation in
-                    continuation.yield("world")
+                    continuation.yield(.textDelta("world"))
                     continuation.finish()
                 }
             }
@@ -324,7 +324,7 @@ struct ChatFeatureTests {
             $0.date = .constant(Self.fixedDate)
             $0.llmClient.streamMessage = { @Sendable _, _, _, _ in
                 AsyncThrowingStream { continuation in
-                    continuation.yield("resp")
+                    continuation.yield(.textDelta("resp"))
                     continuation.finish()
                 }
             }
@@ -472,7 +472,7 @@ struct ChatFeatureTests {
             $0.llmClient.streamMessage = { @Sendable _, _, _, _ in
                 llmCalled.setValue(true)
                 return AsyncThrowingStream { continuation in
-                    continuation.yield("ok")
+                    continuation.yield(.textDelta("ok"))
                     continuation.finish()
                 }
             }

@@ -33,8 +33,8 @@ struct AnthropicClientTests {
 
         var collected: [String] = []
         let stream = try await client.streamMessage([Self.userMessage], .opus46, nil, nil)
-        for try await chunk in stream {
-            collected.append(chunk)
+        for try await event in stream {
+            if case .textDelta(let text) = event { collected.append(text) }
         }
 
         #expect(collected == ["Hello", " world"])
@@ -58,8 +58,8 @@ struct AnthropicClientTests {
 
         var collected: [String] = []
         let stream = try await client.streamMessage([Self.userMessage], .opus46, nil, nil)
-        for try await chunk in stream {
-            collected.append(chunk)
+        for try await event in stream {
+            if case .textDelta(let text) = event { collected.append(text) }
         }
 
         #expect(collected == ["A"])
@@ -136,8 +136,8 @@ struct AnthropicClientTests {
         let stream = try await client.streamMessage([Self.userMessage], .opus46, nil, nil)
 
         await #expect {
-            for try await chunk in stream {
-                collected.append(chunk)
+            for try await event in stream {
+                if case .textDelta(let text) = event { collected.append(text) }
             }
         } throws: { error in
             guard case LLMError.server(_, let message) = error else { return false }
@@ -161,8 +161,8 @@ struct AnthropicClientTests {
         let stream = try await client.streamMessage([Self.userMessage], .opus46, nil, nil)
 
         await #expect {
-            for try await chunk in stream {
-                collected.append(chunk)
+            for try await event in stream {
+                if case .textDelta(let text) = event { collected.append(text) }
             }
         } throws: { error in
             guard case LLMError.decoding = error else { return false }

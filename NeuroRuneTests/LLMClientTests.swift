@@ -15,8 +15,8 @@ struct LLMClientTests {
         let stub = LLMClient(
             streamMessage: { _, _, _, _ in
                 AsyncThrowingStream { continuation in
-                    continuation.yield("hello ")
-                    continuation.yield("world")
+                    continuation.yield(.textDelta("hello "))
+                    continuation.yield(.textDelta("world"))
                     continuation.finish()
                 }
             }
@@ -24,8 +24,8 @@ struct LLMClientTests {
 
         var collected = ""
         let stream = try await stub.streamMessage([], .opus46, nil, nil)
-        for try await chunk in stream {
-            collected += chunk
+        for try await event in stream {
+            if case .textDelta(let text) = event { collected += text }
         }
 
         #expect(collected == "hello world")
@@ -36,7 +36,7 @@ struct LLMClientTests {
         let injected = LLMClient(
             streamMessage: { _, _, _, _ in
                 AsyncThrowingStream { continuation in
-                    continuation.yield("injected")
+                    continuation.yield(.textDelta("injected"))
                     continuation.finish()
                 }
             }
@@ -48,8 +48,8 @@ struct LLMClientTests {
             @Dependency(\.llmClient) var client
             var text = ""
             let stream = try await client.streamMessage([], .sonnet46, nil, nil)
-            for try await chunk in stream {
-                text += chunk
+            for try await event in stream {
+                if case .textDelta(let chunk) = event { text += chunk }
             }
             return text
         }

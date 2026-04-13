@@ -8,7 +8,7 @@ import Dependencies
 import os
 
 nonisolated struct LLMClient: Sendable {
-    var streamMessage: @Sendable ([Message], LLMModel, EffortLevel?, String?) async throws -> AsyncThrowingStream<String, Error>
+    var streamMessage: @Sendable ([Message], LLMModel, EffortLevel?, String?) async throws -> AsyncThrowingStream<LLMStreamEvent, Error>
 }
 
 nonisolated extension LLMClient: DependencyKey {
@@ -36,11 +36,11 @@ nonisolated extension LLMClient: DependencyKey {
     )
 
     static let previewValue = LLMClient(
-        streamMessage: { _, _, _, _ -> AsyncThrowingStream<String, Error> in
+        streamMessage: { _, _, _, _ -> AsyncThrowingStream<LLMStreamEvent, Error> in
             AsyncThrowingStream { continuation in
                 Task {
                     for chunk in ["Preview ", "response ", "from ", "Claude."] {
-                        continuation.yield(chunk)
+                        continuation.yield(.textDelta(chunk))
                         try? await Task.sleep(nanoseconds: 100_000_000)
                     }
                     continuation.finish()

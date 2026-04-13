@@ -84,8 +84,14 @@ nonisolated struct ChatFeature: Reducer {
                         creds: githubCredentialsClient
                     )
                     let stream = try await llmClient.streamMessage(messagesForAPI, model, conversationForDisk.effort, system)
-                    for try await chunk in stream {
-                        await send(.streamChunkReceived(chunk))
+                    for try await event in stream {
+                        switch event {
+                        case .textDelta(let text):
+                            await send(.streamChunkReceived(text))
+                        case .toolUseRequest:
+                            // 슬라이스 3c에서 멀티턴 루프로 처리. 현재는 무시.
+                            continue
+                        }
                     }
                     await send(.streamFinished)
                 } catch let error as LLMError {
