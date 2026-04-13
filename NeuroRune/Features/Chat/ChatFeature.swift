@@ -83,7 +83,10 @@ nonisolated struct ChatFeature: Reducer {
                         github: githubClient,
                         creds: githubCredentialsClient
                     )
-                    let stream = try await llmClient.streamMessage(messagesForAPI, model, conversationForDisk.effort, system)
+                    let apiMessages = messagesForAPI.map {
+                        APIMessage.text(role: $0.role.rawValue, content: $0.content)
+                    }
+                    let stream = try await llmClient.streamMessage(apiMessages, model, conversationForDisk.effort, system, nil)
                     for try await event in stream {
                         switch event {
                         case .textDelta(let text):
