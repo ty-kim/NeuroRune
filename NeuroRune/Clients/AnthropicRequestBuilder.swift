@@ -18,7 +18,10 @@ nonisolated enum AnthropicRequestBuilder {
         model: LLMModel,
         apiKey: String,
         stream: Bool = false,
-        effort: EffortLevel? = nil
+        effort: EffortLevel? = nil,
+        system: String? = nil,
+        tools: [LLMTool]? = nil,
+        apiMessages: [APIMessage]? = nil
     ) throws -> URLRequest {
         var request = URLRequest(url: AnthropicAPI.endpoint)
         request.httpMethod = "POST"
@@ -29,18 +32,17 @@ nonisolated enum AnthropicRequestBuilder {
         // 4.6 모델은 adaptive thinking + output_config.effort 사용 (manual budget_tokens deprecated).
         // 모델이 effort 미지원이면 둘 다 omit.
         let usesEffort = model.supportsEffort && effort != nil
+        let resolvedMessages: [APIMessage] = apiMessages
+            ?? messages.map { APIMessage.text(role: $0.role.rawValue, content: $0.content) }
         let body = AnthropicRequestBody(
             model: model.id,
             maxTokens: AnthropicAPI.defaultMaxTokens,
-            messages: messages.map {
-                AnthropicRequestBody.RequestMessage(
-                    role: $0.role.rawValue,
-                    content: $0.content
-                )
-            },
+            messages: resolvedMessages,
             stream: stream ? true : nil,
             thinking: usesEffort ? AnthropicRequestBody.Thinking(type: "adaptive") : nil,
-            outputConfig: usesEffort ? AnthropicRequestBody.OutputConfig(effort: effort!.rawValue) : nil
+            outputConfig: usesEffort ? AnthropicRequestBody.OutputConfig(effort: effort!.rawValue) : nil,
+            system: system,
+            tools: tools
         )
         let encoder = JSONEncoder()
         encoder.keyEncodingStrategy = .convertToSnakeCase
@@ -50,10 +52,6 @@ nonisolated enum AnthropicRequestBuilder {
 }
 
 private nonisolated struct AnthropicRequestBody: Encodable {
-    struct RequestMessage: Encodable {
-        let role: String
-        let content: String
-    }
     struct Thinking: Encodable {
         let type: String
     }
@@ -62,13 +60,15 @@ private nonisolated struct AnthropicRequestBody: Encodable {
     }
     let model: String
     let maxTokens: Int
-    let messages: [RequestMessage]
+    let messages: [APIMessage]
     let stream: Bool?
     let thinking: Thinking?
     let outputConfig: OutputConfig?
+    let system: String?
+    let tools: [LLMTool]?
 
     enum CodingKeys: String, CodingKey {
-        case model, maxTokens, messages, stream, thinking, outputConfig
+        case model, maxTokens, messages, stream, thinking, outputConfig, system, tools
     }
 
     func encode(to encoder: Encoder) throws {
@@ -79,5 +79,7 @@ private nonisolated struct AnthropicRequestBody: Encodable {
         try container.encodeIfPresent(stream, forKey: .stream)
         try container.encodeIfPresent(thinking, forKey: .thinking)
         try container.encodeIfPresent(outputConfig, forKey: .outputConfig)
+        try container.encodeIfPresent(system, forKey: .system)
+        try container.encodeIfPresent(tools, forKey: .tools)
     }
 }

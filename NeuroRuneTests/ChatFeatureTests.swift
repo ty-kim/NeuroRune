@@ -80,9 +80,49 @@ struct ChatFeatureTests {
             ChatFeature()
         } withDependencies: {
             $0.date = .constant(Self.fixedDate)
-            $0.llmClient.streamMessage = { @Sendable _, _, effort in
+            $0.llmClient.streamMessage = { @Sendable _, _, effort, _, _ in
                 receivedEffort.setValue(effort)
                 return AsyncThrowingStream { $0.finish() }
+            }
+            $0.conversationStore.save = { @Sendable _ in }
+            $0.githubCredentialsClient.load = { @Sendable _ in nil }
+        }
+
+        await store.send(.sendTapped) {
+            $0.conversation = $0.conversation
+                .appending(Message(role: .user, content: "hi", createdAt: Self.fixedDate))
+                .appending(Message(role: .assistant, content: "", createdAt: Self.fixedDate))
+            $0.inputText = ""
+            $0.isStreaming = true
+        }
+
+        await store.receive(.streamFinished) {
+            $0.isStreaming = false
+        }
+
+        await store.finish()
+        #expect(receivedEffort.value == .medium)
+    }
+
+    @Test("sendTapped는 .global + .local MEMORY.md를 concat해 system으로 전달")
+    func sendTappedConcatsBothMemoryFilesIntoSystem() async {
+        let receivedSystem = LockIsolated<String?>(nil)
+        let loadedPaths = LockIsolated<[String]>([])
+
+        let store = TestStore(initialState: makeState(inputText: "hi")) {
+            ChatFeature()
+        } withDependencies: {
+            $0.date = .constant(Self.fixedDate)
+            $0.llmClient.streamMessage = { @Sendable _, _, _, system, _ in
+                receivedSystem.setValue(system)
+                return AsyncThrowingStream { $0.finish() }
+            }
+            $0.githubClient.loadFile = { @Sendable _, path in
+                loadedPaths.withValue { $0.append(path) }
+                return GitHubFile(path: path, sha: "s", content: "body-of-\(path)", isDirectory: false)
+            }
+            $0.githubCredentialsClient.load = { @Sendable role in
+                GitHubCredentials(role: role, pat: "p", owner: "o", repo: "r-\(role.rawValue)", path: "memory")
             }
             $0.conversationStore.save = { @Sendable _ in }
         }
@@ -100,7 +140,160 @@ struct ChatFeatureTests {
         }
 
         await store.finish()
-        #expect(receivedEffort.value == .medium)
+        let system = receivedSystem.value ?? ""
+        #expect(system.contains("body-of-memory/MEMORY.md"))
+        #expect(system.contains("## Global Memory"))
+        #expect(system.contains("## Local Memory"))
+        #expect(loadedPaths.value.sorted() == ["memory/MEMORY.md", "memory/MEMORY.md"])
+    }
+
+    @Test("sendTapped는 credentials가 없으면 system도 nil")
+    func sendTappedPassesNilSystemWhenNoCredentials() async {
+        let receivedSystem = LockIsolated<String?>("not-set")
+
+        let store = TestStore(initialState: makeState(inputText: "hi")) {
+            ChatFeature()
+        } withDependencies: {
+            $0.date = .constant(Self.fixedDate)
+            $0.llmClient.streamMessage = { @Sendable _, _, _, system, _ in
+                receivedSystem.setValue(system)
+                return AsyncThrowingStream { $0.finish() }
+            }
+            $0.githubCredentialsClient.load = { @Sendable _ in nil }
+            $0.conversationStore.save = { @Sendable _ in }
+        }
+
+        await store.send(.sendTapped) {
+            $0.conversation = $0.conversation
+                .appending(Message(role: .user, content: "hi", createdAt: Self.fixedDate))
+                .appending(Message(role: .assistant, content: "", createdAt: Self.fixedDate))
+            $0.inputText = ""
+            $0.isStreaming = true
+        }
+
+        await store.receive(.streamFinished) {
+            $0.isStreaming = false
+        }
+
+        await store.finish()
+        #expect(receivedSystem.value == nil)
+    }
+
+    @Test("sendTapped는 한쪽 role의 MEMORY.md fetch가 notFound이면 그 섹션 제외")
+    func sendTappedSkipsMissingMemoryFile() async {
+        let receivedSystem = LockIsolated<String?>(nil)
+
+        let store = TestStore(initialState: makeState(inputText: "hi")) {
+            ChatFeature()
+        } withDependencies: {
+            $0.date = .constant(Self.fixedDate)
+            $0.llmClient.streamMessage = { @Sendable _, _, _, system, _ in
+                receivedSystem.setValue(system)
+                return AsyncThrowingStream { $0.finish() }
+            }
+            $0.githubClient.loadFile = { @Sendable config, path in
+                if config.repo == "r-local" {
+                    throw GitHubError.notFound
+                }
+                return GitHubFile(path: path, sha: "s", content: "global body", isDirectory: false)
+            }
+            $0.githubCredentialsClient.load = { @Sendable role in
+                GitHubCredentials(role: role, pat: "p", owner: "o", repo: "r-\(role.rawValue)", path: "")
+            }
+            $0.conversationStore.save = { @Sendable _ in }
+        }
+
+        await store.send(.sendTapped) {
+            $0.conversation = $0.conversation
+                .appending(Message(role: .user, content: "hi", createdAt: Self.fixedDate))
+                .appending(Message(role: .assistant, content: "", createdAt: Self.fixedDate))
+            $0.inputText = ""
+            $0.isStreaming = true
+        }
+
+        await store.receive(.streamFinished) {
+            $0.isStreaming = false
+        }
+
+        await store.finish()
+        let system = receivedSystem.value ?? ""
+        #expect(system.contains("## Global Memory"))
+        #expect(system.contains("global body"))
+        #expect(!system.contains("## Local Memory"))
+    }
+
+    @Test("sendTapped는 toolUseRequest 받으면 read_memory 실행하고 다음 라운드로 이어감")
+    func multiTurnExecutesReadMemoryAndContinues() async {
+        let callCount = LockIsolated<Int>(0)
+        let secondRoundMessageCount = LockIsolated<Int?>(nil)
+        let toolFetchPath = LockIsolated<String?>(nil)
+
+        let store = TestStore(initialState: makeState(inputText: "hi")) {
+            ChatFeature()
+        } withDependencies: {
+            $0.date = .constant(Self.fixedDate)
+            $0.llmClient.streamMessage = { @Sendable msgs, _, _, _, tools in
+                let n = callCount.value
+                callCount.setValue(n + 1)
+                if n == 1 {
+                    secondRoundMessageCount.setValue(msgs.count)
+                }
+                return AsyncThrowingStream { continuation in
+                    if n == 0 {
+                        continuation.yield(.textDelta("checking"))
+                        continuation.yield(.toolUseRequest(
+                            id: "t1",
+                            name: "read_memory",
+                            inputJSON: #"{"role":"global","path":"runes/profile.md"}"#
+                        ))
+                    } else {
+                        continuation.yield(.textDelta(" done"))
+                    }
+                    _ = tools
+                    continuation.finish()
+                }
+            }
+            $0.githubClient.loadFile = { @Sendable _, path in
+                toolFetchPath.setValue(path)
+                return GitHubFile(path: path, sha: "s", content: "fetched body", isDirectory: false)
+            }
+            $0.githubCredentialsClient.load = { @Sendable role in
+                GitHubCredentials(role: role, pat: "p", owner: "o", repo: "r-\(role.rawValue)")
+            }
+            $0.conversationStore.save = { @Sendable _ in }
+        }
+
+        await store.send(.sendTapped) {
+            $0.conversation = $0.conversation
+                .appending(Message(role: .user, content: "hi", createdAt: Self.fixedDate))
+                .appending(Message(role: .assistant, content: "", createdAt: Self.fixedDate))
+            $0.inputText = ""
+            $0.isStreaming = true
+        }
+
+        // Round 1 text
+        await store.receive(.streamChunkReceived("checking")) {
+            var msgs = $0.conversation.messages
+            msgs[msgs.count - 1] = Message(role: .assistant, content: "checking", createdAt: Self.fixedDate)
+            $0.conversation.messages = msgs
+        }
+
+        // Round 2 text (after tool execution + new turn)
+        await store.receive(.streamChunkReceived(" done")) {
+            var msgs = $0.conversation.messages
+            msgs[msgs.count - 1] = Message(role: .assistant, content: "checking done", createdAt: Self.fixedDate)
+            $0.conversation.messages = msgs
+        }
+
+        await store.receive(.streamFinished) {
+            $0.isStreaming = false
+        }
+
+        await store.finish()
+        #expect(callCount.value == 2)
+        #expect(toolFetchPath.value == "runes/profile.md")
+        // Round 2: [user text, assistant(text+tool_use), user(tool_result)] = 3
+        #expect(secondRoundMessageCount.value == 3)
     }
 
     @Test("sendTapped는 isStreaming 중이면 아무 효과 없음")
@@ -121,15 +314,16 @@ struct ChatFeatureTests {
             ChatFeature()
         } withDependencies: {
             $0.date = .constant(Self.fixedDate)
-            $0.llmClient.streamMessage = { @Sendable messages, model, _ in
+            $0.llmClient.streamMessage = { @Sendable messages, model, _, _, _ in
                 calledMessagesCount.setValue(messages.count)
                 calledModelId.setValue(model.id)
                 return AsyncThrowingStream { continuation in
-                    continuation.yield("world")
+                    continuation.yield(.textDelta("world"))
                     continuation.finish()
                 }
             }
             $0.conversationStore.save = { @Sendable _ in }
+            $0.githubCredentialsClient.load = { @Sendable _ in nil }
         }
 
         await store.send(.sendTapped) {
@@ -202,15 +396,16 @@ struct ChatFeatureTests {
             ChatFeature()
         } withDependencies: {
             $0.date = .constant(Self.fixedDate)
-            $0.llmClient.streamMessage = { @Sendable _, _, _ in
+            $0.llmClient.streamMessage = { @Sendable _, _, _, _, _ in
                 AsyncThrowingStream { continuation in
-                    continuation.yield("resp")
+                    continuation.yield(.textDelta("resp"))
                     continuation.finish()
                 }
             }
             $0.conversationStore.save = { @Sendable conversation in
                 allSaves.withValue { $0.append(conversation.messages) }
             }
+            $0.githubCredentialsClient.load = { @Sendable _ in nil }
         }
 
         await store.send(.sendTapped) {
@@ -348,16 +543,17 @@ struct ChatFeatureTests {
             ChatFeature()
         } withDependencies: {
             $0.date = .constant(Self.fixedDate)
-            $0.llmClient.streamMessage = { @Sendable _, _, _ in
+            $0.llmClient.streamMessage = { @Sendable _, _, _, _, _ in
                 llmCalled.setValue(true)
                 return AsyncThrowingStream { continuation in
-                    continuation.yield("ok")
+                    continuation.yield(.textDelta("ok"))
                     continuation.finish()
                 }
             }
             $0.conversationStore.save = { @Sendable _ in
                 throw SaveTestError.failed
             }
+            $0.githubCredentialsClient.load = { @Sendable _ in nil }
         }
 
         await store.send(.sendTapped) {

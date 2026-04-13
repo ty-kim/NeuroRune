@@ -98,6 +98,35 @@ struct ConversationListFeatureTests {
         }
     }
 
+    @Test("conversationSelected(nil)은 loadAll을 다시 호출해 목록을 갱신한다")
+    func conversationSelectedNilReloadsList() async {
+        let reloaded = [Self.sampleConversation(title: "fresh")]
+        let store = TestStore(initialState: ConversationListFeature.State()) {
+            ConversationListFeature()
+        } withDependencies: {
+            $0.conversationStore.loadAll = { @Sendable in reloaded }
+        }
+
+        await store.send(.conversationSelected(nil))
+        await store.receive(.conversationsLoaded(reloaded)) {
+            $0.conversations = reloaded
+            $0.isLoading = false
+        }
+    }
+
+    @Test("conversationSelected(non-nil)은 reload하지 않는다")
+    func conversationSelectedNonNilDoesNotReload() async {
+        let conversation = Self.sampleConversation()
+        let store = TestStore(initialState: ConversationListFeature.State()) {
+            ConversationListFeature()
+        }
+
+        await store.send(.conversationSelected(conversation)) {
+            $0.selectedConversation = conversation
+        }
+        // no .conversationsLoaded follow-up expected
+    }
+
     @Test("modelSelected는 selectedEffort && 모델 지원 시 Conversation에 effort 전달")
     func modelSelectedRespectsEffortCapability() async {
         var state = ConversationListFeature.State()

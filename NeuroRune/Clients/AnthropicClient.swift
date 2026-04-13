@@ -10,17 +10,20 @@ nonisolated extension LLMClient {
 
     static func anthropic(session: URLSession, apiKey: String) -> LLMClient {
         LLMClient(
-            streamMessage: { messages, model, effort in
-                Logger.network.info("stream request, model: \(model.id, privacy: .public), messages: \(messages.count), effort: \(effort?.rawValue ?? "default", privacy: .public)")
+            streamMessage: { apiMessages, model, effort, system, tools in
+                Logger.network.info("stream request, model: \(model.id, privacy: .public), messages: \(apiMessages.count), effort: \(effort?.rawValue ?? "default", privacy: .public), system: \(system != nil ? "yes(\(system!.count))" : "no", privacy: .public), tools: \(tools?.count ?? 0)")
 
                 let request: URLRequest
                 do {
                     request = try AnthropicRequestBuilder.build(
-                        messages: messages,
+                        messages: [],
                         model: model,
                         apiKey: apiKey,
                         stream: true,
-                        effort: effort
+                        effort: effort,
+                        system: system,
+                        tools: tools,
+                        apiMessages: apiMessages
                     )
                 } catch {
                     Logger.network.error("stream request encoding failed: \(error.localizedDescription)")
@@ -51,15 +54,30 @@ nonisolated extension LLMClient {
                     throw LLMError.server(status: http.statusCode, message: "stream request failed")
                 }
 
-                return AsyncThrowingStream<String, Error> { continuation in
+                return AsyncThrowingStream<LLMStreamEvent, Error> { continuation in
                     let task = Task {
                         do {
+                            // tool_use 블록 조립 상태: index → (id, name, partialJSON)
+                            var pendingToolUses: [Int: (id: String, name: String, partial: String)] = [:]
                             for try await line in bytes.lines {
                                 guard line.hasPrefix("data:") else { continue }
                                 let payload = String(line.dropFirst("data:".count))
                                 switch AnthropicSSEParser.parseDataLine(payload) {
                                 case .textDelta(let text):
-                                    continuation.yield(text)
+                                    continuation.yield(.textDelta(text))
+                                case let .toolUseStart(index, id, name):
+                                    pendingToolUses[index] = (id, name, "")
+                                case let .toolUseInputDelta(index, partial):
+                                    if var tool = pendingToolUses[index] {
+                                        tool.partial += partial
+                                        pendingToolUses[index] = tool
+                                    }
+                                case let .contentBlockStop(index):
+                                    if let tool = pendingToolUses.removeValue(forKey: index) {
+                                        continuation.yield(.toolUseRequest(id: tool.id, name: tool.name, inputJSON: tool.partial))
+                                    }
+                                case .messageDelta:
+                                    continue
                                 case .stop:
                                     continuation.finish()
                                     return

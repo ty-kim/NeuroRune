@@ -31,6 +31,7 @@ struct MessageView: View {
 
     private var userBubble: some View {
         Text(message.content)
+            .textSelection(.enabled)
             .padding(12)
             .background(Color.accentColor)
             .foregroundStyle(.white)
@@ -41,6 +42,7 @@ struct MessageView: View {
         Markdown(message.content)
             .markdownTheme(.neuroRune)
             .markdownImageProvider(DisabledImageProvider())
+            .textSelection(.enabled)
             .padding(12)
             .background(Color(.secondarySystemBackground))
             .clipShape(RoundedRectangle(cornerRadius: 16))

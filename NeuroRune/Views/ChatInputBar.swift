@@ -9,6 +9,7 @@ struct ChatInputBar: View {
     @Binding var text: String
     let isStreaming: Bool
     let onSend: () -> Void
+    var focus: FocusState<Bool>.Binding
 
     var body: some View {
         HStack(spacing: 8) {
@@ -16,8 +17,12 @@ struct ChatInputBar: View {
                 .textFieldStyle(.roundedBorder)
                 .submitLabel(.send)
                 .onSubmit(onSend)
+                .focused(focus)
 
-            Button(action: onSend) {
+            Button(action: {
+                UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                onSend()
+            }) {
                 Image(systemName: "arrow.up.circle.fill")
                     .font(.title2)
             }
@@ -31,39 +36,34 @@ struct ChatInputBar: View {
 }
 
 #Preview("Empty") {
-    StatefulPreviewWrapper("") { text in
-        ChatInputBar(text: text, isStreaming: false, onSend: {})
-    }
+    InputBarPreview(initialText: "", isStreaming: false)
 }
 
 #Preview("With text") {
-    StatefulPreviewWrapper("Hello Claude") { text in
-        ChatInputBar(text: text, isStreaming: false, onSend: {})
-    }
+    InputBarPreview(initialText: "Hello Claude", isStreaming: false)
 }
 
 #Preview("Streaming (disabled)") {
-    StatefulPreviewWrapper("Waiting for reply…") { text in
-        ChatInputBar(text: text, isStreaming: true, onSend: {})
-    }
+    InputBarPreview(initialText: "Waiting for reply…", isStreaming: true)
 }
 
 #Preview("Dark Mode") {
-    StatefulPreviewWrapper("다크모드") { text in
-        ChatInputBar(text: text, isStreaming: false, onSend: {})
-    }
-    .preferredColorScheme(.dark)
+    InputBarPreview(initialText: "다크모드", isStreaming: false)
+        .preferredColorScheme(.dark)
 }
 
-private struct StatefulPreviewWrapper<Content: View>: View {
-    @State private var value: String
-    let content: (Binding<String>) -> Content
+private struct InputBarPreview: View {
+    @State var text: String
+    let isStreaming: Bool
+    @FocusState private var focus: Bool
 
-    init(_ initial: String, @ViewBuilder content: @escaping (Binding<String>) -> Content) {
-        _value = State(initialValue: initial)
-        self.content = content
+    init(initialText: String, isStreaming: Bool) {
+        _text = State(initialValue: initialText)
+        self.isStreaming = isStreaming
     }
 
-    var body: some View { content($value) }
+    var body: some View {
+        ChatInputBar(text: $text, isStreaming: isStreaming, onSend: {}, focus: $focus)
+    }
 }
 

@@ -32,9 +32,9 @@ struct AnthropicClientTests {
         let client = LLMClient.anthropic(session: stub.session, apiKey: "sk-test")
 
         var collected: [String] = []
-        let stream = try await client.streamMessage([Self.userMessage], .opus46, nil)
-        for try await chunk in stream {
-            collected.append(chunk)
+        let stream = try await client.streamMessage([Self.userMessage], .opus46, nil, nil, nil)
+        for try await event in stream {
+            if case .textDelta(let text) = event { collected.append(text) }
         }
 
         #expect(collected == ["Hello", " world"])
@@ -57,9 +57,9 @@ struct AnthropicClientTests {
         let client = LLMClient.anthropic(session: stub.session, apiKey: "sk-test")
 
         var collected: [String] = []
-        let stream = try await client.streamMessage([Self.userMessage], .opus46, nil)
-        for try await chunk in stream {
-            collected.append(chunk)
+        let stream = try await client.streamMessage([Self.userMessage], .opus46, nil, nil, nil)
+        for try await event in stream {
+            if case .textDelta(let text) = event { collected.append(text) }
         }
 
         #expect(collected == ["A"])
@@ -73,7 +73,7 @@ struct AnthropicClientTests {
         let client = LLMClient.anthropic(session: stub.session, apiKey: "sk-bad")
 
         await #expect(throws: LLMError.unauthorized) {
-            _ = try await client.streamMessage([Self.userMessage], .opus46, nil)
+            _ = try await client.streamMessage([Self.userMessage], .opus46, nil, nil, nil)
         }
     }
 
@@ -83,7 +83,7 @@ struct AnthropicClientTests {
         let client = LLMClient.anthropic(session: stub.session, apiKey: "sk-test")
 
         await #expect(throws: LLMError.rateLimited) {
-            _ = try await client.streamMessage([Self.userMessage], .opus46, nil)
+            _ = try await client.streamMessage([Self.userMessage], .opus46, nil, nil, nil)
         }
     }
 
@@ -93,7 +93,7 @@ struct AnthropicClientTests {
         let client = LLMClient.anthropic(session: stub.session, apiKey: "sk-test")
 
         await #expect {
-            _ = try await client.streamMessage([Self.userMessage], .opus46, nil)
+            _ = try await client.streamMessage([Self.userMessage], .opus46, nil, nil, nil)
         } throws: { error in
             guard case LLMError.server(let status, _) = error else { return false }
             return status == 503
@@ -110,7 +110,7 @@ struct AnthropicClientTests {
         let client = LLMClient.anthropic(session: stub.session, apiKey: "sk-test")
 
         await #expect {
-            _ = try await client.streamMessage([Self.userMessage], .opus46, nil)
+            _ = try await client.streamMessage([Self.userMessage], .opus46, nil, nil, nil)
         } throws: { error in
             guard case LLMError.network = error else { return false }
             return true
@@ -133,11 +133,11 @@ struct AnthropicClientTests {
         let client = LLMClient.anthropic(session: stub.session, apiKey: "sk-test")
 
         var collected: [String] = []
-        let stream = try await client.streamMessage([Self.userMessage], .opus46, nil)
+        let stream = try await client.streamMessage([Self.userMessage], .opus46, nil, nil, nil)
 
         await #expect {
-            for try await chunk in stream {
-                collected.append(chunk)
+            for try await event in stream {
+                if case .textDelta(let text) = event { collected.append(text) }
             }
         } throws: { error in
             guard case LLMError.server(_, let message) = error else { return false }
@@ -158,11 +158,11 @@ struct AnthropicClientTests {
         let client = LLMClient.anthropic(session: stub.session, apiKey: "sk-test")
 
         var collected: [String] = []
-        let stream = try await client.streamMessage([Self.userMessage], .opus46, nil)
+        let stream = try await client.streamMessage([Self.userMessage], .opus46, nil, nil, nil)
 
         await #expect {
-            for try await chunk in stream {
-                collected.append(chunk)
+            for try await event in stream {
+                if case .textDelta(let text) = event { collected.append(text) }
             }
         } throws: { error in
             guard case LLMError.decoding = error else { return false }
@@ -174,11 +174,7 @@ struct AnthropicClientTests {
 
     // MARK: - Helpers
 
-    static let userMessage = Message(
-        role: .user,
-        content: "hi",
-        createdAt: Date(timeIntervalSince1970: 1_000_000)
-    )
+    static let userMessage = APIMessage.text(role: "user", content: "hi")
 
     private func stubStatus(_ status: Int, body: String) -> URLProtocolStub.Stub {
         let stub = URLProtocolStub.Stub()
