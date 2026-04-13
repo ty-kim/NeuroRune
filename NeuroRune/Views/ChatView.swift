@@ -12,13 +12,17 @@ struct ChatView: View {
 
     @State private var showUnauthorizedAlert = false
     @State private var errorShakeTrigger = 0
+    @FocusState private var isInputFocused: Bool
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         WithViewStore(store, observe: { $0 }) { viewStore in
             NavigationStack {
                 VStack(spacing: 0) {
-                    ChatMessageList(messages: viewStore.conversation.messages)
+                    ChatMessageList(
+                        messages: viewStore.conversation.messages,
+                        onTap: { isInputFocused = false }
+                    )
                     if let error = viewStore.error {
                         ChatErrorBanner(error: error)
                             .offset(y: reduceMotion ? 0 : (errorShakeTrigger % 2 == 0 ? 0 : -4))
@@ -40,7 +44,8 @@ struct ChatView: View {
                             send: ChatFeature.Action.inputChanged
                         ),
                         isStreaming: viewStore.isStreaming,
-                        onSend: { viewStore.send(.sendTapped) }
+                        onSend: { viewStore.send(.sendTapped) },
+                        focus: $isInputFocused
                     )
                 }
                 .navigationBarTitleDisplayMode(.inline)
@@ -73,6 +78,12 @@ struct ChatView: View {
                         if error == .unauthorized {
                             showUnauthorizedAlert = true
                         }
+                    }
+                }
+                .onChange(of: viewStore.isStreaming) { wasStreaming, isStreaming in
+                    // streaming 끝났고 error 없으면 응답 수신 완료 → success haptic.
+                    if wasStreaming && !isStreaming && viewStore.error == nil {
+                        UINotificationFeedbackGenerator().notificationOccurred(.success)
                     }
                 }
                 .alert(

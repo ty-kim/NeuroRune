@@ -7,6 +7,7 @@ import SwiftUI
 
 struct ChatMessageList: View {
     let messages: [Message]
+    var onTap: () -> Void = {}
 
     var body: some View {
         ScrollViewReader { proxy in
@@ -22,7 +23,10 @@ struct ChatMessageList: View {
                 }
                 .padding()
             }
-            .scrollDismissesKeyboard(.interactively)
+            .scrollDismissesKeyboard(.immediately)
+            .simultaneousGesture(
+                TapGesture().onEnded { onTap() }
+            )
             .onChange(of: messages.count) {
                 withAnimation {
                     let lastIndex = messages.count - 1
