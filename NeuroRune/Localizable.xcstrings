@@ -1521,6 +1521,24 @@
         }
       }
     },
+    "memory.tab.global" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Global" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "グローバル" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "글로벌" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "全局" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "全域" } }
+      }
+    },
+    "memory.tab.local" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Project" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "プロジェクト" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "프로젝트" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "项目" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "專案" } }
+      }
+    },
     "memory.title" : {
       "localizations" : {
         "en" : {

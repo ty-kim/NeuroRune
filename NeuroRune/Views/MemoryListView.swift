@@ -69,7 +69,7 @@ struct MemoryListView: View {
                 }
                 .sheet(isPresented: $showCredentialsSheet) {
                     GitHubCredentialsView(
-                        store: Store(initialState: GitHubCredentialsFeature.State()) {
+                        store: Store(initialState: GitHubCredentialsFeature.State(role: viewStore.role)) {
                             GitHubCredentialsFeature()
                         },
                         onSaved: {
@@ -79,16 +79,14 @@ struct MemoryListView: View {
                     )
                 }
                 .sheet(isPresented: $showCreateSheet) {
-                    let basePath: String = (try? GitHubCredentialsClient.liveValue.load(.global)).flatMap { $0?.path } ?? ""
+                    let basePath: String = (try? GitHubCredentialsClient.liveValue.load(viewStore.role)).flatMap { $0?.path } ?? ""
                     MemoryCreateView(
                         store: Store(
-                            initialState: MemoryCreateFeature.State(basePath: basePath)
+                            initialState: MemoryCreateFeature.State(role: viewStore.role, basePath: basePath)
                         ) {
                             MemoryCreateFeature()
                         },
                         onCreated: { file in
-                            // 낙관적 insert — GitHub eventual consistency 감안해서
-                            // 서버 재조회 없이 즉시 목록에 반영.
                             viewStore.send(.fileAdded(file))
                             showCreateSheet = false
                         },
@@ -131,7 +129,7 @@ struct MemoryListView: View {
             ForEach(viewStore.files) { file in
                 NavigationLink {
                     MemoryEditView(
-                        store: Store(initialState: MemoryEditFeature.State(file: file)) {
+                        store: Store(initialState: MemoryEditFeature.State(file: file, role: viewStore.role)) {
                             MemoryEditFeature()
                         }
                     )

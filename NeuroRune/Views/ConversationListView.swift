@@ -66,11 +66,7 @@ struct ConversationListView: View {
                         send: ConversationListFeature.Action.memoryListDismissed
                     )
                 ) {
-                    MemoryListView(
-                        store: Store(initialState: MemoryListFeature.State()) {
-                            MemoryListFeature()
-                        }
-                    )
+                    MemoryHubView()
                 }
                 .navigationDestination(
                     item: viewStore.binding(
