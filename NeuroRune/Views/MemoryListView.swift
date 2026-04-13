@@ -102,13 +102,21 @@ struct MemoryListView: View {
     private func fileList(_ viewStore: ViewStoreOf<MemoryListFeature>) -> some View {
         List {
             ForEach(viewStore.files) { file in
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(file.name)
-                        .font(.body)
-                    if file.path != file.name {
-                        Text(file.path)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
+                NavigationLink {
+                    MemoryEditView(
+                        store: Store(initialState: MemoryEditFeature.State(file: file)) {
+                            MemoryEditFeature()
+                        }
+                    )
+                } label: {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(file.name)
+                            .font(.body)
+                        if file.path != file.name {
+                            Text(file.path)
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
                     }
                 }
                 .swipeActions(edge: .trailing, allowsFullSwipe: false) {
