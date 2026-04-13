@@ -9,7 +9,8 @@ import os
 nonisolated extension LLMClient {
 
     static func anthropic(session: URLSession, apiKey: String) -> LLMClient {
-        LLMClient(
+        let stream = LLMClient.anthropicStream(session: session, apiKey: apiKey)
+        return LLMClient(
             sendMessage: { messages, model in
                 Logger.network.info("send request, model: \(model.id, privacy: .public), messages: \(messages.count)")
 
@@ -54,7 +55,8 @@ nonisolated extension LLMClient {
                     Logger.network.error("server error, status: \(http.statusCode), message: \(message)")
                     throw LLMError.server(status: http.statusCode, message: message)
                 }
-            }
+            },
+            streamMessage: stream.streamMessage
         )
     }
 }
