@@ -31,6 +31,7 @@ struct MessageView: View {
 
     private var userBubble: some View {
         Text(message.content)
+            .textSelection(.enabled)
             .padding(12)
             .background(Color.accentColor)
             .foregroundStyle(.white)
@@ -40,9 +41,20 @@ struct MessageView: View {
     private var assistantBubble: some View {
         Markdown(message.content)
             .markdownTheme(.neuroRune)
+            .markdownImageProvider(DisabledImageProvider())
+            .textSelection(.enabled)
             .padding(12)
             .background(Color(.secondarySystemBackground))
             .clipShape(RoundedRectangle(cornerRadius: 16))
+    }
+}
+
+// LLM 응답의 이미지 URL 자동 fetch 차단 (IP/환경 정보 누출 방지).
+private struct DisabledImageProvider: ImageProvider {
+    func makeImage(url: URL?) -> some View {
+        Text("🖼️ [image]")
+            .font(.caption)
+            .foregroundStyle(.secondary)
     }
 }
 

@@ -2,379 +2,191 @@
 //  AnthropicClientTests.swift
 //  NeuroRuneTests
 //
+//  LLMClient.anthropic(session:apiKey:) 통합 테스트.
+//  URLProtocolStub로 HTTP layer 가짜 응답을 주입, streamMessage의
+//  status 매핑, SSE chunk 수집, 에러 전파를 검증한다.
+//
 
 import Testing
 import Foundation
 @testable import NeuroRune
 
-@Suite(.serialized)
 struct AnthropicClientTests {
 
-    init() {
-        URLProtocolStub.reset()
-    }
+    // MARK: - Success path
 
-    // MARK: - Request: URL + Method
+    @Test("SSE bytes → chunk를 순서대로 수집한다")
+    func collectsChunksInOrder() async throws {
+        let sse = """
+        event: content_block_delta
+        data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"Hello"}}
 
-    @Test("sendMessage는 Anthropic messages endpoint로 POST 한다")
-    func sendMessagePostsToAnthropicEndpoint() async throws {
-        stubSuccess()
-        let client = LLMClient.anthropic(session: Self.makeSession(), apiKey: "sk-test")
+        event: content_block_delta
+        data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":" world"}}
 
-        _ = try? await client.sendMessage([Self.testUserMessage], .opus46)
+        event: message_stop
+        data: {"type":"message_stop"}
 
-        let captured = URLProtocolStub.lastRequest
-        #expect(captured?.url?.absoluteString == "https://api.anthropic.com/v1/messages")
-        #expect(captured?.httpMethod == "POST")
-    }
+        """
+        let stub = stubStatus(200, body: sse)
+        let client = LLMClient.anthropic(session: stub.session, apiKey: "sk-test")
 
-    // MARK: - Request: Headers
-
-    @Test("요청 헤더에 x-api-key가 포함된다")
-    func includesApiKeyHeader() async throws {
-        stubSuccess()
-        let client = LLMClient.anthropic(session: Self.makeSession(), apiKey: "sk-ant-abc123")
-
-        _ = try? await client.sendMessage([Self.testUserMessage], .opus46)
-
-        #expect(URLProtocolStub.lastRequest?.value(forHTTPHeaderField: "x-api-key") == "sk-ant-abc123")
-    }
-
-    @Test("요청 헤더에 anthropic-version: 2023-06-01이 포함된다")
-    func includesAnthropicVersionHeader() async throws {
-        stubSuccess()
-        let client = LLMClient.anthropic(session: Self.makeSession(), apiKey: "sk-test")
-
-        _ = try? await client.sendMessage([Self.testUserMessage], .opus46)
-
-        #expect(URLProtocolStub.lastRequest?.value(forHTTPHeaderField: "anthropic-version") == "2023-06-01")
-    }
-
-    @Test("요청 헤더에 content-type: application/json이 포함된다")
-    func includesContentTypeHeader() async throws {
-        stubSuccess()
-        let client = LLMClient.anthropic(session: Self.makeSession(), apiKey: "sk-test")
-
-        _ = try? await client.sendMessage([Self.testUserMessage], .opus46)
-
-        #expect(URLProtocolStub.lastRequest?.value(forHTTPHeaderField: "content-type") == "application/json")
-    }
-
-    // MARK: - Request: Body
-
-    @Test("body의 model 필드가 전달된 LLMModel.id와 일치한다")
-    func bodyModelFieldMatchesProvidedModel() async throws {
-        stubSuccess()
-        let client = LLMClient.anthropic(session: Self.makeSession(), apiKey: "sk-test")
-
-        _ = try? await client.sendMessage([Self.testUserMessage], .sonnet46)
-
-        let body = try Self.decodeCapturedBody()
-        #expect(body["model"] as? String == "claude-sonnet-4-6")
-    }
-
-    @Test("body의 messages 배열이 role/content 형태로 직렬화된다")
-    func bodyMessagesFieldIsSerializedCorrectly() async throws {
-        stubSuccess()
-        let client = LLMClient.anthropic(session: Self.makeSession(), apiKey: "sk-test")
-        let messages = [
-            Message(role: .user, content: "안녕", createdAt: Date()),
-            Message(role: .assistant, content: "반갑다", createdAt: Date()),
-            Message(role: .user, content: "다시", createdAt: Date())
-        ]
-
-        _ = try? await client.sendMessage(messages, .opus46)
-
-        let body = try Self.decodeCapturedBody()
-        let bodyMessages = body["messages"] as? [[String: String]]
-        #expect(bodyMessages?.count == 3)
-        #expect(bodyMessages?[0] == ["role": "user", "content": "안녕"])
-        #expect(bodyMessages?[1] == ["role": "assistant", "content": "반갑다"])
-        #expect(bodyMessages?[2] == ["role": "user", "content": "다시"])
-    }
-
-    @Test("body에 max_tokens 필드가 포함된다 (기본 4096)")
-    func bodyHasMaxTokensField() async throws {
-        stubSuccess()
-        let client = LLMClient.anthropic(session: Self.makeSession(), apiKey: "sk-test")
-
-        _ = try? await client.sendMessage([Self.testUserMessage], .opus46)
-
-        let body = try Self.decodeCapturedBody()
-        #expect(body["max_tokens"] as? Int == 4096)
-    }
-
-    // MARK: - Response: 200 parsing
-
-    @Test("200 응답의 content[0].text를 assistant Message로 파싱한다")
-    func parses200ResponseIntoAssistantMessage() async throws {
-        URLProtocolStub.setHandler { request in
-            let http = HTTPURLResponse(
-                url: request.url!,
-                statusCode: 200,
-                httpVersion: nil,
-                headerFields: ["Content-Type": "application/json"]
-            )!
-            let body: [String: Any] = [
-                "id": "msg_01XYZ",
-                "type": "message",
-                "role": "assistant",
-                "model": "claude-opus-4-6",
-                "content": [["type": "text", "text": "안녕하세요. 반갑습니다."]],
-                "stop_reason": "end_turn"
-            ]
-            let data = try? JSONSerialization.data(withJSONObject: body)
-            return (http, data, nil)
+        var collected: [String] = []
+        let stream = try await client.streamMessage([Self.userMessage], .opus46, nil, nil, nil)
+        for try await event in stream {
+            if case .textDelta(let text) = event { collected.append(text) }
         }
-        let client = LLMClient.anthropic(session: Self.makeSession(), apiKey: "sk-test")
 
-        let result = try await client.sendMessage([Self.testUserMessage], .opus46)
-
-        #expect(result.role == .assistant)
-        #expect(result.content == "안녕하세요. 반갑습니다.")
+        #expect(collected == ["Hello", " world"])
     }
 
-    // MARK: - Response: Error mapping
+    @Test("message_stop 이후 라인은 무시되고 스트림 종료된다")
+    func messageStopTerminatesStream() async throws {
+        let sse = """
+        event: content_block_delta
+        data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"A"}}
 
-    @Test("401 응답은 LLMError.unauthorized를 throw한다")
+        event: message_stop
+        data: {"type":"message_stop"}
+
+        event: content_block_delta
+        data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"SHOULD_NOT_APPEAR"}}
+
+        """
+        let stub = stubStatus(200, body: sse)
+        let client = LLMClient.anthropic(session: stub.session, apiKey: "sk-test")
+
+        var collected: [String] = []
+        let stream = try await client.streamMessage([Self.userMessage], .opus46, nil, nil, nil)
+        for try await event in stream {
+            if case .textDelta(let text) = event { collected.append(text) }
+        }
+
+        #expect(collected == ["A"])
+    }
+
+    // MARK: - Status mapping
+
+    @Test("401 → LLMError.unauthorized")
     func mapsUnauthorized() async throws {
-        Self.stubStatus(401, body: #"{"error":{"type":"authentication_error","message":"invalid"}}"#)
-        let client = LLMClient.anthropic(session: Self.makeSession(), apiKey: "sk-bad")
+        let stub = stubStatus(401, body: #"{"error":{"type":"authentication_error"}}"#)
+        let client = LLMClient.anthropic(session: stub.session, apiKey: "sk-bad")
 
         await #expect(throws: LLMError.unauthorized) {
-            _ = try await client.sendMessage([Self.testUserMessage], .opus46)
+            _ = try await client.streamMessage([Self.userMessage], .opus46, nil, nil, nil)
         }
     }
 
-    @Test("429 응답은 LLMError.rateLimited를 throw한다")
+    @Test("429 → LLMError.rateLimited")
     func mapsRateLimited() async throws {
-        Self.stubStatus(429, body: #"{"error":{"type":"rate_limit_error"}}"#)
-        let client = LLMClient.anthropic(session: Self.makeSession(), apiKey: "sk-test")
+        let stub = stubStatus(429, body: #"{"error":{"type":"rate_limit_error"}}"#)
+        let client = LLMClient.anthropic(session: stub.session, apiKey: "sk-test")
 
         await #expect(throws: LLMError.rateLimited) {
-            _ = try await client.sendMessage([Self.testUserMessage], .opus46)
+            _ = try await client.streamMessage([Self.userMessage], .opus46, nil, nil, nil)
         }
     }
 
-    @Test("5xx 응답은 LLMError.server(status:message:)를 throw한다")
+    @Test("5xx → LLMError.server")
     func mapsServerError() async throws {
-        Self.stubStatus(503, body: #"{"error":{"type":"overloaded_error","message":"Service overloaded"}}"#)
-        let client = LLMClient.anthropic(session: Self.makeSession(), apiKey: "sk-test")
+        let stub = stubStatus(503, body: #"{"error":{"type":"overloaded_error"}}"#)
+        let client = LLMClient.anthropic(session: stub.session, apiKey: "sk-test")
 
-        await #expect(throws: LLMError.server(status: 503, message: "Service overloaded")) {
-            _ = try await client.sendMessage([Self.testUserMessage], .opus46)
+        await #expect {
+            _ = try await client.streamMessage([Self.userMessage], .opus46, nil, nil, nil)
+        } throws: { error in
+            guard case LLMError.server(let status, _) = error else { return false }
+            return status == 503
         }
     }
 
-    @Test("URLError는 LLMError.network로 wrap된다")
+    @Test("URLError → LLMError.network")
     func mapsNetworkError() async throws {
-        URLProtocolStub.setHandler { request in
+        let stub = URLProtocolStub.Stub()
+        stub.setHandler { request in
             let dummy = HTTPURLResponse(url: request.url!, statusCode: 0, httpVersion: nil, headerFields: nil)!
             return (dummy, nil, URLError(.timedOut))
         }
-        let client = LLMClient.anthropic(session: Self.makeSession(), apiKey: "sk-test")
+        let client = LLMClient.anthropic(session: stub.session, apiKey: "sk-test")
 
         await #expect {
-            _ = try await client.sendMessage([Self.testUserMessage], .opus46)
+            _ = try await client.streamMessage([Self.userMessage], .opus46, nil, nil, nil)
         } throws: { error in
-            guard case let LLMError.network(description) = error else { return false }
-            return !description.isEmpty
-        }
-    }
-
-    @Test("빈 content 배열은 LLMError.decoding으로 throw된다")
-    func mapsEmptyContentToDecodingError() async throws {
-        URLProtocolStub.setHandler { request in
-            let http = HTTPURLResponse(
-                url: request.url!,
-                statusCode: 200,
-                httpVersion: nil,
-                headerFields: ["Content-Type": "application/json"]
-            )!
-            let body: [String: Any] = [
-                "id": "msg_empty",
-                "type": "message",
-                "role": "assistant",
-                "content": [],
-                "model": "claude-opus-4-6",
-                "stop_reason": "end_turn"
-            ]
-            let data = try? JSONSerialization.data(withJSONObject: body)
-            return (http, data, nil)
-        }
-        let client = LLMClient.anthropic(session: Self.makeSession(), apiKey: "sk-test")
-
-        await #expect {
-            _ = try await client.sendMessage([Self.testUserMessage], .opus46)
-        } throws: { error in
-            guard case LLMError.decoding = error else { return false }
+            guard case LLMError.network = error else { return false }
             return true
         }
     }
 
-    @Test("content에 text block이 없으면 LLMError.decoding으로 throw된다")
-    func mapsNoTextBlockToDecodingError() async throws {
-        URLProtocolStub.setHandler { request in
-            let http = HTTPURLResponse(
-                url: request.url!,
-                statusCode: 200,
-                httpVersion: nil,
-                headerFields: ["Content-Type": "application/json"]
-            )!
-            let body: [String: Any] = [
-                "id": "msg_tool",
-                "type": "message",
-                "role": "assistant",
-                "content": [
-                    ["type": "tool_use", "id": "tool_1", "name": "calculator", "input": ["x": 1]]
-                ],
-                "model": "claude-opus-4-6",
-                "stop_reason": "tool_use"
-            ]
-            let data = try? JSONSerialization.data(withJSONObject: body)
-            return (http, data, nil)
-        }
-        let client = LLMClient.anthropic(session: Self.makeSession(), apiKey: "sk-test")
+    // MARK: - Stream error propagation
+
+    @Test("스트림 중 error 이벤트는 LLMError.server로 throw된다")
+    func streamErrorEventPropagates() async throws {
+        let sse = """
+        event: content_block_delta
+        data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"partial"}}
+
+        event: error
+        data: {"type":"error","error":{"type":"overloaded_error","message":"Service overloaded"}}
+
+        """
+        let stub = stubStatus(200, body: sse)
+        let client = LLMClient.anthropic(session: stub.session, apiKey: "sk-test")
+
+        var collected: [String] = []
+        let stream = try await client.streamMessage([Self.userMessage], .opus46, nil, nil, nil)
 
         await #expect {
-            _ = try await client.sendMessage([Self.testUserMessage], .opus46)
+            for try await event in stream {
+                if case .textDelta(let text) = event { collected.append(text) }
+            }
+        } throws: { error in
+            guard case LLMError.server(_, let message) = error else { return false }
+            return message == "Service overloaded"
+        }
+
+        #expect(collected == ["partial"])
+    }
+
+    @Test("message_stop 없이 바이트 스트림 종료 시 LLMError.decoding throw")
+    func streamEndWithoutStopThrowsDecoding() async throws {
+        let sse = """
+        event: content_block_delta
+        data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"partial"}}
+
+        """
+        let stub = stubStatus(200, body: sse)
+        let client = LLMClient.anthropic(session: stub.session, apiKey: "sk-test")
+
+        var collected: [String] = []
+        let stream = try await client.streamMessage([Self.userMessage], .opus46, nil, nil, nil)
+
+        await #expect {
+            for try await event in stream {
+                if case .textDelta(let text) = event { collected.append(text) }
+            }
         } throws: { error in
             guard case LLMError.decoding = error else { return false }
             return true
         }
-    }
 
-    @Test("content에 여러 text block이 있으면 순서대로 결합된다")
-    func concatenatesMultipleTextBlocks() async throws {
-        URLProtocolStub.setHandler { request in
-            let http = HTTPURLResponse(
-                url: request.url!,
-                statusCode: 200,
-                httpVersion: nil,
-                headerFields: ["Content-Type": "application/json"]
-            )!
-            let body: [String: Any] = [
-                "id": "msg_multi",
-                "type": "message",
-                "role": "assistant",
-                "content": [
-                    ["type": "text", "text": "안녕. "],
-                    ["type": "text", "text": "반갑다."]
-                ],
-                "model": "claude-opus-4-6",
-                "stop_reason": "end_turn"
-            ]
-            let data = try? JSONSerialization.data(withJSONObject: body)
-            return (http, data, nil)
-        }
-        let client = LLMClient.anthropic(session: Self.makeSession(), apiKey: "sk-test")
-
-        let result = try await client.sendMessage([Self.testUserMessage], .opus46)
-
-        #expect(result.content == "안녕. 반갑다.")
-    }
-
-    @Test("잘못된 JSON 응답은 LLMError.decoding으로 wrap된다")
-    func mapsDecodingError() async throws {
-        URLProtocolStub.setHandler { request in
-            let http = HTTPURLResponse(
-                url: request.url!,
-                statusCode: 200,
-                httpVersion: nil,
-                headerFields: ["Content-Type": "application/json"]
-            )!
-            return (http, Data("not a json".utf8), nil)
-        }
-        let client = LLMClient.anthropic(session: Self.makeSession(), apiKey: "sk-test")
-
-        await #expect {
-            _ = try await client.sendMessage([Self.testUserMessage], .opus46)
-        } throws: { error in
-            guard case LLMError.decoding = error else { return false }
-            return true
-        }
-    }
-
-    private static func stubStatus(_ status: Int, body: String) {
-        URLProtocolStub.setHandler { request in
-            let http = HTTPURLResponse(
-                url: request.url!,
-                statusCode: status,
-                httpVersion: nil,
-                headerFields: ["Content-Type": "application/json"]
-            )!
-            return (http, Data(body.utf8), nil)
-        }
+        #expect(collected == ["partial"])
     }
 
     // MARK: - Helpers
 
-    static let testUserMessage = Message(
-        role: .user,
-        content: "hello",
-        createdAt: Date(timeIntervalSince1970: 1_000_000)
-    )
+    static let userMessage = APIMessage.text(role: "user", content: "hi")
 
-    static func makeSession() -> URLSession {
-        URLProtocolStub.makeSession()
-    }
-
-    private func stubSuccess() {
-        URLProtocolStub.setHandler { request in
+    private func stubStatus(_ status: Int, body: String) -> URLProtocolStub.Stub {
+        let stub = URLProtocolStub.Stub()
+        stub.setHandler { request in
             let http = HTTPURLResponse(
                 url: request.url!,
-                statusCode: 200,
-                httpVersion: nil,
-                headerFields: ["Content-Type": "application/json"]
+                statusCode: status,
+                httpVersion: "HTTP/1.1",
+                headerFields: ["Content-Type": "text/event-stream"]
             )!
-            let body: [String: Any] = [
-                "id": "msg_01",
-                "type": "message",
-                "role": "assistant",
-                "content": [["type": "text", "text": "ok"]],
-                "model": "claude-opus-4-6",
-                "stop_reason": "end_turn"
-            ]
-            let data = try? JSONSerialization.data(withJSONObject: body)
-            return (http, data, nil)
+            return (http, Data(body.utf8), nil)
         }
-    }
-
-    static func decodeCapturedBody() throws -> [String: Any] {
-        guard let data = URLProtocolStub.lastRequest?.httpBodyStream?.readAllData()
-                ?? URLProtocolStub.lastRequest?.httpBody else {
-            throw TestError.noRequestBody
-        }
-        guard let json = try JSONSerialization.jsonObject(with: data) as? [String: Any] else {
-            throw TestError.bodyNotJSON
-        }
-        return json
-    }
-
-    enum TestError: Error {
-        case noRequestBody
-        case bodyNotJSON
-    }
-}
-
-private extension InputStream {
-    func readAllData() -> Data {
-        open()
-        defer { close() }
-
-        var data = Data()
-        let bufferSize = 1024
-        let buffer = UnsafeMutablePointer<UInt8>.allocate(capacity: bufferSize)
-        defer { buffer.deallocate() }
-
-        while hasBytesAvailable {
-            let read = self.read(buffer, maxLength: bufferSize)
-            if read > 0 {
-                data.append(buffer, count: read)
-            } else {
-                break
-            }
-        }
-        return data
+        return stub
     }
 }

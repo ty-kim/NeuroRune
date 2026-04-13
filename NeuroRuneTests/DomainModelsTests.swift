@@ -47,6 +47,18 @@ struct ConversationTests {
         #expect(updated.modelId == original.modelId)
     }
 
+    @Test("Conversation.effort 기본값은 nil (서버 디폴트)")
+    func conversationEffortDefaultsNil() {
+        let conversation = Conversation.empty(modelId: "claude-opus-4-6")
+        #expect(conversation.effort == nil)
+    }
+
+    @Test("Conversation.empty(effort:)로 초기값 설정 가능")
+    func conversationEmptyAcceptsEffort() {
+        let conversation = Conversation.empty(modelId: "claude-opus-4-6", effort: .medium)
+        #expect(conversation.effort == .medium)
+    }
+
     @Test("Conversation은 id, title, messages, modelId, createdAt을 저장한다")
     func conversationStoresProperties() {
         let id = UUID()
@@ -108,5 +120,16 @@ struct LLMModelTests {
 
         #expect(result.id == "unknown-model")
         #expect(result.displayName == "unknown-model")
+    }
+
+    @Test("opus46/sonnet46는 supportsEffort == true")
+    func effortSupportedModels() {
+        #expect(LLMModel.opus46.supportsEffort == true)
+        #expect(LLMModel.sonnet46.supportsEffort == true)
+    }
+
+    @Test("haiku45는 supportsEffort == false")
+    func haiku45DoesNotSupportEffort() {
+        #expect(LLMModel.haiku45.supportsEffort == false)
     }
 }

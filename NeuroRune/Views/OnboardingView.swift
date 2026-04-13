@@ -10,6 +10,8 @@ struct OnboardingView: View {
     let store: StoreOf<OnboardingFeature>
     var onComplete: () -> Void = {}
 
+    @State private var isKeyRevealed = false
+
     var body: some View {
         WithViewStore(store, observe: { $0 }) { viewStore in
             NavigationStack {
@@ -27,18 +29,39 @@ struct OnboardingView: View {
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                         .multilineTextAlignment(.center)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .padding(.horizontal)
 
                     VStack(alignment: .leading, spacing: 8) {
-                        TextField("sk-ant-...", text: viewStore.binding(
-                            get: \.apiKeyInput,
-                            send: OnboardingFeature.Action.apiKeyChanged
-                        ))
-                        .textFieldStyle(.roundedBorder)
-                        .textContentType(.password)
-                        .autocorrectionDisabled()
-                        .textInputAutocapitalization(.never)
-                        .accessibilityLabel(String(localized: "a11y.onboarding.apiKeyField"))
-                        .accessibilityHint(String(localized: "a11y.onboarding.apiKeyHint"))
+                        HStack(spacing: 8) {
+                            Group {
+                                if isKeyRevealed {
+                                    TextField("sk-ant-...", text: viewStore.binding(
+                                        get: \.apiKeyInput,
+                                        send: OnboardingFeature.Action.apiKeyChanged
+                                    ))
+                                } else {
+                                    SecureField("sk-ant-...", text: viewStore.binding(
+                                        get: \.apiKeyInput,
+                                        send: OnboardingFeature.Action.apiKeyChanged
+                                    ))
+                                }
+                            }
+                            .textFieldStyle(.roundedBorder)
+                            .textContentType(.password)
+                            .autocorrectionDisabled()
+                            .textInputAutocapitalization(.never)
+                            .accessibilityLabel(String(localized: "a11y.onboarding.apiKeyField"))
+                            .accessibilityHint(String(localized: "a11y.onboarding.apiKeyHint"))
+
+                            Button {
+                                isKeyRevealed.toggle()
+                            } label: {
+                                Image(systemName: isKeyRevealed ? "eye.slash" : "eye")
+                                    .foregroundStyle(.secondary)
+                            }
+                            .accessibilityLabel(String(localized: isKeyRevealed ? "a11y.onboarding.hideKey" : "a11y.onboarding.revealKey"))
+                        }
 
                         if let error = viewStore.error {
                             Text(error)
@@ -67,8 +90,7 @@ struct OnboardingView: View {
                 }
                 .navigationTitle("NeuroRune")
                 .onChange(of: viewStore.isSaving) { wasSaving, isSaving in
-                    if wasSaving && !isSaving && viewStore.error == nil
-                        && viewStore.apiKeyInput.hasPrefix("sk-ant-") {
+                    if wasSaving && !isSaving && viewStore.error == nil {
                         onComplete()
                     }
                 }

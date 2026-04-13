@@ -65,6 +65,7 @@ struct OnboardingFeatureTests {
         }
         await store.receive(.saveSucceeded) {
             $0.isSaving = false
+            $0.apiKeyInput = ""
         }
 
         #expect(savedKey.value == "anthropic_api_key")
@@ -89,6 +90,44 @@ struct OnboardingFeatureTests {
         await store.receive(.saveFailed(KeychainError.unhandled(status: -25300).localizedDescription)) {
             $0.isSaving = false
             $0.error = KeychainError.unhandled(status: -25300).localizedDescription
+        }
+    }
+
+    @Test("saveTapped는 앞뒤 공백/개행을 trim하고 저장한다")
+    func saveTappedTrimsWhitespace() async {
+        let savedValue = LockIsolated<String?>(nil)
+
+        let store = TestStore(
+            initialState: OnboardingFeature.State(apiKeyInput: "  sk-ant-valid\n")
+        ) {
+            OnboardingFeature()
+        } withDependencies: {
+            $0.keychainClient.save = { @Sendable _, value in
+                savedValue.setValue(value)
+            }
+        }
+
+        await store.send(.saveTapped) {
+            $0.isSaving = true
+        }
+        await store.receive(.saveSucceeded) {
+            $0.isSaving = false
+            $0.apiKeyInput = ""
+        }
+
+        #expect(savedValue.value == "sk-ant-valid")
+    }
+
+    @Test("saveSucceeded는 apiKeyInput을 clear한다")
+    func saveSucceededClearsInput() async {
+        let store = TestStore(
+            initialState: OnboardingFeature.State(apiKeyInput: "sk-ant-abc")
+        ) {
+            OnboardingFeature()
+        }
+
+        await store.send(.saveSucceeded) {
+            $0.apiKeyInput = ""
         }
     }
 

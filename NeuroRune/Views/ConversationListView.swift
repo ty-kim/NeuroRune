@@ -7,83 +7,122 @@ import SwiftUI
 import ComposableArchitecture
 
 struct ConversationListView: View {
+    let store: StoreOf<ConversationListFeature>
     var onApiKeyReset: () -> Void = {}
 
-    @State private var conversations: [Conversation] = []
-    @State private var isLoading = true
-    @State private var selectedConversation: Conversation?
-    @State private var showModelPicker = false
-    @State private var selectedModel: LLMModel = .sonnet46
-    @State private var showResetConfirmation = false
-
     var body: some View {
-        NavigationStack {
-            Group {
-                if isLoading {
-                    ProgressView()
-                } else if conversations.isEmpty {
-                    emptyState
-                } else {
-                    conversationList
-                }
-            }
-            .navigationTitle("NeuroRune")
-            .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    Button {
-                        showResetConfirmation = true
-                    } label: {
-                        Image(systemName: "gearshape")
-                            .font(.title3)
+        WithViewStore(store, observe: { $0 }) { viewStore in
+            NavigationStack {
+                Group {
+                    if viewStore.isLoading {
+                        ProgressView()
+                    } else if viewStore.conversations.isEmpty {
+                        emptyState(viewStore)
+                    } else {
+                        conversationList(viewStore)
                     }
-                    .accessibilityLabel(String(localized: "a11y.chat.menuButton"))
                 }
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button {
-                        showModelPicker = true
-                    } label: {
-                        Image(systemName: "plus.circle")
-                            .font(.title3)
+                .navigationTitle("NeuroRune")
+                .toolbar {
+                    ToolbarItem(placement: .topBarLeading) {
+                        Button {
+                            viewStore.send(.resetApiKeyTapped)
+                        } label: {
+                            Image(systemName: "gearshape")
+                                .font(.title3)
+                        }
+                        .accessibilityLabel(String(localized: "a11y.chat.menuButton"))
                     }
-                    .accessibilityLabel(String(localized: "a11y.list.newChat"))
+                    ToolbarItem(placement: .topBarTrailing) {
+                        HStack(spacing: 16) {
+                            Button {
+                                viewStore.send(.memoryListTapped)
+                            } label: {
+                                Image(systemName: "book.closed")
+                                    .font(.title3)
+                            }
+                            .accessibilityLabel(String(localized: "a11y.list.memory"))
+                            Button {
+                                viewStore.send(.newConversationTapped)
+                            } label: {
+                                Image(systemName: "plus.circle")
+                                    .font(.title3)
+                            }
+                            .accessibilityLabel(String(localized: "a11y.list.newChat"))
+                        }
+                    }
+                }
+                .sheet(
+                    isPresented: viewStore.binding(
+                        get: \.showModelPicker,
+                        send: ConversationListFeature.Action.modelPickerDismissed
+                    )
+                ) {
+                    modelPickerSheet(viewStore)
+                }
+                .sheet(
+                    isPresented: viewStore.binding(
+                        get: \.showMemoryList,
+                        send: ConversationListFeature.Action.memoryListDismissed
+                    )
+                ) {
+                    MemoryHubView()
+                }
+                .navigationDestination(
+                    item: viewStore.binding(
+                        get: \.selectedConversation,
+                        send: ConversationListFeature.Action.conversationSelected
+                    )
+                ) { conversation in
+                    ChatView(
+                        store: Store(
+                            initialState: ChatFeature.State(
+                                conversation: conversation,
+                                inputText: "",
+                                isStreaming: false,
+                                error: nil
+                            )
+                        ) {
+                            ChatFeature()
+                        },
+                        onApiKeyReset: onApiKeyReset
+                    )
                 }
             }
-            .sheet(isPresented: $showModelPicker) {
-                modelPickerSheet
+            .task {
+                await viewStore.send(.task).finish()
             }
-            .navigationDestination(item: $selectedConversation) { conversation in
-                ChatView(
-                    store: Store(
-                        initialState: ChatFeature.State(
-                            conversation: conversation,
-                            inputText: "",
-                            isStreaming: false,
-                            error: nil
-                        )
-                    ) {
-                        ChatFeature()
-                    },
-                    onApiKeyReset: onApiKeyReset
-                )
+            .alert(
+                String(localized: "error.prefix"),
+                isPresented: .init(
+                    get: { viewStore.listError != nil },
+                    set: { if !$0 { viewStore.send(.errorDismissed) } }
+                ),
+                presenting: viewStore.listError
+            ) { _ in
+                Button(String(localized: "error.cancel"), role: .cancel) {
+                    viewStore.send(.errorDismissed)
+                }
+            } message: { message in
+                Text(message)
             }
-        }
-        .task(id: selectedConversation) {
-            await loadConversations()
-        }
-        .confirmationDialog(
-            String(localized: "chat.menu.title"),
-            isPresented: $showResetConfirmation,
-            titleVisibility: .hidden
-        ) {
-            Button(String(localized: "chat.resetApiKey"), role: .destructive) {
-                let client = KeychainClient.liveValue
-                try? client.delete(OnboardingFeature.anthropicKeyName)
-                onApiKeyReset()
+            .confirmationDialog(
+                String(localized: "chat.menu.title"),
+                isPresented: viewStore.binding(
+                    get: \.showResetConfirmation,
+                    send: ConversationListFeature.Action.resetConfirmationDismissed
+                ),
+                titleVisibility: .hidden
+            ) {
+                Button(String(localized: "chat.resetApiKey"), role: .destructive) {
+                    viewStore.send(.resetApiKeyConfirmed)
+                    onApiKeyReset()
+                }
             }
         }
     }
 
-    private var emptyState: some View {
+    private func emptyState(_ viewStore: ViewStoreOf<ConversationListFeature>) -> some View {
         VStack(spacing: 16) {
             Image(systemName: "bubble.left.and.bubble.right")
                 .font(.system(size: 48))
@@ -92,30 +131,30 @@ struct ConversationListView: View {
                 .font(.subheadline)
                 .foregroundStyle(.primary.opacity(0.6))
             Button(String(localized: "list.newChat")) {
-                showModelPicker = true
+                viewStore.send(.newConversationTapped)
             }
             .buttonStyle(.borderedProminent)
         }
     }
 
-    private var conversationList: some View {
+    private func conversationList(_ viewStore: ViewStoreOf<ConversationListFeature>) -> some View {
         List {
-            ForEach(conversations) { conversation in
+            ForEach(viewStore.conversations) { conversation in
                 Button {
-                    selectedConversation = conversation
+                    viewStore.send(.conversationSelected(conversation))
                 } label: {
                     ConversationRow(conversation: conversation)
                 }
                 .contextMenu {
                     Button(role: .destructive) {
-                        deleteConversation(conversation)
+                        viewStore.send(.deleteTapped(conversation))
                     } label: {
                         Label(String(localized: "list.delete"), systemImage: "trash")
                     }
                 }
                 .swipeActions(edge: .trailing, allowsFullSwipe: true) {
                     Button(role: .destructive) {
-                        deleteConversation(conversation)
+                        viewStore.send(.deleteTapped(conversation))
                     } label: {
                         Label(String(localized: "list.delete"), systemImage: "trash")
                     }
@@ -124,27 +163,57 @@ struct ConversationListView: View {
         }
     }
 
-    private func deleteConversation(_ conversation: Conversation) {
-        Task {
-            let store = ConversationStore.liveValue
-            try? await store.delete(conversation.id)
-            conversations.removeAll { $0.id == conversation.id }
-        }
-    }
-
-    private var modelPickerSheet: some View {
+    private func modelPickerSheet(_ viewStore: ViewStoreOf<ConversationListFeature>) -> some View {
         NavigationStack {
-            List(LLMModel.allSupported) { model in
-                Button {
-                    showModelPicker = false
-                    startNewConversation(model: model)
-                } label: {
-                    HStack {
-                        Text(model.displayName)
-                            .foregroundStyle(Color("BrandTitle"))
-                        Spacer()
+            List {
+                Section {
+                    Picker(
+                        selection: viewStore.binding(
+                            get: \.selectedEffort,
+                            send: ConversationListFeature.Action.effortSelected
+                        )
+                    ) {
+                        Text(String(localized: "modelPicker.effort.default"))
+                            .tag(EffortLevel?.none)
+                        ForEach(EffortLevel.allCases) { level in
+                            Text(level.displayName).tag(EffortLevel?.some(level))
+                        }
+                    } label: {
+                        Label {
+                            Text(String(localized: "modelPicker.effort.label"))
+                        } icon: {
+                            Image(systemName: "gauge.with.dots.needle.67percent")
+                                .foregroundStyle(.purple)
+                        }
                     }
-                    .contentShape(Rectangle())
+                } footer: {
+                    Text(String(localized: "modelPicker.effort.footer"))
+                }
+
+                Section {
+                    ForEach(LLMModel.allSupported) { model in
+                        Button {
+                            viewStore.send(.modelSelected(model))
+                        } label: {
+                            HStack {
+                                Text(model.displayName)
+                                    .foregroundStyle(Color("BrandTitle"))
+                                Spacer()
+                                if model.supportsEffort {
+                                    Image(systemName: "gauge.with.dots.needle.67percent")
+                                        .foregroundStyle(.purple.opacity(0.7))
+                                        .accessibilityHidden(true)
+                                }
+                            }
+                            .contentShape(Rectangle())
+                            .accessibilityElement(children: .combine)
+                            .accessibilityLabel(
+                                model.supportsEffort
+                                    ? "\(model.displayName), \(String(localized: "a11y.modelPicker.effortSupported"))"
+                                    : model.displayName
+                            )
+                        }
+                    }
                 }
             }
             .navigationTitle(String(localized: "modelPicker.title"))
@@ -152,30 +221,12 @@ struct ConversationListView: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button(String(localized: "error.cancel")) {
-                        showModelPicker = false
+                        viewStore.send(.modelPickerDismissed)
                     }
                 }
             }
         }
         .presentationDetents([.medium])
-    }
-
-    private func loadConversations() async {
-        let store = ConversationStore.liveValue
-        do {
-            let loaded = try await store.loadAll()
-            conversations = loaded
-        } catch {
-            if conversations.isEmpty {
-                conversations = []
-            }
-        }
-        if isLoading { isLoading = false }
-    }
-
-    private func startNewConversation(model: LLMModel) {
-        let conversation = Conversation.empty(modelId: model.id)
-        selectedConversation = conversation
     }
 }
 

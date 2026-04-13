@@ -39,17 +39,18 @@ each generation passes what it learned to the next.
 - [x] Error UI (banner + shake + 401 alert)
 - [x] App icon (ᛗ Mannaz rune), brand colors (amber + dark navy)
 - [x] Launch screen (DarkNavy + Mannaz rune)
-- [x] 61 unit tests, Swift Testing + TCA TestStore
+- [x] 170 unit tests, Swift Testing + TCA TestStore
 
-### Sprint 2 — Memory & Voice (Apr 16-19)
-- [ ] GitHub-backed memory sync
+### Sprint 2 — Memory (Apr 13~)
+- [x] GitHub-backed memory sync (.global / .local roles, PAT auth)
+- [x] User-driven memory editing + commit (MemoryEditView / MemoryCreateView)
+- [x] Memory context injection (MEMORY.md auto + read_memory tool for dynamic load)
+- [ ] Tool-call transparency UI (chip showing which file Claude is reading)
+- [ ] write_memory tool with confirm modal (file name + diff → user accept)
+
+### Sprint 3 — Voice & Consolidation (Future)
 - [ ] Clova Note voice input
-- [ ] Memory context injection
-- [ ] File editing + commit
-
-### Sprint 3 — Multi-LLM (Future)
-- [ ] OpenAI (GPT-5, Codex)
-- [ ] Provider-neutral LLMClient protocol
+- [ ] Consolidation (raw chat → distilled memory proposals)
 
 ## Stack
 
@@ -65,6 +66,15 @@ each generation passes what it learned to the next.
 - iOS 17+
 - Anthropic API key (BYOK)
 - GitHub Personal Access Token (Sprint 2+)
+
+## Known Limitations
+
+- **Markdown rendering is unbounded.** Assistant responses are passed
+  directly to MarkdownUI without length/depth caps or a render timeout.
+  In a single-user BYOK app the threat model is narrow (your own LLM
+  reply on your own device), but a pathological response can still hang
+  the UI. Use lower `effort` levels to keep responses bounded, and watch
+  swift-cmark for parser CVEs.
 
 ## License
 

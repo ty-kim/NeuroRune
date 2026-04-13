@@ -6,10 +6,31 @@
 nonisolated struct LLMModel: Equatable, Sendable, Identifiable {
     let id: String
     let displayName: String
+    /// Anthropic `output_config.effort` 파라미터를 지원하는지 여부.
+    /// 4.5/4.6 모델만 true. haiku는 미지원.
+    let supportsEffort: Bool
 
-    static let opus46 = LLMModel(id: "claude-opus-4-6", displayName: "Claude Opus 4.6")
-    static let sonnet46 = LLMModel(id: "claude-sonnet-4-6", displayName: "Claude Sonnet 4.6")
-    static let haiku45 = LLMModel(id: "claude-haiku-4-5", displayName: "Claude Haiku 4.5")
+    init(id: String, displayName: String, supportsEffort: Bool = false) {
+        self.id = id
+        self.displayName = displayName
+        self.supportsEffort = supportsEffort
+    }
+
+    static let opus46 = LLMModel(
+        id: "claude-opus-4-6",
+        displayName: "Claude Opus 4.6",
+        supportsEffort: true
+    )
+    static let sonnet46 = LLMModel(
+        id: "claude-sonnet-4-6",
+        displayName: "Claude Sonnet 4.6",
+        supportsEffort: true
+    )
+    static let haiku45 = LLMModel(
+        id: "claude-haiku-4-5",
+        displayName: "Claude Haiku 4.5",
+        supportsEffort: false
+    )
 
     static let allSupported: [LLMModel] = [.opus46, .sonnet46, .haiku45]
 

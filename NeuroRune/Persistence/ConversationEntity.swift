@@ -12,6 +12,9 @@ final class ConversationEntity {
     var title: String
     var modelId: String
     var createdAt: Date
+    /// Anthropic effort 파라미터 raw value (low/medium/high/max). nil = 서버 디폴트.
+    /// SwiftData lightweight migration이 기존 row에 nil 채움.
+    var effort: String?
 
     @Relationship(deleteRule: .cascade)
     var messages: [MessageEntity]
@@ -21,12 +24,14 @@ final class ConversationEntity {
         title: String,
         modelId: String,
         createdAt: Date,
+        effort: String?,
         messages: [MessageEntity]
     ) {
         self.id = id
         self.title = title
         self.modelId = modelId
         self.createdAt = createdAt
+        self.effort = effort
         self.messages = messages
     }
 }

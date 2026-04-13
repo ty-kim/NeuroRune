@@ -10,140 +10,98 @@ nonisolated extension LLMClient {
 
     static func anthropic(session: URLSession, apiKey: String) -> LLMClient {
         LLMClient(
-            sendMessage: { messages, model in
-                Logger.network.info("send request, model: \(model.id, privacy: .public), messages: \(messages.count)")
+            streamMessage: { apiMessages, model, effort, system, tools in
+                Logger.network.info("stream request, model: \(model.id, privacy: .public), messages: \(apiMessages.count), effort: \(effort?.rawValue ?? "default", privacy: .public), system: \(system != nil ? "yes(\(system!.count))" : "no", privacy: .public), tools: \(tools?.count ?? 0)")
 
                 let request: URLRequest
                 do {
-                    request = try Self.buildRequest(messages: messages, model: model, apiKey: apiKey)
+                    request = try AnthropicRequestBuilder.build(
+                        messages: [],
+                        model: model,
+                        apiKey: apiKey,
+                        stream: true,
+                        effort: effort,
+                        system: system,
+                        tools: tools,
+                        apiMessages: apiMessages
+                    )
                 } catch {
-                    Logger.network.error("request encoding failed: \(error.localizedDescription)")
+                    Logger.network.error("stream request encoding failed: \(error.localizedDescription)")
                     throw LLMError.decoding("request encoding failed: \(error)")
                 }
 
-                let data: Data
-                let response: URLResponse
+                let (bytes, response): (URLSession.AsyncBytes, URLResponse)
                 do {
-                    (data, response) = try await session.data(for: request)
+                    (bytes, response) = try await session.bytes(for: request)
                 } catch let urlError as URLError {
-                    Logger.network.error("url error: \(urlError.localizedDescription)")
                     throw LLMError.network(urlError.localizedDescription)
                 } catch {
-                    Logger.network.error("network error: \(error.localizedDescription)")
                     throw LLMError.network(error.localizedDescription)
                 }
 
                 guard let http = response as? HTTPURLResponse else {
-                    Logger.network.error("non-http response")
                     throw LLMError.network("non-http response")
                 }
 
-                Logger.network.info("received response, status: \(http.statusCode)")
-
                 switch http.statusCode {
                 case 200..<300:
-                    return try Self.parseSuccessResponse(data: data)
+                    break
                 case 401:
-                    Logger.network.error("unauthorized (401)")
                     throw LLMError.unauthorized
                 case 429:
-                    Logger.network.error("rate limited (429)")
                     throw LLMError.rateLimited
                 default:
-                    let message = Self.parseErrorMessage(data: data)
-                    Logger.network.error("server error, status: \(http.statusCode), message: \(message)")
-                    throw LLMError.server(status: http.statusCode, message: message)
+                    throw LLMError.server(status: http.statusCode, message: "stream request failed")
+                }
+
+                return AsyncThrowingStream<LLMStreamEvent, Error> { continuation in
+                    let task = Task {
+                        do {
+                            // tool_use 블록 조립 상태: index → (id, name, partialJSON)
+                            var pendingToolUses: [Int: (id: String, name: String, partial: String)] = [:]
+                            for try await line in bytes.lines {
+                                guard line.hasPrefix("data:") else { continue }
+                                let payload = String(line.dropFirst("data:".count))
+                                switch AnthropicSSEParser.parseDataLine(payload) {
+                                case .textDelta(let text):
+                                    continuation.yield(.textDelta(text))
+                                case let .toolUseStart(index, id, name):
+                                    pendingToolUses[index] = (id, name, "")
+                                case let .toolUseInputDelta(index, partial):
+                                    if var tool = pendingToolUses[index] {
+                                        tool.partial += partial
+                                        pendingToolUses[index] = tool
+                                    }
+                                case let .contentBlockStop(index):
+                                    if let tool = pendingToolUses.removeValue(forKey: index) {
+                                        continuation.yield(.toolUseRequest(id: tool.id, name: tool.name, inputJSON: tool.partial))
+                                    }
+                                case .messageDelta:
+                                    continue
+                                case .stop:
+                                    continuation.finish()
+                                    return
+                                case .error(let message):
+                                    continuation.finish(throwing: LLMError.server(status: 0, message: message))
+                                    return
+                                case .ignored:
+                                    continue
+                                }
+                            }
+                            // 바이트 스트림이 message_stop 없이 끝나면 부분 응답을
+                            // 성공으로 저장하지 않도록 실패 처리.
+                            continuation.finish(throwing: LLMError.decoding("stream ended without message_stop"))
+                        } catch let urlError as URLError {
+                            continuation.finish(throwing: LLMError.network(urlError.localizedDescription))
+                        } catch {
+                            continuation.finish(throwing: error)
+                        }
+                    }
+                    continuation.onTermination = { _ in
+                        task.cancel()
+                    }
                 }
             }
         )
     }
-
-    private nonisolated static func parseSuccessResponse(data: Data) throws -> Message {
-        struct AnthropicResponse: Decodable {
-            struct Content: Decodable {
-                let type: String
-                let text: String?
-            }
-            let content: [Content]
-        }
-
-        let decoder = JSONDecoder()
-        let decoded: AnthropicResponse
-        do {
-            decoded = try decoder.decode(AnthropicResponse.self, from: data)
-        } catch {
-            throw LLMError.decoding(String(describing: error))
-        }
-
-        let textBlocks = decoded.content.compactMap { block -> String? in
-            guard block.type == "text" else { return nil }
-            return block.text
-        }
-
-        guard !textBlocks.isEmpty else {
-            throw LLMError.decoding("response contained no text blocks")
-        }
-
-        return Message(
-            role: .assistant,
-            content: textBlocks.joined(),
-            createdAt: Date()
-        )
-    }
-
-    private nonisolated static func parseErrorMessage(data: Data) -> String {
-        struct ErrorResponse: Decodable {
-            struct ErrorDetail: Decodable {
-                let message: String
-            }
-            let error: ErrorDetail
-        }
-        if let parsed = try? JSONDecoder().decode(ErrorResponse.self, from: data) {
-            return parsed.error.message
-        }
-        return String(data: data, encoding: .utf8) ?? "Unknown error"
-    }
-
-    private nonisolated static func buildRequest(
-        messages: [Message],
-        model: LLMModel,
-        apiKey: String
-    ) throws -> URLRequest {
-        var request = URLRequest(url: AnthropicAPI.endpoint)
-        request.httpMethod = "POST"
-        request.setValue(apiKey, forHTTPHeaderField: "x-api-key")
-        request.setValue(AnthropicAPI.apiVersion, forHTTPHeaderField: "anthropic-version")
-        request.setValue("application/json", forHTTPHeaderField: "content-type")
-
-        let body = AnthropicRequestBody(
-            model: model.id,
-            maxTokens: AnthropicAPI.defaultMaxTokens,
-            messages: messages.map {
-                AnthropicRequestBody.RequestMessage(
-                    role: $0.role.rawValue,
-                    content: $0.content
-                )
-            }
-        )
-        let encoder = JSONEncoder()
-        encoder.keyEncodingStrategy = .convertToSnakeCase
-        request.httpBody = try encoder.encode(body)
-        return request
-    }
-}
-
-private nonisolated enum AnthropicAPI {
-    static let endpoint = URL(string: "https://api.anthropic.com/v1/messages")!
-    static let apiVersion = "2023-06-01"
-    static let defaultMaxTokens = 4096
-}
-
-private nonisolated struct AnthropicRequestBody: Encodable {
-    struct RequestMessage: Encodable {
-        let role: String
-        let content: String
-    }
-    let model: String
-    let maxTokens: Int
-    let messages: [RequestMessage]
 }
