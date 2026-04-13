@@ -130,6 +130,7 @@ struct MemoryEditFeatureTests {
             $0.isSaving = false
             $0.file = expectedSaved
             $0.hasUnsavedChanges = false
+            $0.saveCount = 1
         }
 
         #expect(capturedSha.value == "old-sha")

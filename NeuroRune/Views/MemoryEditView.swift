@@ -31,6 +31,7 @@ struct MemoryEditView: View {
             .navigationTitle(viewStore.hasUnsavedChanges ? "• \(viewStore.file.name)" : viewStore.file.name)
             .navigationBarTitleDisplayMode(.inline)
             .navigationBarBackButtonHidden(viewStore.hasUnsavedChanges)
+            .sensoryFeedback(.success, trigger: viewStore.saveCount)
             .toolbar {
                 if viewStore.hasUnsavedChanges {
                     ToolbarItem(placement: .topBarLeading) {

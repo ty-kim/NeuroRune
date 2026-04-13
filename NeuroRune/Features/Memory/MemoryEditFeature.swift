@@ -16,6 +16,8 @@ nonisolated struct MemoryEditFeature: Reducer {
         var isSaving: Bool = false
         var error: String?
         var hasUnsavedChanges: Bool = false
+        /// 저장 성공 때마다 1 증가. View가 sensoryFeedback 트리거로 사용.
+        var saveCount: Int = 0
 
         init(file: GitHubFile) {
             self.file = file
@@ -105,6 +107,7 @@ nonisolated struct MemoryEditFeature: Reducer {
             state.isSaving = false
             state.file = file
             state.hasUnsavedChanges = false
+            state.saveCount += 1
             return .none
 
         case let .saveFailed(message):
