@@ -41,11 +41,16 @@ each generation passes what it learned to the next.
 - [x] Launch screen (DarkNavy + Mannaz rune)
 - [x] 168 unit tests, Swift Testing + TCA TestStore
 
-### Sprint 2 — Memory & Voice (Apr 16-19)
-- [ ] GitHub-backed memory sync
+### Sprint 2 — Memory (Apr 13~)
+- [x] GitHub-backed memory sync (.global / .local roles, PAT auth)
+- [x] User-driven memory editing + commit (MemoryEditView / MemoryCreateView)
+- [x] Memory context injection (MEMORY.md auto + read_memory tool for dynamic load)
+- [ ] Tool-call transparency UI (chip showing which file Claude is reading)
+- [ ] write_memory tool with confirm modal (file name + diff → user accept)
+
+### Sprint 3 — Voice & Consolidation (Future)
 - [ ] Clova Note voice input
-- [ ] Memory context injection
-- [ ] File editing + commit
+- [ ] Consolidation (raw chat → distilled memory proposals)
 
 ## Stack
 
