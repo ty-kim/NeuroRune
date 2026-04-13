@@ -107,6 +107,40 @@
         }
       }
     },
+    "a11y.list.memory" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Memory files"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "メモリファイル"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "메모리 파일"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "记忆文件"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "記憶檔案"
+          }
+        }
+      }
+    },
     "a11y.list.newChat" : {
       "localizations" : {
         "en" : {
@@ -487,6 +521,237 @@
         }
       }
     },
+    "credentials.owner.placeholder" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Owner"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "オーナー"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "소유자"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "所有者"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "擁有者"
+          }
+        }
+      }
+    },
+    "credentials.pat" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Personal Access Token"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "パーソナルアクセストークン"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "개인 액세스 토큰"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "个人访问令牌"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "個人存取權杖"
+          }
+        }
+      }
+    },
+    "credentials.pat.footer" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Needs 'repo' scope. Create one at github.com/settings/tokens."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "'repo' スコープが必要です。github.com/settings/tokens で作成してください。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "'repo' 권한이 필요합니다. github.com/settings/tokens에서 발급하세요."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "需要 'repo' 权限。请在 github.com/settings/tokens 创建。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "需要 'repo' 權限。請在 github.com/settings/tokens 建立。"
+          }
+        }
+      }
+    },
+    "credentials.repo" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Repository"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "リポジトリ"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "저장소"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "仓库"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "儲存庫"
+          }
+        }
+      }
+    },
+    "credentials.repo.placeholder" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Repository name"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "リポジトリ名"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "저장소 이름"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "仓库名称"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "儲存庫名稱"
+          }
+        }
+      }
+    },
+    "credentials.path" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Memory Path" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "メモリパス" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "메모리 경로" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "记忆路径" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "記憶路徑" } }
+      }
+    },
+    "credentials.path.placeholder" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "e.g. memory (leave empty for root)" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "例: memory (空欄でルート)" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "예: memory (비워두면 루트)" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "例如: memory（留空为根目录）" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "例如: memory（留空為根目錄）" } }
+      }
+    },
+    "credentials.path.footer" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Subdirectory within the repo. Leave empty to use the repo root." } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "リポジトリ内のサブディレクトリ。空欄でルートを使用。" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "repo 내 하위 디렉터리. 비워두면 repo 루트 사용." } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "仓库中的子目录。留空使用根目录。" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "儲存庫中的子目錄。留空使用根目錄。" } }
+      }
+    },
+    "credentials.title" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "GitHub Settings"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "GitHub 設定"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "GitHub 설정"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "GitHub 设置"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "GitHub 設定"
+          }
+        }
+      }
+    },
     "error.cancel" : {
       "localizations" : {
         "en" : {
@@ -725,6 +990,10 @@
         }
       }
     },
+    "ghp_..." : {
+      "comment" : "A text field for the GitHub Personal Access Token (PAT).",
+      "isCommentAutoGenerated" : true
+    },
     "list.delete" : {
       "localizations" : {
         "en" : {
@@ -925,6 +1194,363 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "無標題"
+          }
+        }
+      }
+    },
+    "main" : {
+      "comment" : "The default branch name in GitHub repositories.",
+      "isCommentAutoGenerated" : true
+    },
+    "memory.empty.noCredentials" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Connect a GitHub repository to sync memory files."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "メモリファイルを同期するには GitHub リポジトリを接続してください。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "메모리 파일을 동기화하려면 GitHub 저장소를 연결하세요."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "连接 GitHub 仓库以同步记忆文件。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "連接 GitHub 儲存庫以同步記憶檔案。"
+          }
+        }
+      }
+    },
+    "memory.empty.noFiles" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No memory files yet"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "メモリファイルはまだありません"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "메모리 파일이 없습니다"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "暂无记忆文件"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "尚無記憶檔案"
+          }
+        }
+      }
+    },
+    "memory.error.conflict" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "File changed on GitHub. Refresh and try again."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "GitHub 上でファイルが変更されました。リフレッシュしてもう一度お試しください。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "GitHub에서 파일이 변경되었습니다. 새로고침 후 다시 시도하세요."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "GitHub 上的文件已变更。请刷新后重试。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "GitHub 上的檔案已變更。請重新整理後再試。"
+          }
+        }
+      }
+    },
+    "memory.error.notFound" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Memory file or repository not found."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "メモリファイルまたはリポジトリが見つかりません。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "메모리 파일 또는 저장소를 찾을 수 없습니다."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未找到记忆文件或仓库。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "找不到記憶檔案或儲存庫。"
+          }
+        }
+      }
+    },
+    "memory.error.rateLimited" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "GitHub rate limit exceeded. Try again later."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "GitHub のレート制限を超えました。後でお試しください。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "GitHub 요청 제한을 초과했습니다. 잠시 후 다시 시도하세요."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已超过 GitHub 速率限制。请稍后再试。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已超過 GitHub 速率限制。請稍後再試。"
+          }
+        }
+      }
+    },
+    "memory.edit.discardTitle" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Discard unsaved changes?" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "未保存の変更を破棄しますか?" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "저장되지 않은 변경 사항을 버리시겠습니까?" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "放弃未保存的更改?" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "放棄未儲存的變更?" } }
+      }
+    },
+    "memory.edit.discardMessage" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Your edits will be lost." } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "編集内容が失われます。" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "편집 내용이 사라집니다." } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "您的编辑将会丢失。" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "您的編輯將會遺失。" } }
+      }
+    },
+    "memory.edit.discardConfirm" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Discard" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "破棄" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "버리기" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "放弃" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "放棄" } }
+      }
+    },
+    "memory.error.unauthorized" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "GitHub authentication failed. Check your PAT."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "GitHub 認証に失敗しました。PAT を確認してください。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "GitHub 인증 실패. PAT를 확인하세요."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "GitHub 认证失败。请检查 PAT。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "GitHub 驗證失敗。請檢查 PAT。"
+          }
+        }
+      }
+    },
+    "memory.create.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "New Memory" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "新しいメモリ" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "새 메모리" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "新建记忆" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "新增記憶" } }
+      }
+    },
+    "memory.create.filename" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Filename" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "ファイル名" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "파일명" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "文件名" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "檔名" } }
+      }
+    },
+    "memory.create.filename.placeholder" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "e.g. note_2026_04_13" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "例: note_2026_04_13" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "예: note_2026_04_13" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "例如: note_2026_04_13" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "例如: note_2026_04_13" } }
+      }
+    },
+    "memory.create.filename.footer" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : ".md extension is added automatically if omitted." } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : ".md 拡張子は省略時に自動付与されます。" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : ".md 확장자는 생략 시 자동 추가됩니다." } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "省略时自动添加 .md 扩展名。" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "省略時自動加上 .md 副檔名。" } }
+      }
+    },
+    "memory.create.content" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Content" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "内容" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "내용" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "内容" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "內容" } }
+      }
+    },
+    "memory.create.save" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Create" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "作成" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "만들기" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "创建" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "建立" } }
+      }
+    },
+    "memory.setupGitHub" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Set up GitHub"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "GitHub を設定"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "GitHub 설정"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "设置 GitHub"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "設定 GitHub"
+          }
+        }
+      }
+    },
+    "memory.title" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Memory"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "メモリ"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "메모리"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "记忆"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "記憶"
           }
         }
       }

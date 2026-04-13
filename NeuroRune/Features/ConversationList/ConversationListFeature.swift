@@ -16,6 +16,7 @@ nonisolated struct ConversationListFeature: Reducer {
         var showResetConfirmation: Bool = false
         var thinkingEnabled: Bool = false
         var listError: String?
+        var showMemoryList: Bool = false
     }
 
     enum Action: Equatable {
@@ -30,6 +31,8 @@ nonisolated struct ConversationListFeature: Reducer {
         case modelPickerDismissed
         case modelSelected(LLMModel)
         case thinkingToggled(Bool)
+        case memoryListTapped
+        case memoryListDismissed
         case resetApiKeyTapped
         case resetConfirmationDismissed
         case resetApiKeyConfirmed
@@ -103,6 +106,14 @@ nonisolated struct ConversationListFeature: Reducer {
 
         case let .thinkingToggled(enabled):
             state.thinkingEnabled = enabled
+            return .none
+
+        case .memoryListTapped:
+            state.showMemoryList = true
+            return .none
+
+        case .memoryListDismissed:
+            state.showMemoryList = false
             return .none
 
         case .resetApiKeyTapped:
