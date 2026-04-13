@@ -32,6 +32,8 @@ nonisolated struct ChatFeature: Reducer {
         @Dependency(\.uuid) var uuid
         @Dependency(\.llmClient) var llmClient
         @Dependency(\.conversationStore) var conversationStore
+        @Dependency(\.githubClient) var githubClient
+        @Dependency(\.githubCredentialsClient) var githubCredentialsClient
 
         switch action {
         case let .inputChanged(text):
@@ -77,7 +79,11 @@ nonisolated struct ChatFeature: Reducer {
             return .run { send in
                 await Self.save(conversationForDisk, using: conversationStore, send: send)
                 do {
-                    let stream = try await llmClient.streamMessage(messagesForAPI, model, conversationForDisk.effort, nil)
+                    let system = await Self.loadSystemPrompt(
+                        github: githubClient,
+                        creds: githubCredentialsClient
+                    )
+                    let stream = try await llmClient.streamMessage(messagesForAPI, model, conversationForDisk.effort, system)
                     for try await chunk in stream {
                         await send(.streamChunkReceived(chunk))
                     }
@@ -131,6 +137,26 @@ nonisolated struct ChatFeature: Reducer {
             state.persistenceError = nil
             return .none
         }
+    }
+
+    /// 두 role(.global/.local)의 MEMORY.md를 fetch해 헤더 붙여 concat.
+    /// credentials 없거나 fetch 실패한 role은 skip. 둘 다 비면 nil 반환.
+    /// fetch 실패는 LLMError로 surface하지 않음 (메모리는 보조 컨텍스트, 누락이 send 자체를 막진 않음).
+    private static func loadSystemPrompt(
+        github: GitHubClient,
+        creds: GitHubCredentialsClient
+    ) async -> String? {
+        var sections: [String] = []
+        for role in CredentialsRole.allCases {
+            guard let credentials = try? creds.load(role) else { continue }
+            let path = credentials.path.isEmpty
+                ? "MEMORY.md"
+                : "\(credentials.path)/MEMORY.md"
+            guard let file = try? await github.loadFile(credentials.repoConfig, path) else { continue }
+            let header = role == .global ? "## Global Memory" : "## Local Memory"
+            sections.append("\(header)\n\n\(file.content)")
+        }
+        return sections.isEmpty ? nil : sections.joined(separator: "\n\n")
     }
 
     /// 저장 실패 시 `.persistenceFailed(String)` 액션을 디스패치한다.
