@@ -1399,6 +1399,24 @@
         "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "放棄" } }
       }
     },
+    "memory.error.unsupportedEncoding" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "File too large or unsupported encoding. Edit on desktop." } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "ファイルが大きすぎるか、サポートされないエンコーディングです。デスクトップで編集してください。" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "파일이 너무 크거나 지원하지 않는 인코딩입니다. 데스크톱에서 편집하세요." } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "文件过大或编码不支持。请在桌面上编辑。" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "檔案過大或不支援的編碼。請於桌面編輯。" } }
+      }
+    },
+    "memory.error.invalidBase64" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Couldn't decode file content." } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "ファイル内容をデコードできませんでした。" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "파일 내용 디코딩 실패." } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "无法解码文件内容。" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "無法解碼檔案內容。" } }
+      }
+    },
     "memory.error.unauthorized" : {
       "localizations" : {
         "en" : {

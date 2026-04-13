@@ -13,6 +13,10 @@ nonisolated enum GitHubError: Error, Equatable {
     case network(String)
     case decoding(String)
     case server(status: Int, message: String)
+    /// GitHub Contents API가 base64가 아닌 인코딩 반환 (예: 1MB 초과 시 "none").
+    case unsupportedEncoding(String)
+    /// Base64 디코딩 실패.
+    case invalidBase64
 
     /// 사용자에게 노출할 로컬라이즈 메시지.
     /// 여러 Feature에서 동일 switch가 반복되던 것을 한 군데로 통합.
@@ -25,6 +29,8 @@ nonisolated enum GitHubError: Error, Equatable {
         case let .server(_, message): return message
         case let .network(message): return message
         case let .decoding(message): return message
+        case let .unsupportedEncoding(encoding): return String(localized: "memory.error.unsupportedEncoding") + " (\(encoding))"
+        case .invalidBase64: return String(localized: "memory.error.invalidBase64")
         }
     }
 }
