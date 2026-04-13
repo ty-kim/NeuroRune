@@ -23,7 +23,7 @@ struct LLMClientTests {
         )
 
         var collected = ""
-        let stream = try await stub.streamMessage([], .opus46, false)
+        let stream = try await stub.streamMessage([], .opus46, nil)
         for try await chunk in stream {
             collected += chunk
         }
@@ -47,7 +47,7 @@ struct LLMClientTests {
         } operation: {
             @Dependency(\.llmClient) var client
             var text = ""
-            let stream = try await client.streamMessage([], .sonnet46, false)
+            let stream = try await client.streamMessage([], .sonnet46, nil)
             for try await chunk in stream {
                 text += chunk
             }

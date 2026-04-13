@@ -6,29 +6,30 @@
 nonisolated struct LLMModel: Equatable, Sendable, Identifiable {
     let id: String
     let displayName: String
-    /// Anthropic Extended Thinking budget. nil이면 thinking 미지원.
-    let thinkingBudgetTokens: Int?
+    /// Anthropic `output_config.effort` 파라미터를 지원하는지 여부.
+    /// 4.5/4.6 모델만 true. haiku는 미지원.
+    let supportsEffort: Bool
 
-    init(id: String, displayName: String, thinkingBudgetTokens: Int? = nil) {
+    init(id: String, displayName: String, supportsEffort: Bool = false) {
         self.id = id
         self.displayName = displayName
-        self.thinkingBudgetTokens = thinkingBudgetTokens
+        self.supportsEffort = supportsEffort
     }
 
     static let opus46 = LLMModel(
         id: "claude-opus-4-6",
         displayName: "Claude Opus 4.6",
-        thinkingBudgetTokens: 10_000
+        supportsEffort: true
     )
     static let sonnet46 = LLMModel(
         id: "claude-sonnet-4-6",
         displayName: "Claude Sonnet 4.6",
-        thinkingBudgetTokens: 8_000
+        supportsEffort: true
     )
     static let haiku45 = LLMModel(
         id: "claude-haiku-4-5",
         displayName: "Claude Haiku 4.5",
-        thinkingBudgetTokens: nil
+        supportsEffort: false
     )
 
     static let allSupported: [LLMModel] = [.opus46, .sonnet46, .haiku45]

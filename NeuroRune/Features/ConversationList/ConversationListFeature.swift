@@ -14,7 +14,7 @@ nonisolated struct ConversationListFeature: Reducer {
         var selectedConversation: Conversation?
         var showModelPicker: Bool = false
         var showResetConfirmation: Bool = false
-        var thinkingEnabled: Bool = false
+        var selectedEffort: EffortLevel? = nil
         var listError: String?
         var showMemoryList: Bool = false
     }
@@ -30,7 +30,7 @@ nonisolated struct ConversationListFeature: Reducer {
         case newConversationTapped
         case modelPickerDismissed
         case modelSelected(LLMModel)
-        case thinkingToggled(Bool)
+        case effortSelected(EffortLevel?)
         case memoryListTapped
         case memoryListDismissed
         case resetApiKeyTapped
@@ -97,15 +97,15 @@ nonisolated struct ConversationListFeature: Reducer {
 
         case let .modelSelected(model):
             state.showModelPicker = false
-            let supportsThinking = model.thinkingBudgetTokens != nil
+            let effort = model.supportsEffort ? state.selectedEffort : nil
             state.selectedConversation = Conversation.empty(
                 modelId: model.id,
-                thinkingEnabled: state.thinkingEnabled && supportsThinking
+                effort: effort
             )
             return .none
 
-        case let .thinkingToggled(enabled):
-            state.thinkingEnabled = enabled
+        case let .effortSelected(effort):
+            state.selectedEffort = effort
             return .none
 
         case .memoryListTapped:

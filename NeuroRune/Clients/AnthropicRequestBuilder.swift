@@ -18,7 +18,7 @@ nonisolated enum AnthropicRequestBuilder {
         model: LLMModel,
         apiKey: String,
         stream: Bool = false,
-        thinkingBudgetTokens: Int? = nil
+        effort: EffortLevel? = nil
     ) throws -> URLRequest {
         var request = URLRequest(url: AnthropicAPI.endpoint)
         request.httpMethod = "POST"
@@ -26,6 +26,9 @@ nonisolated enum AnthropicRequestBuilder {
         request.setValue(AnthropicAPI.apiVersion, forHTTPHeaderField: "anthropic-version")
         request.setValue("application/json", forHTTPHeaderField: "content-type")
 
+        // 4.6 모델은 adaptive thinking + output_config.effort 사용 (manual budget_tokens deprecated).
+        // 모델이 effort 미지원이면 둘 다 omit.
+        let usesEffort = model.supportsEffort && effort != nil
         let body = AnthropicRequestBody(
             model: model.id,
             maxTokens: AnthropicAPI.defaultMaxTokens,
@@ -36,9 +39,8 @@ nonisolated enum AnthropicRequestBuilder {
                 )
             },
             stream: stream ? true : nil,
-            thinking: thinkingBudgetTokens.map {
-                AnthropicRequestBody.Thinking(type: "enabled", budgetTokens: $0)
-            }
+            thinking: usesEffort ? AnthropicRequestBody.Thinking(type: "adaptive") : nil,
+            outputConfig: usesEffort ? AnthropicRequestBody.OutputConfig(effort: effort!.rawValue) : nil
         )
         let encoder = JSONEncoder()
         encoder.keyEncodingStrategy = .convertToSnakeCase
@@ -54,16 +56,19 @@ private nonisolated struct AnthropicRequestBody: Encodable {
     }
     struct Thinking: Encodable {
         let type: String
-        let budgetTokens: Int
+    }
+    struct OutputConfig: Encodable {
+        let effort: String
     }
     let model: String
     let maxTokens: Int
     let messages: [RequestMessage]
     let stream: Bool?
     let thinking: Thinking?
+    let outputConfig: OutputConfig?
 
     enum CodingKeys: String, CodingKey {
-        case model, maxTokens, messages, stream, thinking
+        case model, maxTokens, messages, stream, thinking, outputConfig
     }
 
     func encode(to encoder: Encoder) throws {
@@ -73,5 +78,6 @@ private nonisolated struct AnthropicRequestBody: Encodable {
         try container.encode(messages, forKey: .messages)
         try container.encodeIfPresent(stream, forKey: .stream)
         try container.encodeIfPresent(thinking, forKey: .thinking)
+        try container.encodeIfPresent(outputConfig, forKey: .outputConfig)
     }
 }

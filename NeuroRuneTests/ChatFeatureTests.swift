@@ -62,9 +62,9 @@ struct ChatFeatureTests {
         await store.send(.sendTapped)
     }
 
-    @Test("sendTapped는 conversation.thinkingEnabled를 streamMessage로 전달한다")
-    func sendTappedPassesThinkingFlag() async {
-        let receivedThinking = LockIsolated<Bool?>(nil)
+    @Test("sendTapped는 conversation.effort를 streamMessage로 전달한다")
+    func sendTappedPassesEffort() async {
+        let receivedEffort = LockIsolated<EffortLevel?>(nil)
 
         var state = makeState(inputText: "hi")
         state.conversation = Conversation(
@@ -73,15 +73,15 @@ struct ChatFeatureTests {
             messages: [],
             modelId: LLMModel.opus46.id,
             createdAt: Self.fixedDate,
-            thinkingEnabled: true
+            effort: .medium
         )
 
         let store = TestStore(initialState: state) {
             ChatFeature()
         } withDependencies: {
             $0.date = .constant(Self.fixedDate)
-            $0.llmClient.streamMessage = { @Sendable _, _, useThinking in
-                receivedThinking.setValue(useThinking)
+            $0.llmClient.streamMessage = { @Sendable _, _, effort in
+                receivedEffort.setValue(effort)
                 return AsyncThrowingStream { $0.finish() }
             }
             $0.conversationStore.save = { @Sendable _ in }
@@ -100,7 +100,7 @@ struct ChatFeatureTests {
         }
 
         await store.finish()
-        #expect(receivedThinking.value == true)
+        #expect(receivedEffort.value == .medium)
     }
 
     @Test("sendTapped는 isStreaming 중이면 아무 효과 없음")

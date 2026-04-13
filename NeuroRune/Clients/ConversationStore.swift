@@ -24,7 +24,7 @@ nonisolated extension ConversationStore {
                 if let existing = try fetchEntity(by: conversation.id, in: context) {
                     existing.title = conversation.title
                     existing.modelId = conversation.modelId
-                    existing.thinkingEnabled = conversation.thinkingEnabled
+                    existing.effort = conversation.effort?.rawValue
                     for msg in existing.messages {
                         context.delete(msg)
                     }

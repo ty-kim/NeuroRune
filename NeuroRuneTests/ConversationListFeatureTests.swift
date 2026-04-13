@@ -98,10 +98,10 @@ struct ConversationListFeatureTests {
         }
     }
 
-    @Test("modelSelected는 thinkingEnabled && 모델 지원 시 Conversation에 thinking true 전달")
-    func modelSelectedRespectsThinkingCapability() async {
+    @Test("modelSelected는 selectedEffort && 모델 지원 시 Conversation에 effort 전달")
+    func modelSelectedRespectsEffortCapability() async {
         var state = ConversationListFeature.State()
-        state.thinkingEnabled = true
+        state.selectedEffort = .medium
         state.isLoading = false
 
         let store = TestStore(initialState: state) {
@@ -109,39 +109,37 @@ struct ConversationListFeatureTests {
         }
 
         // Conversation.empty 내부에서 UUID/Date 생성 → 정확한 equality 대신
-        // thinkingEnabled / modelId만 검증.
+        // effort / modelId만 검증.
         store.exhaustivity = .off
         await store.send(.modelSelected(.opus46))
         #expect(store.state.showModelPicker == false)
         #expect(store.state.selectedConversation?.modelId == LLMModel.opus46.id)
-        #expect(store.state.selectedConversation?.thinkingEnabled == true)
+        #expect(store.state.selectedConversation?.effort == .medium)
     }
 
-    @Test("modelSelected는 모델 미지원 시 thinking을 false로 강제")
-    func modelSelectedForcesThinkingFalseForUnsupportedModel() async {
+    @Test("modelSelected는 모델 미지원 시 effort를 nil로 강제")
+    func modelSelectedForcesEffortNilForUnsupportedModel() async {
         var state = ConversationListFeature.State()
-        state.thinkingEnabled = true
+        state.selectedEffort = .medium
         state.isLoading = false
 
         let store = TestStore(initialState: state) {
             ConversationListFeature()
         }
 
-        // Conversation.empty 내부에서 UUID/Date 생성이라 equality가 어려워짐.
-        // 대신 thinkingEnabled만 검증하기 위해 non-exhaustive로.
         store.exhaustivity = .off
         await store.send(.modelSelected(.haiku45))
-        #expect(store.state.selectedConversation?.thinkingEnabled == false)
+        #expect(store.state.selectedConversation?.effort == nil)
     }
 
-    @Test("thinkingToggled는 state.thinkingEnabled를 업데이트한다")
-    func thinkingToggledUpdatesState() async {
+    @Test("effortSelected는 state.selectedEffort를 업데이트한다")
+    func effortSelectedUpdatesState() async {
         let store = TestStore(initialState: ConversationListFeature.State()) {
             ConversationListFeature()
         }
 
-        await store.send(.thinkingToggled(true)) {
-            $0.thinkingEnabled = true
+        await store.send(.effortSelected(.high)) {
+            $0.selectedEffort = .high
         }
     }
 

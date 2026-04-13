@@ -14,7 +14,7 @@ extension ConversationEntity {
             title: conversation.title,
             modelId: conversation.modelId,
             createdAt: conversation.createdAt,
-            thinkingEnabled: conversation.thinkingEnabled,
+            effort: conversation.effort?.rawValue,
             messages: conversation.messages.enumerated().map { index, message in
                 MessageEntity.from(message, ordinal: index)
             }
@@ -31,7 +31,7 @@ extension ConversationEntity {
             messages: domainMessages,
             modelId: modelId,
             createdAt: createdAt,
-            thinkingEnabled: thinkingEnabled
+            effort: effort.flatMap(EffortLevel.init(rawValue:))
         )
     }
 }

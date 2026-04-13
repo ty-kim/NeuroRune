@@ -167,21 +167,27 @@ struct ConversationListView: View {
         NavigationStack {
             List {
                 Section {
-                    Toggle(
-                        isOn: viewStore.binding(
-                            get: \.thinkingEnabled,
-                            send: ConversationListFeature.Action.thinkingToggled
+                    Picker(
+                        selection: viewStore.binding(
+                            get: \.selectedEffort,
+                            send: ConversationListFeature.Action.effortSelected
                         )
                     ) {
+                        Text(String(localized: "modelPicker.effort.default"))
+                            .tag(EffortLevel?.none)
+                        ForEach(EffortLevel.allCases) { level in
+                            Text(level.displayName).tag(EffortLevel?.some(level))
+                        }
+                    } label: {
                         Label {
-                            Text(String(localized: "modelPicker.thinking.label"))
+                            Text(String(localized: "modelPicker.effort.label"))
                         } icon: {
-                            Image(systemName: "brain")
+                            Image(systemName: "gauge.with.dots.needle.67percent")
                                 .foregroundStyle(.purple)
                         }
                     }
                 } footer: {
-                    Text(String(localized: "modelPicker.thinking.footer"))
+                    Text(String(localized: "modelPicker.effort.footer"))
                 }
 
                 Section {
@@ -193,8 +199,8 @@ struct ConversationListView: View {
                                 Text(model.displayName)
                                     .foregroundStyle(Color("BrandTitle"))
                                 Spacer()
-                                if model.thinkingBudgetTokens != nil {
-                                    Image(systemName: "brain")
+                                if model.supportsEffort {
+                                    Image(systemName: "gauge.with.dots.needle.67percent")
                                         .foregroundStyle(.purple.opacity(0.7))
                                         .accessibilityHidden(true)
                                 }
@@ -202,8 +208,8 @@ struct ConversationListView: View {
                             .contentShape(Rectangle())
                             .accessibilityElement(children: .combine)
                             .accessibilityLabel(
-                                model.thinkingBudgetTokens != nil
-                                    ? "\(model.displayName), \(String(localized: "a11y.modelPicker.thinkingSupported"))"
+                                model.supportsEffort
+                                    ? "\(model.displayName), \(String(localized: "a11y.modelPicker.effortSupported"))"
                                     : model.displayName
                             )
                         }

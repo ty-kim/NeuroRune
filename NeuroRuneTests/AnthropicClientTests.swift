@@ -32,7 +32,7 @@ struct AnthropicClientTests {
         let client = LLMClient.anthropic(session: stub.session, apiKey: "sk-test")
 
         var collected: [String] = []
-        let stream = try await client.streamMessage([Self.userMessage], .opus46, false)
+        let stream = try await client.streamMessage([Self.userMessage], .opus46, nil)
         for try await chunk in stream {
             collected.append(chunk)
         }
@@ -57,7 +57,7 @@ struct AnthropicClientTests {
         let client = LLMClient.anthropic(session: stub.session, apiKey: "sk-test")
 
         var collected: [String] = []
-        let stream = try await client.streamMessage([Self.userMessage], .opus46, false)
+        let stream = try await client.streamMessage([Self.userMessage], .opus46, nil)
         for try await chunk in stream {
             collected.append(chunk)
         }
@@ -73,7 +73,7 @@ struct AnthropicClientTests {
         let client = LLMClient.anthropic(session: stub.session, apiKey: "sk-bad")
 
         await #expect(throws: LLMError.unauthorized) {
-            _ = try await client.streamMessage([Self.userMessage], .opus46, false)
+            _ = try await client.streamMessage([Self.userMessage], .opus46, nil)
         }
     }
 
@@ -83,7 +83,7 @@ struct AnthropicClientTests {
         let client = LLMClient.anthropic(session: stub.session, apiKey: "sk-test")
 
         await #expect(throws: LLMError.rateLimited) {
-            _ = try await client.streamMessage([Self.userMessage], .opus46, false)
+            _ = try await client.streamMessage([Self.userMessage], .opus46, nil)
         }
     }
 
@@ -93,7 +93,7 @@ struct AnthropicClientTests {
         let client = LLMClient.anthropic(session: stub.session, apiKey: "sk-test")
 
         await #expect {
-            _ = try await client.streamMessage([Self.userMessage], .opus46, false)
+            _ = try await client.streamMessage([Self.userMessage], .opus46, nil)
         } throws: { error in
             guard case LLMError.server(let status, _) = error else { return false }
             return status == 503
@@ -110,7 +110,7 @@ struct AnthropicClientTests {
         let client = LLMClient.anthropic(session: stub.session, apiKey: "sk-test")
 
         await #expect {
-            _ = try await client.streamMessage([Self.userMessage], .opus46, false)
+            _ = try await client.streamMessage([Self.userMessage], .opus46, nil)
         } throws: { error in
             guard case LLMError.network = error else { return false }
             return true
@@ -133,7 +133,7 @@ struct AnthropicClientTests {
         let client = LLMClient.anthropic(session: stub.session, apiKey: "sk-test")
 
         var collected: [String] = []
-        let stream = try await client.streamMessage([Self.userMessage], .opus46, false)
+        let stream = try await client.streamMessage([Self.userMessage], .opus46, nil)
 
         await #expect {
             for try await chunk in stream {

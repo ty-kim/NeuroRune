@@ -47,16 +47,16 @@ struct ConversationTests {
         #expect(updated.modelId == original.modelId)
     }
 
-    @Test("Conversation.thinkingEnabled 기본값은 false")
-    func conversationThinkingEnabledDefaultsFalse() {
+    @Test("Conversation.effort 기본값은 nil (서버 디폴트)")
+    func conversationEffortDefaultsNil() {
         let conversation = Conversation.empty(modelId: "claude-opus-4-6")
-        #expect(conversation.thinkingEnabled == false)
+        #expect(conversation.effort == nil)
     }
 
-    @Test("Conversation.empty(thinkingEnabled:)로 초기값 설정 가능")
-    func conversationEmptyAcceptsThinkingFlag() {
-        let conversation = Conversation.empty(modelId: "claude-opus-4-6", thinkingEnabled: true)
-        #expect(conversation.thinkingEnabled == true)
+    @Test("Conversation.empty(effort:)로 초기값 설정 가능")
+    func conversationEmptyAcceptsEffort() {
+        let conversation = Conversation.empty(modelId: "claude-opus-4-6", effort: .medium)
+        #expect(conversation.effort == .medium)
     }
 
     @Test("Conversation은 id, title, messages, modelId, createdAt을 저장한다")
@@ -122,14 +122,14 @@ struct LLMModelTests {
         #expect(result.displayName == "unknown-model")
     }
 
-    @Test("opus46/sonnet46는 thinkingBudgetTokens 값을 가진다")
-    func extendedThinkingSupportedModelsHaveBudget() {
-        #expect(LLMModel.opus46.thinkingBudgetTokens != nil)
-        #expect(LLMModel.sonnet46.thinkingBudgetTokens != nil)
+    @Test("opus46/sonnet46는 supportsEffort == true")
+    func effortSupportedModels() {
+        #expect(LLMModel.opus46.supportsEffort == true)
+        #expect(LLMModel.sonnet46.supportsEffort == true)
     }
 
-    @Test("haiku45는 thinkingBudgetTokens가 nil이다 (extended thinking 미지원)")
-    func haiku45HasNoThinkingBudget() {
-        #expect(LLMModel.haiku45.thinkingBudgetTokens == nil)
+    @Test("haiku45는 supportsEffort == false")
+    func haiku45DoesNotSupportEffort() {
+        #expect(LLMModel.haiku45.supportsEffort == false)
     }
 }
