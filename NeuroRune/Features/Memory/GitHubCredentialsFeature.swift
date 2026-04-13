@@ -9,6 +9,7 @@ import ComposableArchitecture
 nonisolated struct GitHubCredentialsFeature: Reducer {
 
     struct State: Equatable {
+        var role: CredentialsRole = .global
         var pat: String = ""
         var owner: String = ""
         var repo: String = ""
@@ -16,6 +17,10 @@ nonisolated struct GitHubCredentialsFeature: Reducer {
         var path: String = ""
         var isSaving: Bool = false
         var error: String?
+
+        init(role: CredentialsRole = .global) {
+            self.role = role
+        }
 
         var isValid: Bool {
             !pat.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
@@ -69,6 +74,7 @@ nonisolated struct GitHubCredentialsFeature: Reducer {
             state.isSaving = true
             state.error = nil
             let creds = GitHubCredentials(
+                role: state.role,
                 pat: state.pat.trimmingCharacters(in: .whitespacesAndNewlines),
                 owner: state.owner.trimmingCharacters(in: .whitespacesAndNewlines),
                 repo: state.repo.trimmingCharacters(in: .whitespacesAndNewlines),
@@ -95,8 +101,9 @@ nonisolated struct GitHubCredentialsFeature: Reducer {
             return .none
 
         case .loadExisting:
+            let role = state.role
             return .run { send in
-                let creds = try? client.load()
+                let creds = try? client.load(role)
                 await send(.existingLoaded(creds ?? nil))
             }
 

@@ -11,17 +11,17 @@ nonisolated struct Conversation: Equatable, Sendable, Identifiable {
     var messages: [Message]
     let modelId: String
     let createdAt: Date
-    /// Extended Thinking 활성 여부. 모델이 미지원이면 무시됨.
-    var thinkingEnabled: Bool = false
+    /// Anthropic effort 파라미터. nil이면 서버 디폴트(high). 모델 미지원이면 무시됨.
+    var effort: EffortLevel? = nil
 
-    static func empty(modelId: String, thinkingEnabled: Bool = false) -> Conversation {
+    static func empty(modelId: String, effort: EffortLevel? = nil) -> Conversation {
         Conversation(
             id: UUID(),
             title: "",
             messages: [],
             modelId: modelId,
             createdAt: Date(),
-            thinkingEnabled: thinkingEnabled
+            effort: effort
         )
     }
 

@@ -10,6 +10,7 @@ struct StorageErrorView: View {
 
     @State private var showConfirmReset = false
     @State private var didReset = false
+    @State private var resetErrorMessage: String?
 
     var body: some View {
         VStack(spacing: 20) {
@@ -50,13 +51,31 @@ struct StorageErrorView: View {
             titleVisibility: .visible
         ) {
             Button(String(localized: "storage.error.resetConfirm"), role: .destructive) {
-                try? ConversationStore.resetDefaultStorage()
-                didReset = true
-                onResetTapped()
+                do {
+                    try ConversationStore.resetDefaultStorage()
+                    didReset = true
+                    onResetTapped()
+                } catch {
+                    resetErrorMessage = error.localizedDescription
+                }
             }
             Button(String(localized: "error.cancel"), role: .cancel) {}
         } message: {
             Text(String(localized: "storage.error.resetConfirmMessage"))
+        }
+        .alert(
+            String(localized: "storage.error.resetFailedTitle"),
+            isPresented: .init(
+                get: { resetErrorMessage != nil },
+                set: { if !$0 { resetErrorMessage = nil } }
+            ),
+            presenting: resetErrorMessage
+        ) { _ in
+            Button(String(localized: "error.cancel"), role: .cancel) {
+                resetErrorMessage = nil
+            }
+        } message: { detail in
+            Text(detail)
         }
     }
 }

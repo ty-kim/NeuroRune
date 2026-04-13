@@ -9,6 +9,7 @@ import ComposableArchitecture
 nonisolated struct MemoryCreateFeature: Reducer {
 
     struct State: Equatable {
+        var role: CredentialsRole = .global
         /// creds.path — repo 안 메모리 디렉터리. 빈 문자열이면 repo 루트.
         var basePath: String = ""
         var filename: String = ""
@@ -19,7 +20,16 @@ nonisolated struct MemoryCreateFeature: Reducer {
         var createdFile: GitHubFile?
 
         var isValid: Bool {
-            !filename.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            let trimmed = filename.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !trimmed.isEmpty else { return false }
+            // 단일 파일만 허용. 디렉터리 traversal/escape/숨김파일 차단.
+            // basePath는 credentials에서 설정 (별도 위치).
+            let invalid = CharacterSet(charactersIn: "/\\")
+                .union(.controlCharacters)
+            guard trimmed.rangeOfCharacter(from: invalid) == nil else { return false }
+            guard !trimmed.hasPrefix(".") else { return false }
+            guard !trimmed.contains("..") else { return false }
+            return true
         }
 
         var fullPath: String {
@@ -59,9 +69,10 @@ nonisolated struct MemoryCreateFeature: Reducer {
             state.error = nil
             let path = state.fullPath
             let content = state.content
+            let role = state.role
             let message = "Create \(URL(fileURLWithPath: path).lastPathComponent)"
             return .run { send in
-                guard let loaded = credsClient.loadIgnoringError() else {
+                guard let loaded = credsClient.loadIgnoringError(role: role) else {
                     await send(.saveFailed(String(localized: "memory.error.unauthorized")))
                     return
                 }

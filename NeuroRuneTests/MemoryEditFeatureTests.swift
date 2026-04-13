@@ -31,7 +31,7 @@ struct MemoryEditFeatureTests {
         let store = TestStore(initialState: MemoryEditFeature.State(file: EditFixtures.file)) {
             MemoryEditFeature()
         } withDependencies: {
-            $0.githubCredentialsClient.load = { EditFixtures.creds }
+            $0.githubCredentialsClient.load = { _ in EditFixtures.creds }
             $0.githubClient.loadFile = { _, _ in
                 GitHubFile(
                     path: EditFixtures.file.path,
@@ -102,7 +102,7 @@ struct MemoryEditFeatureTests {
         let store = TestStore(initialState: state) {
             MemoryEditFeature()
         } withDependencies: {
-            $0.githubCredentialsClient.load = { EditFixtures.creds }
+            $0.githubCredentialsClient.load = { _ in EditFixtures.creds }
             $0.githubClient.saveFile = { _, _, _, sha, message in
                 capturedSha.setValue(sha)
                 capturedMessage.setValue(message)
@@ -158,7 +158,7 @@ struct MemoryEditFeatureTests {
         let store = TestStore(initialState: state) {
             MemoryEditFeature()
         } withDependencies: {
-            $0.githubCredentialsClient.load = { EditFixtures.creds }
+            $0.githubCredentialsClient.load = { _ in EditFixtures.creds }
             $0.githubClient.saveFile = { _, _, _, _, _ in
                 throw GitHubError.conflict
             }
@@ -178,7 +178,7 @@ struct MemoryEditFeatureTests {
         let store = TestStore(initialState: MemoryEditFeature.State(file: EditFixtures.file)) {
             MemoryEditFeature()
         } withDependencies: {
-            $0.githubCredentialsClient.load = { EditFixtures.creds }
+            $0.githubCredentialsClient.load = { _ in EditFixtures.creds }
             $0.githubClient.loadFile = { _, _ in throw GitHubError.notFound }
         }
 

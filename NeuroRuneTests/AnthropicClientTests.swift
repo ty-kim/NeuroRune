@@ -32,7 +32,7 @@ struct AnthropicClientTests {
         let client = LLMClient.anthropic(session: stub.session, apiKey: "sk-test")
 
         var collected: [String] = []
-        let stream = try await client.streamMessage([Self.userMessage], .opus46, false)
+        let stream = try await client.streamMessage([Self.userMessage], .opus46, nil)
         for try await chunk in stream {
             collected.append(chunk)
         }
@@ -57,7 +57,7 @@ struct AnthropicClientTests {
         let client = LLMClient.anthropic(session: stub.session, apiKey: "sk-test")
 
         var collected: [String] = []
-        let stream = try await client.streamMessage([Self.userMessage], .opus46, false)
+        let stream = try await client.streamMessage([Self.userMessage], .opus46, nil)
         for try await chunk in stream {
             collected.append(chunk)
         }
@@ -73,7 +73,7 @@ struct AnthropicClientTests {
         let client = LLMClient.anthropic(session: stub.session, apiKey: "sk-bad")
 
         await #expect(throws: LLMError.unauthorized) {
-            _ = try await client.streamMessage([Self.userMessage], .opus46, false)
+            _ = try await client.streamMessage([Self.userMessage], .opus46, nil)
         }
     }
 
@@ -83,7 +83,7 @@ struct AnthropicClientTests {
         let client = LLMClient.anthropic(session: stub.session, apiKey: "sk-test")
 
         await #expect(throws: LLMError.rateLimited) {
-            _ = try await client.streamMessage([Self.userMessage], .opus46, false)
+            _ = try await client.streamMessage([Self.userMessage], .opus46, nil)
         }
     }
 
@@ -93,7 +93,7 @@ struct AnthropicClientTests {
         let client = LLMClient.anthropic(session: stub.session, apiKey: "sk-test")
 
         await #expect {
-            _ = try await client.streamMessage([Self.userMessage], .opus46, false)
+            _ = try await client.streamMessage([Self.userMessage], .opus46, nil)
         } throws: { error in
             guard case LLMError.server(let status, _) = error else { return false }
             return status == 503
@@ -110,7 +110,7 @@ struct AnthropicClientTests {
         let client = LLMClient.anthropic(session: stub.session, apiKey: "sk-test")
 
         await #expect {
-            _ = try await client.streamMessage([Self.userMessage], .opus46, false)
+            _ = try await client.streamMessage([Self.userMessage], .opus46, nil)
         } throws: { error in
             guard case LLMError.network = error else { return false }
             return true
@@ -133,7 +133,7 @@ struct AnthropicClientTests {
         let client = LLMClient.anthropic(session: stub.session, apiKey: "sk-test")
 
         var collected: [String] = []
-        let stream = try await client.streamMessage([Self.userMessage], .opus46, false)
+        let stream = try await client.streamMessage([Self.userMessage], .opus46, nil)
 
         await #expect {
             for try await chunk in stream {
@@ -142,6 +142,31 @@ struct AnthropicClientTests {
         } throws: { error in
             guard case LLMError.server(_, let message) = error else { return false }
             return message == "Service overloaded"
+        }
+
+        #expect(collected == ["partial"])
+    }
+
+    @Test("message_stop 없이 바이트 스트림 종료 시 LLMError.decoding throw")
+    func streamEndWithoutStopThrowsDecoding() async throws {
+        let sse = """
+        event: content_block_delta
+        data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"partial"}}
+
+        """
+        let stub = stubStatus(200, body: sse)
+        let client = LLMClient.anthropic(session: stub.session, apiKey: "sk-test")
+
+        var collected: [String] = []
+        let stream = try await client.streamMessage([Self.userMessage], .opus46, nil)
+
+        await #expect {
+            for try await chunk in stream {
+                collected.append(chunk)
+            }
+        } throws: { error in
+            guard case LLMError.decoding = error else { return false }
+            return true
         }
 
         #expect(collected == ["partial"])

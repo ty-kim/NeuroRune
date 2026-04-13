@@ -50,17 +50,20 @@ struct ChatView: View {
                         HStack(spacing: 4) {
                             Text(modelName)
                                 .font(.headline)
-                            if viewStore.conversation.thinkingEnabled {
-                                Image(systemName: "brain")
+                            if let effort = viewStore.conversation.effort {
+                                Text("·")
+                                    .foregroundStyle(.secondary)
+                                Text(effort.displayName)
+                                    .font(.subheadline)
                                     .foregroundStyle(.purple)
                                     .accessibilityHidden(true)
                             }
                         }
                         .accessibilityElement(children: .combine)
                         .accessibilityLabel(
-                            viewStore.conversation.thinkingEnabled
-                                ? "\(modelName), \(String(localized: "a11y.chat.thinkingEnabled"))"
-                                : modelName
+                            viewStore.conversation.effort.map {
+                                "\(modelName), \(String(localized: "a11y.chat.effort")) \($0.displayName)"
+                            } ?? modelName
                         )
                     }
                 }

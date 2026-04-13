@@ -40,23 +40,24 @@ struct AnthropicRequestBuilderTests {
         #expect(body["stream"] == nil)
     }
 
-    @Test("thinkingBudgetTokens 지정 시 body의 thinking이 enabled로 설정된다")
-    func thinkingEncodedWhenBudgetProvided() throws {
+    @Test("effort + supportsEffort 모델이면 thinking.adaptive + output_config.effort 전송")
+    func adaptiveEffortEncodedWhenSupported() throws {
         let request = try AnthropicRequestBuilder.build(
             messages: [Self.testMessage],
             model: .opus46,
             apiKey: "sk-test",
-            thinkingBudgetTokens: 5_000
+            effort: .medium
         )
 
         let body = try decodeBody(request)
         let thinking = body["thinking"] as? [String: Any]
-        #expect(thinking?["type"] as? String == "enabled")
-        #expect(thinking?["budget_tokens"] as? Int == 5_000)
+        #expect(thinking?["type"] as? String == "adaptive")
+        let outputConfig = body["output_config"] as? [String: Any]
+        #expect(outputConfig?["effort"] as? String == "medium")
     }
 
-    @Test("thinkingBudgetTokens 미지정 시 body에 thinking 필드가 없다")
-    func thinkingOmittedWhenNil() throws {
+    @Test("effort 미지정 시 thinking/output_config 필드가 없다")
+    func thinkingOmittedWhenEffortNil() throws {
         let request = try AnthropicRequestBuilder.build(
             messages: [Self.testMessage],
             model: .opus46,
@@ -65,6 +66,21 @@ struct AnthropicRequestBuilderTests {
 
         let body = try decodeBody(request)
         #expect(body["thinking"] == nil)
+        #expect(body["output_config"] == nil)
+    }
+
+    @Test("supportsEffort=false 모델은 effort를 지정해도 thinking/output_config omit")
+    func effortOmittedForUnsupportedModel() throws {
+        let request = try AnthropicRequestBuilder.build(
+            messages: [Self.testMessage],
+            model: .haiku45,
+            apiKey: "sk-test",
+            effort: .high
+        )
+
+        let body = try decodeBody(request)
+        #expect(body["thinking"] == nil)
+        #expect(body["output_config"] == nil)
     }
 
     private func decodeBody(_ request: URLRequest) throws -> [String: Any] {

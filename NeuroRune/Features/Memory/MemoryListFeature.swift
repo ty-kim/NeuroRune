@@ -9,6 +9,7 @@ import ComposableArchitecture
 nonisolated struct MemoryListFeature: Reducer {
 
     struct State: Equatable {
+        var role: CredentialsRole = .global
         var files: [GitHubFile] = []
         var isLoading: Bool = true
         var listError: String?
@@ -16,6 +17,8 @@ nonisolated struct MemoryListFeature: Reducer {
         /// credentials 미설정 시 true. UI에서 설정 화면 유도.
         var credentialsMissing: Bool = false
         var config: GitHubRepoConfig?
+        /// 새 파일 생성 시 사용할 repo 내 디렉터리 경로. 로드 성공 시 채워짐.
+        var basePath: String = ""
     }
 
     enum Action: Equatable {
@@ -39,8 +42,9 @@ nonisolated struct MemoryListFeature: Reducer {
         switch action {
         case .task, .refresh:
             state.isLoading = true
+            let role = state.role
             return .run { send in
-                guard let loaded = creds.loadIgnoringError() else {
+                guard let loaded = creds.loadIgnoringError(role: role) else {
                     await send(.credentialsMissing)
                     return
                 }
@@ -70,7 +74,9 @@ nonisolated struct MemoryListFeature: Reducer {
                 .sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
             state.isLoading = false
             state.credentialsMissing = false
-            state.config = loadConfig(creds: creds)
+            let loaded = creds.loadIgnoringError(role: state.role)
+            state.config = loaded?.repoConfig
+            state.basePath = loaded?.path ?? ""
             return .none
 
         case let .loadFailed(message):
@@ -89,7 +95,8 @@ nonisolated struct MemoryListFeature: Reducer {
             return .none
 
         case let .deleteTapped(file):
-            guard let loaded = creds.loadIgnoringError() else {
+            let role = state.role
+            guard let loaded = creds.loadIgnoringError(role: role) else {
                 return .send(.credentialsMissing)
             }
             let config = loaded.repoConfig
@@ -131,7 +138,4 @@ nonisolated struct MemoryListFeature: Reducer {
         }
     }
 
-    private func loadConfig(creds: GitHubCredentialsClient) -> GitHubRepoConfig? {
-        creds.loadIgnoringError()?.repoConfig
-    }
 }

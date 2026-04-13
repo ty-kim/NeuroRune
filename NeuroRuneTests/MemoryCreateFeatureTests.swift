@@ -43,6 +43,25 @@ struct MemoryCreateFeatureTests {
         #expect(state.isValid == false)
     }
 
+    @Test("isValid는 path traversal/escape/숨김파일을 거부한다")
+    func isValidRejectsUnsafeFilenames() {
+        var state = MemoryCreateFeature.State()
+        let bad = [
+            "../escape",
+            "..",
+            "foo/bar",
+            "foo\\bar",
+            "/leading",
+            ".hidden",
+            ".github/workflows",
+            "a\u{00}b",
+        ]
+        for name in bad {
+            state.filename = name
+            #expect(state.isValid == false, "\(name)이 isValid==true로 통과")
+        }
+    }
+
     @Test("fullPath는 basePath + filename + .md 자동 부착")
     func fullPathComposition() {
         var state = MemoryCreateFeature.State(basePath: "memory")
@@ -69,7 +88,7 @@ struct MemoryCreateFeatureTests {
         let store = TestStore(initialState: state) {
             MemoryCreateFeature()
         } withDependencies: {
-            $0.githubCredentialsClient.load = { CreateFixtures.creds }
+            $0.githubCredentialsClient.load = { _ in CreateFixtures.creds }
             $0.githubClient.saveFile = { _, path, _, sha, message in
                 capturedSha.setValue(sha)
                 capturedMessage.setValue(message)
@@ -117,7 +136,7 @@ struct MemoryCreateFeatureTests {
         let store = TestStore(initialState: state) {
             MemoryCreateFeature()
         } withDependencies: {
-            $0.githubCredentialsClient.load = { CreateFixtures.creds }
+            $0.githubCredentialsClient.load = { _ in CreateFixtures.creds }
             $0.githubClient.saveFile = { _, _, _, _, _ in
                 throw GitHubError.conflict
             }

@@ -39,7 +39,7 @@ each generation passes what it learned to the next.
 - [x] Error UI (banner + shake + 401 alert)
 - [x] App icon (ᛗ Mannaz rune), brand colors (amber + dark navy)
 - [x] Launch screen (DarkNavy + Mannaz rune)
-- [x] 61 unit tests, Swift Testing + TCA TestStore
+- [x] 148 unit tests, Swift Testing + TCA TestStore
 
 ### Sprint 2 — Memory & Voice (Apr 16-19)
 - [ ] GitHub-backed memory sync
@@ -61,6 +61,15 @@ each generation passes what it learned to the next.
 - iOS 17+
 - Anthropic API key (BYOK)
 - GitHub Personal Access Token (Sprint 2+)
+
+## Known Limitations
+
+- **Markdown rendering is unbounded.** Assistant responses are passed
+  directly to MarkdownUI without length/depth caps or a render timeout.
+  In a single-user BYOK app the threat model is narrow (your own LLM
+  reply on your own device), but a pathological response can still hang
+  the UI. Use lower `effort` levels to keep responses bounded, and watch
+  swift-cmark for parser CVEs.
 
 ## License
 

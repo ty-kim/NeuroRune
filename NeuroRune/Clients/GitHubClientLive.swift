@@ -18,10 +18,10 @@ nonisolated extension GitHubClient {
 
                 // 디렉터리는 배열, 파일 단일은 단일 객체. 우선 배열 시도 → 실패 시 단일.
                 if let items = try? JSONDecoder().decode([GitHubContentItem].self, from: data) {
-                    return items.map { $0.toGitHubFile(includeContent: false) }
+                    return items.map { $0.toMetadata() }
                 }
                 if let item = try? JSONDecoder().decode(GitHubContentItem.self, from: data) {
-                    return [item.toGitHubFile(includeContent: false)]
+                    return [item.toMetadata()]
                 }
                 throw GitHubError.decoding("unexpected contents response shape")
             },
@@ -36,7 +36,7 @@ nonisolated extension GitHubClient {
                 } catch {
                     throw GitHubError.decoding(String(describing: error))
                 }
-                return item.toGitHubFile(includeContent: true)
+                return try item.toFileWithContent()
             },
             saveFile: { config, path, content, sha, message in
                 var body: [String: Any] = [
@@ -62,7 +62,7 @@ nonisolated extension GitHubClient {
                     throw GitHubError.decoding(String(describing: error))
                 }
                 // 서버가 돌려주는 content 필드엔 payload content가 없음. 로컬 content 결합.
-                var file = parsed.content.toGitHubFile(includeContent: false)
+                var file = parsed.content.toMetadata()
                 file = GitHubFile(
                     path: file.path,
                     sha: file.sha,
@@ -135,24 +135,40 @@ private nonisolated struct GitHubContentItem: Decodable {
     let content: String?
     let encoding: String?
 
-    func toGitHubFile(includeContent: Bool) -> GitHubFile {
-        let decodedContent: String
-        if includeContent, let content, encoding == "base64" {
-            let cleaned = content.replacingOccurrences(of: "\n", with: "")
-            if let data = Data(base64Encoded: cleaned),
-               let text = String(data: data, encoding: .utf8) {
-                decodedContent = text
-            } else {
-                decodedContent = ""
-            }
-        } else {
-            decodedContent = ""
+    /// content 없이 메타데이터만. 디렉터리 listing/save 응답용.
+    func toMetadata() -> GitHubFile {
+        GitHubFile(
+            path: path,
+            sha: sha,
+            content: "",
+            isDirectory: type == "dir"
+        )
+    }
+
+    /// content 디코딩 포함. loadFile 응답용. 실패 시 명시적 throw — 데이터 손실
+    /// (빈 문자열로 덮어쓰기) 방지.
+    func toFileWithContent() throws -> GitHubFile {
+        // 디렉터리는 content 필요 없음
+        if type == "dir" {
+            return toMetadata()
+        }
+        guard let encoding, encoding == "base64" else {
+            // GitHub Contents API: 1MB 초과 시 encoding="none", content=""
+            throw GitHubError.unsupportedEncoding(encoding ?? "missing")
+        }
+        guard let content else {
+            throw GitHubError.invalidBase64
+        }
+        let cleaned = content.replacingOccurrences(of: "\n", with: "")
+        guard let data = Data(base64Encoded: cleaned),
+              let text = String(data: data, encoding: .utf8) else {
+            throw GitHubError.invalidBase64
         }
         return GitHubFile(
             path: path,
             sha: sha,
-            content: decodedContent,
-            isDirectory: type == "dir"
+            content: text,
+            isDirectory: false
         )
     }
 }

@@ -80,6 +80,32 @@ struct GitHubClientLiveTests {
         #expect(file.content == plain)
     }
 
+    @Test("loadFile: encoding=none(1MB 초과)은 unsupportedEncoding throw")
+    func loadFileLargeFileThrowsUnsupportedEncoding() async throws {
+        // GitHub API: 파일이 1MB 초과면 content="" + encoding="none"
+        let body = #"{"name":"big.md","path":"big.md","sha":"sha","type":"file","encoding":"none","content":""}"#
+        let stub = stubStatus(200, body: body)
+        let client = GitHubClient.live(session: stub.session, pat: "ghp_test")
+
+        await #expect {
+            _ = try await client.loadFile(Self.config, "big.md")
+        } throws: { error in
+            guard case GitHubError.unsupportedEncoding(let enc) = error else { return false }
+            return enc == "none"
+        }
+    }
+
+    @Test("loadFile: 손상된 base64는 invalidBase64 throw")
+    func loadFileCorruptBase64Throws() async throws {
+        let body = #"{"name":"a.md","path":"a.md","sha":"sha","type":"file","encoding":"base64","content":"@@@invalid@@@"}"#
+        let stub = stubStatus(200, body: body)
+        let client = GitHubClient.live(session: stub.session, pat: "ghp_test")
+
+        await #expect(throws: GitHubError.invalidBase64) {
+            _ = try await client.loadFile(Self.config, "a.md")
+        }
+    }
+
     // MARK: - saveFile
 
     @Test("saveFile: sha 없이 신규 생성하면 body에 sha가 없고 content는 Base64")

@@ -174,6 +174,45 @@ struct ConversationStoreTests {
         }
     }
 
+    @Test("resetStorage(in:)는 default.store* 패턴 파일만 삭제한다")
+    func resetStorageDeletesOnlyDefaultStoreFiles() throws {
+        let tmp = try Self.makeTempDir()
+        defer { try? FileManager.default.removeItem(at: tmp) }
+
+        let toDelete = ["default.store", "default.store-shm", "default.store-wal", "default.store-journal"]
+        let toKeep = ["other.txt", "Preferences.plist"]
+        for name in toDelete + toKeep {
+            try Data().write(to: tmp.appendingPathComponent(name))
+        }
+
+        try ConversationStore.resetStorage(in: tmp)
+
+        let remaining = try FileManager.default
+            .contentsOfDirectory(at: tmp, includingPropertiesForKeys: nil)
+            .map(\.lastPathComponent)
+            .sorted()
+        #expect(remaining == toKeep.sorted())
+    }
+
+    @Test("resetStorage(in:)는 매칭 파일이 없어도 에러 없이 통과")
+    func resetStorageNoOpWhenEmpty() throws {
+        let tmp = try Self.makeTempDir()
+        defer { try? FileManager.default.removeItem(at: tmp) }
+
+        try ConversationStore.resetStorage(in: tmp)
+
+        let remaining = try FileManager.default
+            .contentsOfDirectory(at: tmp, includingPropertiesForKeys: nil)
+        #expect(remaining.isEmpty)
+    }
+
+    private static func makeTempDir() throws -> URL {
+        let url = FileManager.default.temporaryDirectory
+            .appendingPathComponent("NeuroRuneTests-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
+        return url
+    }
+
     static func sampleConversation(
         id: UUID = UUID(),
         title: String = "sample",

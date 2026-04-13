@@ -5,7 +5,13 @@
 
 import Foundation
 
+nonisolated enum CredentialsRole: String, Codable, Sendable, CaseIterable {
+    case global
+    case local
+}
+
 nonisolated struct GitHubCredentials: Codable, Equatable, Sendable {
+    let role: CredentialsRole
     let pat: String
     let owner: String
     let repo: String
@@ -17,7 +23,8 @@ nonisolated struct GitHubCredentials: Codable, Equatable, Sendable {
         GitHubRepoConfig(owner: owner, repo: repo, branch: branch)
     }
 
-    init(pat: String, owner: String, repo: String, branch: String = "main", path: String = "") {
+    init(role: CredentialsRole = .global, pat: String, owner: String, repo: String, branch: String = "main", path: String = "") {
+        self.role = role
         self.pat = pat
         self.owner = owner
         self.repo = repo
@@ -27,11 +34,13 @@ nonisolated struct GitHubCredentials: Codable, Equatable, Sendable {
 
     // 기존 저장된 creds(이전 path 필드 없음)과의 호환을 위해 커스텀 decode.
     enum CodingKeys: String, CodingKey {
-        case pat, owner, repo, branch, path
+        case role, pat, owner, repo, branch, path
     }
 
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
+        // 기존 저장된 creds(role 없음) → .global로 마이그레이션
+        role = try container.decodeIfPresent(CredentialsRole.self, forKey: .role) ?? .global
         pat = try container.decode(String.self, forKey: .pat)
         owner = try container.decode(String.self, forKey: .owner)
         repo = try container.decode(String.self, forKey: .repo)

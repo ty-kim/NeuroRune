@@ -10,8 +10,8 @@ nonisolated extension LLMClient {
 
     static func anthropic(session: URLSession, apiKey: String) -> LLMClient {
         LLMClient(
-            streamMessage: { messages, model, useThinking in
-                Logger.network.info("stream request, model: \(model.id, privacy: .public), messages: \(messages.count), thinking: \(useThinking)")
+            streamMessage: { messages, model, effort in
+                Logger.network.info("stream request, model: \(model.id, privacy: .public), messages: \(messages.count), effort: \(effort?.rawValue ?? "default", privacy: .public)")
 
                 let request: URLRequest
                 do {
@@ -20,7 +20,7 @@ nonisolated extension LLMClient {
                         model: model,
                         apiKey: apiKey,
                         stream: true,
-                        thinkingBudgetTokens: useThinking ? model.thinkingBudgetTokens : nil
+                        effort: effort
                     )
                 } catch {
                     Logger.network.error("stream request encoding failed: \(error.localizedDescription)")
@@ -70,7 +70,9 @@ nonisolated extension LLMClient {
                                     continue
                                 }
                             }
-                            continuation.finish()
+                            // 바이트 스트림이 message_stop 없이 끝나면 부분 응답을
+                            // 성공으로 저장하지 않도록 실패 처리.
+                            continuation.finish(throwing: LLMError.decoding("stream ended without message_stop"))
                         } catch let urlError as URLError {
                             continuation.finish(throwing: LLMError.network(urlError.localizedDescription))
                         } catch {

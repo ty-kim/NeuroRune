@@ -9,6 +9,7 @@ import ComposableArchitecture
 nonisolated struct MemoryEditFeature: Reducer {
 
     struct State: Equatable {
+        var role: CredentialsRole
         /// 편집 대상 파일 메타데이터. sha는 저장 성공 시 갱신됨.
         var file: GitHubFile
         var content: String = ""
@@ -19,8 +20,9 @@ nonisolated struct MemoryEditFeature: Reducer {
         /// 저장 성공 때마다 1 증가. View가 sensoryFeedback 트리거로 사용.
         var saveCount: Int = 0
 
-        init(file: GitHubFile) {
+        init(file: GitHubFile, role: CredentialsRole = .global) {
             self.file = file
+            self.role = role
         }
     }
 
@@ -43,8 +45,9 @@ nonisolated struct MemoryEditFeature: Reducer {
         case .task:
             state.isLoading = true
             let path = state.file.path
+            let role = state.role
             return .run { send in
-                guard let loaded = credsClient.loadIgnoringError() else {
+                guard let loaded = credsClient.loadIgnoringError(role: role) else {
                     await send(.loadFailed(String(localized: "memory.error.unauthorized")))
                     return
                 }
@@ -87,9 +90,10 @@ nonisolated struct MemoryEditFeature: Reducer {
             let path = state.file.path
             let sha = state.file.sha
             let content = state.content
+            let role = state.role
             let message = "Update \(URL(fileURLWithPath: path).lastPathComponent)"
             return .run { send in
-                guard let loaded = credsClient.loadIgnoringError() else {
+                guard let loaded = credsClient.loadIgnoringError(role: role) else {
                     await send(.saveFailed(String(localized: "memory.error.unauthorized")))
                     return
                 }
