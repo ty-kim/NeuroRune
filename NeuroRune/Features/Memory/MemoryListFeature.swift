@@ -41,10 +41,7 @@ nonisolated struct MemoryListFeature: Reducer {
             state.isLoading = true
             let basePath = state.basePath
             return .run { send in
-                guard let loaded = try? creds.load() else {
-                    await send(.credentialsMissing)
-                    return
-                }
+                let loaded = (try? creds.load()) ?? nil
                 guard let loaded else {
                     await send(.credentialsMissing)
                     return
@@ -83,10 +80,11 @@ nonisolated struct MemoryListFeature: Reducer {
             return .none
 
         case let .deleteTapped(file):
-            guard let creds = try? creds.load(), let creds else {
+            let loaded = (try? creds.load()) ?? nil
+            guard let loaded else {
                 return .send(.credentialsMissing)
             }
-            let config = creds.repoConfig
+            let config = loaded.repoConfig
             let path = file.path
             let sha = file.sha
             return .run { send in

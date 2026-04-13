@@ -589,6 +589,105 @@
         }
       }
     },
+    "memory.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Memory" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "メモリ" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "메모리" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "记忆" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "記憶" } }
+      }
+    },
+    "memory.empty.noFiles" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "No memory files yet" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "メモリファイルはまだありません" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "메모리 파일이 없습니다" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "暂无记忆文件" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "尚無記憶檔案" } }
+      }
+    },
+    "memory.empty.noCredentials" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Connect a GitHub repository to sync memory files." } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "メモリファイルを同期するには GitHub リポジトリを接続してください。" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "메모리 파일을 동기화하려면 GitHub 저장소를 연결하세요." } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "连接 GitHub 仓库以同步记忆文件。" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "連接 GitHub 儲存庫以同步記憶檔案。" } }
+      }
+    },
+    "memory.setupGitHub" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Set up GitHub" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "GitHub を設定" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "GitHub 설정" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "设置 GitHub" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "設定 GitHub" } }
+      }
+    },
+    "credentials.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "GitHub Settings" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "GitHub 設定" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "GitHub 설정" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "GitHub 设置" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "GitHub 設定" } }
+      }
+    },
+    "credentials.pat" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Personal Access Token" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "パーソナルアクセストークン" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "개인 액세스 토큰" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "个人访问令牌" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "個人存取權杖" } }
+      }
+    },
+    "credentials.pat.footer" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Needs 'repo' scope. Create one at github.com/settings/tokens." } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "'repo' スコープが必要です。github.com/settings/tokens で作成してください。" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "'repo' 권한이 필요합니다. github.com/settings/tokens에서 발급하세요." } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "需要 'repo' 权限。请在 github.com/settings/tokens 创建。" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "需要 'repo' 權限。請在 github.com/settings/tokens 建立。" } }
+      }
+    },
+    "credentials.repo" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Repository" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "リポジトリ" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "저장소" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "仓库" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "儲存庫" } }
+      }
+    },
+    "credentials.owner.placeholder" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Owner" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "オーナー" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "소유자" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "所有者" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "擁有者" } }
+      }
+    },
+    "credentials.repo.placeholder" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Repository name" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "リポジトリ名" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "저장소 이름" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "仓库名称" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "儲存庫名稱" } }
+      }
+    },
+    "a11y.list.memory" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Memory files" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "メモリファイル" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "메모리 파일" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "记忆文件" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "記憶檔案" } }
+      }
+    },
     "memory.error.unauthorized" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "GitHub authentication failed. Check your PAT." } },
