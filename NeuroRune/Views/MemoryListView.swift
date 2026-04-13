@@ -10,6 +10,7 @@ struct MemoryListView: View {
     let store: StoreOf<MemoryListFeature>
 
     @State private var showCredentialsSheet = false
+    @State private var showCreateSheet = false
 
     var body: some View {
         WithViewStore(store, observe: { $0 }) { viewStore in
@@ -28,13 +29,22 @@ struct MemoryListView: View {
                 .navigationTitle(String(localized: "memory.title"))
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar {
-                    ToolbarItem(placement: .topBarTrailing) {
+                    ToolbarItem(placement: .topBarLeading) {
                         Button {
                             showCredentialsSheet = true
                         } label: {
                             Image(systemName: "gearshape")
                         }
                         .accessibilityLabel(String(localized: "credentials.title"))
+                    }
+                    ToolbarItem(placement: .topBarTrailing) {
+                        Button {
+                            showCreateSheet = true
+                        } label: {
+                            Image(systemName: "plus.circle")
+                        }
+                        .disabled(viewStore.credentialsMissing)
+                        .accessibilityLabel(String(localized: "memory.create.title"))
                     }
                 }
                 .refreshable {
@@ -66,6 +76,21 @@ struct MemoryListView: View {
                             showCredentialsSheet = false
                             viewStore.send(.task)
                         }
+                    )
+                }
+                .sheet(isPresented: $showCreateSheet) {
+                    let basePath: String = (try? GitHubCredentialsClient.liveValue.load()).flatMap { $0?.path } ?? ""
+                    MemoryCreateView(
+                        store: Store(
+                            initialState: MemoryCreateFeature.State(basePath: basePath)
+                        ) {
+                            MemoryCreateFeature()
+                        },
+                        onCreated: { _ in
+                            showCreateSheet = false
+                            viewStore.send(.refresh)
+                        },
+                        onCancel: { showCreateSheet = false }
                     )
                 }
             }

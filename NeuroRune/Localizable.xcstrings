@@ -1406,6 +1406,60 @@
         }
       }
     },
+    "memory.create.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "New Memory" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "新しいメモリ" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "새 메모리" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "新建记忆" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "新增記憶" } }
+      }
+    },
+    "memory.create.filename" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Filename" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "ファイル名" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "파일명" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "文件名" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "檔名" } }
+      }
+    },
+    "memory.create.filename.placeholder" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "e.g. note_2026_04_13" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "例: note_2026_04_13" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "예: note_2026_04_13" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "例如: note_2026_04_13" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "例如: note_2026_04_13" } }
+      }
+    },
+    "memory.create.filename.footer" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : ".md extension is added automatically if omitted." } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : ".md 拡張子は省略時に自動付与されます。" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : ".md 확장자는 생략 시 자동 추가됩니다." } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "省略时自动添加 .md 扩展名。" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "省略時自動加上 .md 副檔名。" } }
+      }
+    },
+    "memory.create.content" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Content" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "内容" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "내용" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "内容" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "內容" } }
+      }
+    },
+    "memory.create.save" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Create" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "作成" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "만들기" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "创建" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "建立" } }
+      }
+    },
     "memory.setupGitHub" : {
       "localizations" : {
         "en" : {
