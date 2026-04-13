@@ -39,8 +39,7 @@ nonisolated struct MemoryListFeature: Reducer {
         case .task, .refresh:
             state.isLoading = true
             return .run { send in
-                let loaded = (try? creds.load()) ?? nil
-                guard let loaded else {
+                guard let loaded = creds.loadIgnoringError() else {
                     await send(.credentialsMissing)
                     return
                 }
@@ -82,8 +81,7 @@ nonisolated struct MemoryListFeature: Reducer {
             return .none
 
         case let .deleteTapped(file):
-            let loaded = (try? creds.load()) ?? nil
-            guard let loaded else {
+            guard let loaded = creds.loadIgnoringError() else {
                 return .send(.credentialsMissing)
             }
             let config = loaded.repoConfig
@@ -115,6 +113,6 @@ nonisolated struct MemoryListFeature: Reducer {
     }
 
     private func loadConfig(creds: GitHubCredentialsClient) -> GitHubRepoConfig? {
-        (try? creds.load())??.repoConfig
+        creds.loadIgnoringError()?.repoConfig
     }
 }

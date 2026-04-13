@@ -42,8 +42,7 @@ nonisolated struct MemoryEditFeature: Reducer {
             state.isLoading = true
             let path = state.file.path
             return .run { send in
-                let loaded = (try? credsClient.load()) ?? nil
-                guard let loaded else {
+                guard let loaded = credsClient.loadIgnoringError() else {
                     await send(.loadFailed(String(localized: "memory.error.unauthorized")))
                     return
                 }
@@ -88,8 +87,7 @@ nonisolated struct MemoryEditFeature: Reducer {
             let content = state.content
             let message = "Update \(URL(fileURLWithPath: path).lastPathComponent)"
             return .run { send in
-                let loaded = (try? credsClient.load()) ?? nil
-                guard let loaded else {
+                guard let loaded = credsClient.loadIgnoringError() else {
                     await send(.saveFailed(String(localized: "memory.error.unauthorized")))
                     return
                 }

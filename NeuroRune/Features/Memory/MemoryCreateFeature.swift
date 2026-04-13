@@ -61,8 +61,7 @@ nonisolated struct MemoryCreateFeature: Reducer {
             let content = state.content
             let message = "Create \(URL(fileURLWithPath: path).lastPathComponent)"
             return .run { send in
-                let loaded = (try? credsClient.load()) ?? nil
-                guard let loaded else {
+                guard let loaded = credsClient.loadIgnoringError() else {
                     await send(.saveFailed(String(localized: "memory.error.unauthorized")))
                     return
                 }

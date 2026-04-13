@@ -43,6 +43,14 @@ nonisolated extension GitHubCredentialsClient {
     }
 }
 
+nonisolated extension GitHubCredentialsClient {
+    /// 로드 실패(Keychain 에러 등)와 미설정을 모두 nil로 통합.
+    /// UI 레이어에서 "credentials 있음/없음"만 관심 있을 때 사용.
+    func loadIgnoringError() -> GitHubCredentials? {
+        (try? load()) ?? nil
+    }
+}
+
 nonisolated extension GitHubCredentialsClient: DependencyKey {
     static let liveValue = GitHubCredentialsClient.keychainBacked(keychain: KeychainClient.liveValue)
 
