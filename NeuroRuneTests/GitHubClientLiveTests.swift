@@ -10,12 +10,7 @@ import Testing
 import Foundation
 @testable import NeuroRune
 
-@Suite(.serialized)
 struct GitHubClientLiveTests {
-
-    init() {
-        URLProtocolStub.reset()
-    }
 
     static let config = GitHubRepoConfig(owner: "ty-kim", repo: "memory")
 
@@ -30,8 +25,8 @@ struct GitHubClientLiveTests {
           {"name":"sub","path":"memory/sub","sha":"sha-sub","type":"dir","encoding":null,"content":null}
         ]
         """
-        stubStatus(200, body: body)
-        let client = GitHubClient.live(session: Self.makeSession(), pat: "ghp_test")
+        let stub = stubStatus(200, body: body)
+        let client = GitHubClient.live(session: stub.session, pat: "ghp_test")
 
         let result = try await client.listContents(Self.config, "memory")
 
@@ -44,12 +39,12 @@ struct GitHubClientLiveTests {
 
     @Test("파일명의 공백/한글은 URL 경로에서 percent-encoding된다")
     func pathWithSpecialCharsIsPercentEncoded() async throws {
-        stubStatus(200, body: "[]")
-        let client = GitHubClient.live(session: Self.makeSession(), pat: "ghp_test")
+        let stub = stubStatus(200, body: "[]")
+        let client = GitHubClient.live(session: stub.session, pat: "ghp_test")
 
         _ = try await client.listContents(Self.config, "memory/my note 한글.md")
 
-        let url = URLProtocolStub.lastRequest?.url?.absoluteString
+        let url = stub.lastRequest?.url?.absoluteString
         #expect(url?.contains("%20") == true) // space → %20
         #expect(url?.contains(" ") == false)  // literal space 없어야 함
         #expect(url?.contains("한글") == false) // 한글 literal도 인코딩됨
@@ -57,12 +52,12 @@ struct GitHubClientLiveTests {
 
     @Test("listContents: Authorization 헤더에 Bearer <pat>이 설정된다")
     func listContentsSetsBearerAuth() async throws {
-        stubStatus(200, body: "[]")
-        let client = GitHubClient.live(session: Self.makeSession(), pat: "ghp_xyz")
+        let stub = stubStatus(200, body: "[]")
+        let client = GitHubClient.live(session: stub.session, pat: "ghp_xyz")
 
         _ = try await client.listContents(Self.config, "memory")
 
-        let auth = URLProtocolStub.lastRequest?.value(forHTTPHeaderField: "Authorization")
+        let auth = stub.lastRequest?.value(forHTTPHeaderField: "Authorization")
         #expect(auth == "Bearer ghp_xyz")
     }
 
@@ -75,8 +70,8 @@ struct GitHubClientLiveTests {
         let body = """
         {"name":"a.md","path":"memory/a.md","sha":"sha-a","type":"file","encoding":"base64","content":"\(encoded)"}
         """
-        stubStatus(200, body: body)
-        let client = GitHubClient.live(session: Self.makeSession(), pat: "ghp_test")
+        let stub = stubStatus(200, body: body)
+        let client = GitHubClient.live(session: stub.session, pat: "ghp_test")
 
         let file = try await client.loadFile(Self.config, "memory/a.md")
 
@@ -92,15 +87,15 @@ struct GitHubClientLiveTests {
         let responseBody = """
         {"content":{"name":"a.md","path":"memory/a.md","sha":"new-sha","type":"file","encoding":null,"content":null}}
         """
-        stubStatus(201, body: responseBody)
-        let client = GitHubClient.live(session: Self.makeSession(), pat: "ghp_test")
+        let stub = stubStatus(201, body: responseBody)
+        let client = GitHubClient.live(session: stub.session, pat: "ghp_test")
 
         let file = try await client.saveFile(Self.config, "memory/a.md", "hello world", nil, "add a")
 
         #expect(file.sha == "new-sha")
         #expect(file.content == "hello world") // 로컬 payload 결합
 
-        let bodyJSON = try decodeRequestBody()
+        let bodyJSON = try decodeRequestBody(stub)
         #expect(bodyJSON["sha"] == nil)
         #expect(bodyJSON["message"] as? String == "add a")
         let encoded = Data("hello world".utf8).base64EncodedString()
@@ -112,12 +107,12 @@ struct GitHubClientLiveTests {
         let responseBody = """
         {"content":{"name":"a.md","path":"memory/a.md","sha":"updated-sha","type":"file","encoding":null,"content":null}}
         """
-        stubStatus(200, body: responseBody)
-        let client = GitHubClient.live(session: Self.makeSession(), pat: "ghp_test")
+        let stub = stubStatus(200, body: responseBody)
+        let client = GitHubClient.live(session: stub.session, pat: "ghp_test")
 
         _ = try await client.saveFile(Self.config, "memory/a.md", "new content", "old-sha", "update a")
 
-        let bodyJSON = try decodeRequestBody()
+        let bodyJSON = try decodeRequestBody(stub)
         #expect(bodyJSON["sha"] as? String == "old-sha")
     }
 
@@ -125,16 +120,16 @@ struct GitHubClientLiveTests {
 
     @Test("deleteFile: body에 sha + message 포함")
     func deleteFileIncludesShaAndMessage() async throws {
-        stubStatus(200, body: #"{"commit":{}}"#)
-        let client = GitHubClient.live(session: Self.makeSession(), pat: "ghp_test")
+        let stub = stubStatus(200, body: #"{"commit":{}}"#)
+        let client = GitHubClient.live(session: stub.session, pat: "ghp_test")
 
         try await client.deleteFile(Self.config, "memory/a.md", "some-sha", "remove a")
 
-        let bodyJSON = try decodeRequestBody()
+        let bodyJSON = try decodeRequestBody(stub)
         #expect(bodyJSON["sha"] as? String == "some-sha")
         #expect(bodyJSON["message"] as? String == "remove a")
 
-        let method = URLProtocolStub.lastRequest?.httpMethod
+        let method = stub.lastRequest?.httpMethod
         #expect(method == "DELETE")
     }
 
@@ -142,8 +137,8 @@ struct GitHubClientLiveTests {
 
     @Test("401 → GitHubError.unauthorized")
     func mapsUnauthorized() async throws {
-        stubStatus(401, body: #"{"message":"Bad credentials"}"#)
-        let client = GitHubClient.live(session: Self.makeSession(), pat: "ghp_bad")
+        let stub = stubStatus(401, body: #"{"message":"Bad credentials"}"#)
+        let client = GitHubClient.live(session: stub.session, pat: "ghp_bad")
 
         await #expect(throws: GitHubError.unauthorized) {
             _ = try await client.listContents(Self.config, "memory")
@@ -152,8 +147,8 @@ struct GitHubClientLiveTests {
 
     @Test("404 → GitHubError.notFound")
     func mapsNotFound() async throws {
-        stubStatus(404, body: #"{"message":"Not Found"}"#)
-        let client = GitHubClient.live(session: Self.makeSession(), pat: "ghp_test")
+        let stub = stubStatus(404, body: #"{"message":"Not Found"}"#)
+        let client = GitHubClient.live(session: stub.session, pat: "ghp_test")
 
         await #expect(throws: GitHubError.notFound) {
             _ = try await client.loadFile(Self.config, "memory/missing.md")
@@ -162,7 +157,8 @@ struct GitHubClientLiveTests {
 
     @Test("403 + X-RateLimit-Remaining:0 → GitHubError.rateLimited")
     func mapsRateLimited() async throws {
-        URLProtocolStub.setHandler { request in
+        let stub = URLProtocolStub.Stub()
+        stub.setHandler { request in
             let http = HTTPURLResponse(
                 url: request.url!,
                 statusCode: 403,
@@ -174,7 +170,7 @@ struct GitHubClientLiveTests {
             )!
             return (http, Data(#"{"message":"rate limit"}"#.utf8), nil)
         }
-        let client = GitHubClient.live(session: Self.makeSession(), pat: "ghp_test")
+        let client = GitHubClient.live(session: stub.session, pat: "ghp_test")
 
         await #expect(throws: GitHubError.rateLimited) {
             _ = try await client.listContents(Self.config, "memory")
@@ -183,8 +179,8 @@ struct GitHubClientLiveTests {
 
     @Test("422 → GitHubError.conflict (sha mismatch)")
     func mapsConflict() async throws {
-        stubStatus(422, body: #"{"message":"sha mismatch"}"#)
-        let client = GitHubClient.live(session: Self.makeSession(), pat: "ghp_test")
+        let stub = stubStatus(422, body: #"{"message":"sha mismatch"}"#)
+        let client = GitHubClient.live(session: stub.session, pat: "ghp_test")
 
         await #expect(throws: GitHubError.conflict) {
             _ = try await client.saveFile(Self.config, "memory/a.md", "x", "stale-sha", "update")
@@ -193,8 +189,8 @@ struct GitHubClientLiveTests {
 
     @Test("5xx → GitHubError.server(status:)")
     func mapsServerError() async throws {
-        stubStatus(503, body: #"{"message":"unavailable"}"#)
-        let client = GitHubClient.live(session: Self.makeSession(), pat: "ghp_test")
+        let stub = stubStatus(503, body: #"{"message":"unavailable"}"#)
+        let client = GitHubClient.live(session: stub.session, pat: "ghp_test")
 
         await #expect {
             _ = try await client.listContents(Self.config, "memory")
@@ -206,11 +202,12 @@ struct GitHubClientLiveTests {
 
     @Test("URLError → GitHubError.network")
     func mapsNetworkError() async throws {
-        URLProtocolStub.setHandler { request in
+        let stub = URLProtocolStub.Stub()
+        stub.setHandler { request in
             let dummy = HTTPURLResponse(url: request.url!, statusCode: 0, httpVersion: nil, headerFields: nil)!
             return (dummy, nil, URLError(.timedOut))
         }
-        let client = GitHubClient.live(session: Self.makeSession(), pat: "ghp_test")
+        let client = GitHubClient.live(session: stub.session, pat: "ghp_test")
 
         await #expect {
             _ = try await client.listContents(Self.config, "memory")
@@ -222,12 +219,9 @@ struct GitHubClientLiveTests {
 
     // MARK: - Helpers
 
-    static func makeSession() -> URLSession {
-        URLProtocolStub.makeSession()
-    }
-
-    private func stubStatus(_ status: Int, body: String) {
-        URLProtocolStub.setHandler { request in
+    private func stubStatus(_ status: Int, body: String) -> URLProtocolStub.Stub {
+        let stub = URLProtocolStub.Stub()
+        stub.setHandler { request in
             let http = HTTPURLResponse(
                 url: request.url!,
                 statusCode: status,
@@ -236,11 +230,12 @@ struct GitHubClientLiveTests {
             )!
             return (http, Data(body.utf8), nil)
         }
+        return stub
     }
 
-    private func decodeRequestBody() throws -> [String: Any] {
-        guard let data = URLProtocolStub.lastRequest?.httpBodyStream?.readAllData()
-                ?? URLProtocolStub.lastRequest?.httpBody else {
+    private func decodeRequestBody(_ stub: URLProtocolStub.Stub) throws -> [String: Any] {
+        guard let data = stub.lastRequest?.httpBodyStream?.readAllData()
+                ?? stub.lastRequest?.httpBody else {
             throw DecodeErr.noBody
         }
         guard let json = try JSONSerialization.jsonObject(with: data) as? [String: Any] else {

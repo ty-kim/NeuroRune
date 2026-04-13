@@ -11,12 +11,7 @@ import Testing
 import Foundation
 @testable import NeuroRune
 
-@Suite(.serialized)
 struct AnthropicClientTests {
-
-    init() {
-        URLProtocolStub.reset()
-    }
 
     // MARK: - Success path
 
@@ -33,8 +28,8 @@ struct AnthropicClientTests {
         data: {"type":"message_stop"}
 
         """
-        stubStatus(200, body: sse)
-        let client = LLMClient.anthropic(session: Self.makeSession(), apiKey: "sk-test")
+        let stub = stubStatus(200, body: sse)
+        let client = LLMClient.anthropic(session: stub.session, apiKey: "sk-test")
 
         var collected: [String] = []
         let stream = try await client.streamMessage([Self.userMessage], .opus46, false)
@@ -58,8 +53,8 @@ struct AnthropicClientTests {
         data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"SHOULD_NOT_APPEAR"}}
 
         """
-        stubStatus(200, body: sse)
-        let client = LLMClient.anthropic(session: Self.makeSession(), apiKey: "sk-test")
+        let stub = stubStatus(200, body: sse)
+        let client = LLMClient.anthropic(session: stub.session, apiKey: "sk-test")
 
         var collected: [String] = []
         let stream = try await client.streamMessage([Self.userMessage], .opus46, false)
@@ -74,8 +69,8 @@ struct AnthropicClientTests {
 
     @Test("401 → LLMError.unauthorized")
     func mapsUnauthorized() async throws {
-        stubStatus(401, body: #"{"error":{"type":"authentication_error"}}"#)
-        let client = LLMClient.anthropic(session: Self.makeSession(), apiKey: "sk-bad")
+        let stub = stubStatus(401, body: #"{"error":{"type":"authentication_error"}}"#)
+        let client = LLMClient.anthropic(session: stub.session, apiKey: "sk-bad")
 
         await #expect(throws: LLMError.unauthorized) {
             _ = try await client.streamMessage([Self.userMessage], .opus46, false)
@@ -84,8 +79,8 @@ struct AnthropicClientTests {
 
     @Test("429 → LLMError.rateLimited")
     func mapsRateLimited() async throws {
-        stubStatus(429, body: #"{"error":{"type":"rate_limit_error"}}"#)
-        let client = LLMClient.anthropic(session: Self.makeSession(), apiKey: "sk-test")
+        let stub = stubStatus(429, body: #"{"error":{"type":"rate_limit_error"}}"#)
+        let client = LLMClient.anthropic(session: stub.session, apiKey: "sk-test")
 
         await #expect(throws: LLMError.rateLimited) {
             _ = try await client.streamMessage([Self.userMessage], .opus46, false)
@@ -94,8 +89,8 @@ struct AnthropicClientTests {
 
     @Test("5xx → LLMError.server")
     func mapsServerError() async throws {
-        stubStatus(503, body: #"{"error":{"type":"overloaded_error"}}"#)
-        let client = LLMClient.anthropic(session: Self.makeSession(), apiKey: "sk-test")
+        let stub = stubStatus(503, body: #"{"error":{"type":"overloaded_error"}}"#)
+        let client = LLMClient.anthropic(session: stub.session, apiKey: "sk-test")
 
         await #expect {
             _ = try await client.streamMessage([Self.userMessage], .opus46, false)
@@ -107,11 +102,12 @@ struct AnthropicClientTests {
 
     @Test("URLError → LLMError.network")
     func mapsNetworkError() async throws {
-        URLProtocolStub.setHandler { request in
+        let stub = URLProtocolStub.Stub()
+        stub.setHandler { request in
             let dummy = HTTPURLResponse(url: request.url!, statusCode: 0, httpVersion: nil, headerFields: nil)!
             return (dummy, nil, URLError(.timedOut))
         }
-        let client = LLMClient.anthropic(session: Self.makeSession(), apiKey: "sk-test")
+        let client = LLMClient.anthropic(session: stub.session, apiKey: "sk-test")
 
         await #expect {
             _ = try await client.streamMessage([Self.userMessage], .opus46, false)
@@ -133,8 +129,8 @@ struct AnthropicClientTests {
         data: {"type":"error","error":{"type":"overloaded_error","message":"Service overloaded"}}
 
         """
-        stubStatus(200, body: sse)
-        let client = LLMClient.anthropic(session: Self.makeSession(), apiKey: "sk-test")
+        let stub = stubStatus(200, body: sse)
+        let client = LLMClient.anthropic(session: stub.session, apiKey: "sk-test")
 
         var collected: [String] = []
         let stream = try await client.streamMessage([Self.userMessage], .opus46, false)
@@ -159,12 +155,9 @@ struct AnthropicClientTests {
         createdAt: Date(timeIntervalSince1970: 1_000_000)
     )
 
-    static func makeSession() -> URLSession {
-        URLProtocolStub.makeSession()
-    }
-
-    private func stubStatus(_ status: Int, body: String) {
-        URLProtocolStub.setHandler { request in
+    private func stubStatus(_ status: Int, body: String) -> URLProtocolStub.Stub {
+        let stub = URLProtocolStub.Stub()
+        stub.setHandler { request in
             let http = HTTPURLResponse(
                 url: request.url!,
                 statusCode: status,
@@ -173,5 +166,6 @@ struct AnthropicClientTests {
             )!
             return (http, Data(body.utf8), nil)
         }
+        return stub
     }
 }

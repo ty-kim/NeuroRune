@@ -34,9 +34,7 @@ struct MemoryListFeatureTests {
             $0.githubClient.listContents = { _, _ in Fixtures.files }
         }
 
-        await store.send(.task) {
-            $0.isLoading = true
-        }
+        await store.send(.task)
         await store.receive(.filesLoaded(Fixtures.files)) {
             // 디렉터리는 필터링됨
             $0.files = Fixtures.files.filter { !$0.isDirectory }
@@ -54,9 +52,7 @@ struct MemoryListFeatureTests {
             $0.githubCredentialsClient.load = { nil }
         }
 
-        await store.send(.task) {
-            $0.isLoading = true
-        }
+        await store.send(.task)
         await store.receive(.credentialsMissing) {
             $0.isLoading = false
             $0.credentialsMissing = true
@@ -73,9 +69,7 @@ struct MemoryListFeatureTests {
             $0.githubClient.listContents = { _, _ in throw GitHubError.unauthorized }
         }
 
-        await store.send(.task) {
-            $0.isLoading = true
-        }
+        await store.send(.task)
         await store.receive(.loadFailed(String(localized: "memory.error.unauthorized"))) {
             $0.isLoading = false
             $0.listError = String(localized: "memory.error.unauthorized")
@@ -152,7 +146,7 @@ struct MemoryListFeatureTests {
             $0.githubClient.listContents = { _, _ in throw GitHubError.notFound }
         }
 
-        await store.send(.task) { $0.isLoading = true }
+        await store.send(.task)
         await store.receive(.filesLoaded([])) {
             $0.files = []
             $0.isLoading = false
@@ -177,7 +171,7 @@ struct MemoryListFeatureTests {
             $0.githubClient.listContents = { _, _ in throw GitHubError.notFound }
         }
 
-        await store.send(.task) { $0.isLoading = true }
+        await store.send(.task)
         await store.receive(.loadFailed(GitHubError.notFound.localizedMessage)) {
             $0.isLoading = false
             $0.listError = GitHubError.notFound.localizedMessage
@@ -200,7 +194,7 @@ struct MemoryListFeatureTests {
             $0.githubClient.listContents = { _, _ in unsorted }
         }
 
-        await store.send(.task) { $0.isLoading = true }
+        await store.send(.task)
         await store.receive(.filesLoaded(unsorted)) {
             $0.files = [
                 GitHubFile(path: "a.md", sha: "2", content: "", isDirectory: false),

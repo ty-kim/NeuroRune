@@ -42,9 +42,7 @@ struct MemoryEditFeatureTests {
             }
         }
 
-        await store.send(.task) {
-            $0.isLoading = true
-        }
+        await store.send(.task)
         await store.receive(.contentLoaded(content: "# Hello", sha: "sha-loaded")) {
             $0.content = "# Hello"
             $0.file = GitHubFile(
@@ -184,9 +182,7 @@ struct MemoryEditFeatureTests {
             $0.githubClient.loadFile = { _, _ in throw GitHubError.notFound }
         }
 
-        await store.send(.task) {
-            $0.isLoading = true
-        }
+        await store.send(.task)
         await store.receive(.loadFailed(String(localized: "memory.error.notFound"))) {
             $0.isLoading = false
             $0.error = String(localized: "memory.error.notFound")
