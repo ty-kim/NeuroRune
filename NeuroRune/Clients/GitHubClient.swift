@@ -19,12 +19,36 @@ nonisolated struct GitHubClient: Sendable {
 }
 
 nonisolated extension GitHubClient: DependencyKey {
-    static let liveValue = GitHubClient(
-        listContents: unimplemented("GitHubClient.listContents"),
-        loadFile: unimplemented("GitHubClient.loadFile"),
-        saveFile: unimplemented("GitHubClient.saveFile"),
-        deleteFile: unimplemented("GitHubClient.deleteFile")
-    )
+    /// liveValue는 호출 시점에 Keychain에서 PAT를 로드해 요청을 발행한다.
+    /// PAT 미설정 시 `.unauthorized` throw.
+    static let liveValue: GitHubClient = {
+        let credsClient = GitHubCredentialsClient.liveValue
+        return GitHubClient(
+            listContents: { config, path in
+                let pat = try loadPAT(credsClient)
+                return try await GitHubClient.live(session: .shared, pat: pat).listContents(config, path)
+            },
+            loadFile: { config, path in
+                let pat = try loadPAT(credsClient)
+                return try await GitHubClient.live(session: .shared, pat: pat).loadFile(config, path)
+            },
+            saveFile: { config, path, content, sha, message in
+                let pat = try loadPAT(credsClient)
+                return try await GitHubClient.live(session: .shared, pat: pat).saveFile(config, path, content, sha, message)
+            },
+            deleteFile: { config, path, sha, message in
+                let pat = try loadPAT(credsClient)
+                try await GitHubClient.live(session: .shared, pat: pat).deleteFile(config, path, sha, message)
+            }
+        )
+    }()
+
+    private static func loadPAT(_ credsClient: GitHubCredentialsClient) throws -> String {
+        guard let creds = try credsClient.load() else {
+            throw GitHubError.unauthorized
+        }
+        return creds.pat
+    }
 
     static let testValue = GitHubClient(
         listContents: unimplemented("GitHubClient.listContents"),
