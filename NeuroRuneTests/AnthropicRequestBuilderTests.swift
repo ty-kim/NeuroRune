@@ -122,6 +122,58 @@ struct AnthropicRequestBuilderTests {
         #expect((schema?["required"] as? [String]) == ["path"])
     }
 
+    @Test("apiMessages가 있으면 messages 자리에 multi-block 메시지가 들어간다")
+    func apiMessagesOverrideEncoded() throws {
+        let apiMessages: [APIMessage] = [
+            .text(role: "user", content: "hi"),
+            APIMessage(
+                role: "assistant",
+                content: .blocks([
+                    .text("plan"),
+                    .toolUse(id: "t1", name: "read_memory", input: ["path": "MEMORY.md"]),
+                ])
+            ),
+            APIMessage(
+                role: "user",
+                content: .blocks([
+                    .toolResult(toolUseID: "t1", content: "body"),
+                ])
+            ),
+        ]
+        let request = try AnthropicRequestBuilder.build(
+            messages: [],
+            model: .opus46,
+            apiKey: "sk-test",
+            apiMessages: apiMessages
+        )
+
+        let body = try decodeBody(request)
+        let messages = body["messages"] as? [[String: Any]]
+        #expect(messages?.count == 3)
+        #expect(messages?[0]["role"] as? String == "user")
+        #expect(messages?[0]["content"] as? String == "hi")
+        let assistantBlocks = messages?[1]["content"] as? [[String: Any]]
+        #expect(assistantBlocks?.count == 2)
+        #expect(assistantBlocks?[1]["type"] as? String == "tool_use")
+        let toolResultBlocks = messages?[2]["content"] as? [[String: Any]]
+        #expect(toolResultBlocks?.first?["type"] as? String == "tool_result")
+        #expect(toolResultBlocks?.first?["tool_use_id"] as? String == "t1")
+    }
+
+    @Test("apiMessages 미지정 시 messages를 string content로 변환")
+    func messagesAreConvertedWhenApiMessagesNil() throws {
+        let request = try AnthropicRequestBuilder.build(
+            messages: [Self.testMessage],
+            model: .opus46,
+            apiKey: "sk-test"
+        )
+
+        let body = try decodeBody(request)
+        let messages = body["messages"] as? [[String: Any]]
+        #expect(messages?.first?["role"] as? String == "user")
+        #expect(messages?.first?["content"] as? String == "hi")
+    }
+
     @Test("tools 미지정 시 body에 tools 필드가 없다")
     func toolsOmittedWhenNil() throws {
         let request = try AnthropicRequestBuilder.build(
