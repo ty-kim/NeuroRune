@@ -79,11 +79,7 @@ nonisolated struct ChatFeature: Reducer {
             let messagesForAPI = conversationForDisk.messages
             let model = LLMModel.resolve(id: state.conversation.modelId)
             return .run { send in
-                do {
-                    try await conversationStore.save(conversationForDisk)
-                } catch {
-                    await send(.persistenceFailed(error.localizedDescription))
-                }
+                await Self.save(conversationForDisk, using: conversationStore, send: send)
                 do {
                     let stream = try await llmClient.streamMessage(messagesForAPI, model)
                     for try await chunk in stream {
@@ -115,11 +111,7 @@ nonisolated struct ChatFeature: Reducer {
             state.isStreaming = false
             let conversation = state.conversation
             return .run { send in
-                do {
-                    try await conversationStore.save(conversation)
-                } catch {
-                    await send(.persistenceFailed(error.localizedDescription))
-                }
+                await Self.save(conversation, using: conversationStore, send: send)
             }
 
         case let .errorOccurred(llmError):
@@ -132,11 +124,7 @@ nonisolated struct ChatFeature: Reducer {
                 state.conversation.messages.removeLast()
                 let conversation = state.conversation
                 return .run { send in
-                    do {
-                        try await conversationStore.save(conversation)
-                    } catch {
-                        await send(.persistenceFailed(error.localizedDescription))
-                    }
+                    await Self.save(conversation, using: conversationStore, send: send)
                 }
             }
             return .none
@@ -148,6 +136,20 @@ nonisolated struct ChatFeature: Reducer {
         case .persistenceErrorDismissed:
             state.persistenceError = nil
             return .none
+        }
+    }
+
+    /// 저장 실패 시 `.persistenceFailed(String)` 액션을 디스패치한다.
+    /// sendTapped/streamFinished/errorOccurred의 공통 save 패턴 추출.
+    private static func save(
+        _ conversation: Conversation,
+        using store: ConversationStore,
+        send: Send<Action>
+    ) async {
+        do {
+            try await store.save(conversation)
+        } catch {
+            await send(.persistenceFailed(error.localizedDescription))
         }
     }
 }
