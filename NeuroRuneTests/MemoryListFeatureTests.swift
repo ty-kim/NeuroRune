@@ -136,6 +136,36 @@ struct MemoryListFeatureTests {
         }
     }
 
+    @Test("filesLoaded는 이름 알파벳 순으로 정렬한다 (numeric-aware)")
+    func filesLoadedSortsByName() async {
+        let unsorted = [
+            GitHubFile(path: "z.md", sha: "1", content: "", isDirectory: false),
+            GitHubFile(path: "a.md", sha: "2", content: "", isDirectory: false),
+            GitHubFile(path: "note_2.md", sha: "3", content: "", isDirectory: false),
+            GitHubFile(path: "note_10.md", sha: "4", content: "", isDirectory: false),
+        ]
+
+        let store = TestStore(initialState: MemoryListFeature.State()) {
+            MemoryListFeature()
+        } withDependencies: {
+            $0.githubCredentialsClient.load = { Fixtures.creds }
+            $0.githubClient.listContents = { _, _ in unsorted }
+        }
+
+        await store.send(.task) { $0.isLoading = true }
+        await store.receive(.filesLoaded(unsorted)) {
+            $0.files = [
+                GitHubFile(path: "a.md", sha: "2", content: "", isDirectory: false),
+                GitHubFile(path: "note_2.md", sha: "3", content: "", isDirectory: false),
+                GitHubFile(path: "note_10.md", sha: "4", content: "", isDirectory: false),
+                GitHubFile(path: "z.md", sha: "1", content: "", isDirectory: false),
+            ]
+            $0.isLoading = false
+            $0.credentialsMissing = false
+            $0.config = Fixtures.creds.repoConfig
+        }
+    }
+
     @Test("fileSelected는 selectedFile을 업데이트한다")
     func fileSelectedUpdatesState() async {
         let file = Fixtures.files[0]

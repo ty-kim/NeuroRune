@@ -59,7 +59,9 @@ nonisolated struct MemoryListFeature: Reducer {
             }
 
         case let .filesLoaded(files):
-            state.files = files.filter { !$0.isDirectory }
+            state.files = files
+                .filter { !$0.isDirectory }
+                .sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
             state.isLoading = false
             state.credentialsMissing = false
             state.config = loadConfig(creds: creds)
