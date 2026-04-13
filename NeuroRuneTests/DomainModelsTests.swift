@@ -47,6 +47,18 @@ struct ConversationTests {
         #expect(updated.modelId == original.modelId)
     }
 
+    @Test("Conversation.thinkingEnabled 기본값은 false")
+    func conversationThinkingEnabledDefaultsFalse() {
+        let conversation = Conversation.empty(modelId: "claude-opus-4-6")
+        #expect(conversation.thinkingEnabled == false)
+    }
+
+    @Test("Conversation.empty(thinkingEnabled:)로 초기값 설정 가능")
+    func conversationEmptyAcceptsThinkingFlag() {
+        let conversation = Conversation.empty(modelId: "claude-opus-4-6", thinkingEnabled: true)
+        #expect(conversation.thinkingEnabled == true)
+    }
+
     @Test("Conversation은 id, title, messages, modelId, createdAt을 저장한다")
     func conversationStoresProperties() {
         let id = UUID()

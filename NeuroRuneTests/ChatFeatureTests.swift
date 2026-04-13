@@ -62,6 +62,47 @@ struct ChatFeatureTests {
         await store.send(.sendTapped)
     }
 
+    @Test("sendTapped는 conversation.thinkingEnabled를 streamMessage로 전달한다")
+    func sendTappedPassesThinkingFlag() async {
+        let receivedThinking = LockIsolated<Bool?>(nil)
+
+        var state = makeState(inputText: "hi")
+        state.conversation = Conversation(
+            id: UUID(),
+            title: "",
+            messages: [],
+            modelId: LLMModel.opus46.id,
+            createdAt: Self.fixedDate,
+            thinkingEnabled: true
+        )
+
+        let store = TestStore(initialState: state) {
+            ChatFeature()
+        } withDependencies: {
+            $0.date = .constant(Self.fixedDate)
+            $0.llmClient.streamMessage = { @Sendable _, _, useThinking in
+                receivedThinking.setValue(useThinking)
+                return AsyncThrowingStream { $0.finish() }
+            }
+            $0.conversationStore.save = { @Sendable _ in }
+        }
+
+        await store.send(.sendTapped) {
+            $0.conversation = $0.conversation
+                .appending(Message(role: .user, content: "hi", createdAt: Self.fixedDate))
+                .appending(Message(role: .assistant, content: "", createdAt: Self.fixedDate))
+            $0.inputText = ""
+            $0.isStreaming = true
+        }
+
+        await store.receive(.streamFinished) {
+            $0.isStreaming = false
+        }
+
+        await store.finish()
+        #expect(receivedThinking.value == true)
+    }
+
     @Test("sendTapped는 isStreaming 중이면 아무 효과 없음")
     func sendTappedNoOpWhileStreaming() async {
         let store = TestStore(initialState: makeState(inputText: "hello", isStreaming: true)) {

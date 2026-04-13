@@ -11,14 +11,17 @@ nonisolated struct Conversation: Equatable, Sendable, Identifiable {
     var messages: [Message]
     let modelId: String
     let createdAt: Date
+    /// Extended Thinking 활성 여부. 모델이 미지원이면 무시됨.
+    var thinkingEnabled: Bool = false
 
-    static func empty(modelId: String) -> Conversation {
+    static func empty(modelId: String, thinkingEnabled: Bool = false) -> Conversation {
         Conversation(
             id: UUID(),
             title: "",
             messages: [],
             modelId: modelId,
-            createdAt: Date()
+            createdAt: Date(),
+            thinkingEnabled: thinkingEnabled
         )
     }
 

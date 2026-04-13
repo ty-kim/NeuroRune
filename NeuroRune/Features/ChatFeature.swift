@@ -77,7 +77,7 @@ nonisolated struct ChatFeature: Reducer {
             return .run { send in
                 await Self.save(conversationForDisk, using: conversationStore, send: send)
                 do {
-                    let stream = try await llmClient.streamMessage(messagesForAPI, model, false)
+                    let stream = try await llmClient.streamMessage(messagesForAPI, model, conversationForDisk.thinkingEnabled)
                     for try await chunk in stream {
                         await send(.streamChunkReceived(chunk))
                     }
