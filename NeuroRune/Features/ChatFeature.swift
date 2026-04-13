@@ -19,7 +19,8 @@ nonisolated struct ChatFeature: Reducer {
     enum Action: Equatable {
         case inputChanged(String)
         case sendTapped
-        case messageReceived(Message)
+        case streamChunkReceived(String)
+        case streamFinished
         case errorOccurred(LLMError)
         case persistenceFailed(String)
         case persistenceErrorDismissed
@@ -57,13 +58,20 @@ nonisolated struct ChatFeature: Reducer {
                 content: state.inputText,
                 createdAt: date.now
             )
-            state.conversation = state.conversation.appending(userMessage)
+            let placeholder = Message(
+                role: .assistant,
+                content: "",
+                createdAt: date.now
+            )
+            state.conversation = state.conversation
+                .appending(userMessage)
+                .appending(placeholder)
             state.inputText = ""
             state.isStreaming = true
             state.error = nil
 
             let conversation = state.conversation
-            let messages = conversation.messages
+            let messagesForAPI = Array(conversation.messages.dropLast())
             let model = LLMModel.resolve(id: conversation.modelId)
             return .run { send in
                 do {
@@ -72,8 +80,11 @@ nonisolated struct ChatFeature: Reducer {
                     await send(.persistenceFailed(error.localizedDescription))
                 }
                 do {
-                    let reply = try await llmClient.sendMessage(messages, model)
-                    await send(.messageReceived(reply))
+                    let stream = try await llmClient.streamMessage(messagesForAPI, model)
+                    for try await chunk in stream {
+                        await send(.streamChunkReceived(chunk))
+                    }
+                    await send(.streamFinished)
                 } catch let error as LLMError {
                     await send(.errorOccurred(error))
                 } catch {
@@ -81,8 +92,21 @@ nonisolated struct ChatFeature: Reducer {
                 }
             }
 
-        case let .messageReceived(message):
-            state.conversation = state.conversation.appending(message)
+        case let .streamChunkReceived(chunk):
+            guard let last = state.conversation.messages.last, last.role == .assistant else {
+                return .none
+            }
+            let updated = Message(
+                role: last.role,
+                content: last.content + chunk,
+                createdAt: last.createdAt
+            )
+            var newMessages = state.conversation.messages
+            newMessages[newMessages.count - 1] = updated
+            state.conversation.messages = newMessages
+            return .none
+
+        case .streamFinished:
             state.isStreaming = false
             let conversation = state.conversation
             return .run { send in

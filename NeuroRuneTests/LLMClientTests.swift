@@ -10,31 +10,50 @@ import Dependencies
 
 struct LLMClientTests {
 
-    @Test("LLMClient는 sendMessage 클로저를 통해 Message를 반환할 수 있다")
-    func llmClientSendMessageReturnsMessage() async throws {
-        let stub = LLMClient(sendMessage: { _, _ in
-            Message(role: .assistant, content: "stub response", createdAt: Date(timeIntervalSince1970: 1_000_000))
-        })
+    @Test("LLMClient는 streamMessage 클로저를 통해 chunk 시퀀스를 반환한다")
+    func llmClientStreamMessageYieldsChunks() async throws {
+        let stub = LLMClient(
+            streamMessage: { _, _ in
+                AsyncThrowingStream { continuation in
+                    continuation.yield("hello ")
+                    continuation.yield("world")
+                    continuation.finish()
+                }
+            }
+        )
 
-        let result = try await stub.sendMessage([], .opus46)
+        var collected = ""
+        let stream = try await stub.streamMessage([], .opus46)
+        for try await chunk in stream {
+            collected += chunk
+        }
 
-        #expect(result.role == .assistant)
-        #expect(result.content == "stub response")
+        #expect(collected == "hello world")
     }
 
     @Test("LLMClient는 TCA DependencyKey로 등록되어 있다")
     func llmClientIsRegisteredAsDependency() async throws {
-        let injected = LLMClient(sendMessage: { _, _ in
-            Message(role: .assistant, content: "injected", createdAt: Date(timeIntervalSince1970: 2_000_000))
-        })
+        let injected = LLMClient(
+            streamMessage: { _, _ in
+                AsyncThrowingStream { continuation in
+                    continuation.yield("injected")
+                    continuation.finish()
+                }
+            }
+        )
 
-        let result = try await withDependencies {
+        let collected = try await withDependencies {
             $0.llmClient = injected
         } operation: {
             @Dependency(\.llmClient) var client
-            return try await client.sendMessage([], .sonnet46)
+            var text = ""
+            let stream = try await client.streamMessage([], .sonnet46)
+            for try await chunk in stream {
+                text += chunk
+            }
+            return text
         }
 
-        #expect(result.content == "injected")
+        #expect(collected == "injected")
     }
 }
