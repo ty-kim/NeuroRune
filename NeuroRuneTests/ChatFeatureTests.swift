@@ -71,9 +71,8 @@ struct ChatFeatureTests {
         await store.send(.sendTapped)
     }
 
-    @Test("sendTapped는 user Message 추가 + inputText 비움 + isStreaming=true + LLMClient.sendMessage 호출")
-    func sendTappedTriggersLLMEffect() async {
-        let reply = Message(role: .assistant, content: "world", createdAt: Self.fixedDate)
+    @Test("sendTapped는 user/empty-assistant placeholder 추가 + isStreaming=true + streamMessage 호출")
+    func sendTappedTriggersStream() async {
         let calledModelId = LockIsolated<String?>(nil)
         let calledMessagesCount = LockIsolated<Int?>(nil)
 
@@ -81,31 +80,77 @@ struct ChatFeatureTests {
             ChatFeature()
         } withDependencies: {
             $0.date = .constant(Self.fixedDate)
-            $0.llmClient.sendMessage = { @Sendable messages, model in
+            $0.llmClient.streamMessage = { @Sendable messages, model in
                 calledMessagesCount.setValue(messages.count)
                 calledModelId.setValue(model.id)
-                return reply
+                return AsyncThrowingStream { continuation in
+                    continuation.yield("world")
+                    continuation.finish()
+                }
             }
             $0.conversationStore.save = { @Sendable _ in }
         }
 
         await store.send(.sendTapped) {
-            $0.conversation = $0.conversation.appending(
-                Message(role: .user, content: "hello", createdAt: Self.fixedDate)
-            )
+            $0.conversation = $0.conversation
+                .appending(Message(role: .user, content: "hello", createdAt: Self.fixedDate))
+                .appending(Message(role: .assistant, content: "", createdAt: Self.fixedDate))
             $0.inputText = ""
             $0.isStreaming = true
         }
 
-        await store.receive(.messageReceived(reply)) {
-            $0.conversation = $0.conversation.appending(reply)
+        await store.receive(.streamChunkReceived("world")) {
+            var msgs = $0.conversation.messages
+            msgs[msgs.count - 1] = Message(role: .assistant, content: "world", createdAt: Self.fixedDate)
+            $0.conversation.messages = msgs
+        }
+
+        await store.receive(.streamFinished) {
             $0.isStreaming = false
         }
 
         await store.finish()
 
-        #expect(calledMessagesCount.value == 1)
+        #expect(calledMessagesCount.value == 1) // user message only, placeholder excluded
         #expect(calledModelId.value == LLMModel.opus46.id)
+    }
+
+    @Test("streamChunkReceived는 마지막 assistant 메시지에 append한다")
+    func streamChunkAppendsToLastAssistant() async {
+        var state = makeState(isStreaming: true)
+        state.conversation = state.conversation
+            .appending(Message(role: .user, content: "hi", createdAt: Self.fixedDate))
+            .appending(Message(role: .assistant, content: "partial ", createdAt: Self.fixedDate))
+
+        let store = TestStore(initialState: state) {
+            ChatFeature()
+        }
+
+        await store.send(.streamChunkReceived("done")) {
+            var msgs = $0.conversation.messages
+            msgs[msgs.count - 1] = Message(role: .assistant, content: "partial done", createdAt: Self.fixedDate)
+            $0.conversation.messages = msgs
+        }
+    }
+
+    @Test("streamFinished는 isStreaming=false + save 호출")
+    func streamFinishedClearsStreamingAndSaves() async {
+        let savedMessages = LockIsolated<Int?>(nil)
+
+        let store = TestStore(initialState: makeState(isStreaming: true)) {
+            ChatFeature()
+        } withDependencies: {
+            $0.conversationStore.save = { @Sendable conversation in
+                savedMessages.setValue(conversation.messages.count)
+            }
+        }
+
+        await store.send(.streamFinished) {
+            $0.isStreaming = false
+        }
+
+        await store.finish()
+        #expect(savedMessages.value == 0)
     }
 
     @Test("messageReceived는 assistant Message를 추가하고 isStreaming=false로 바꾼다")
@@ -196,18 +241,20 @@ struct ChatFeatureTests {
         }
     }
 
-    @Test("sendTapped 중 save 실패해도 LLM 요청은 진행된다")
-    func sendTappedContinuesLLMDespiteSaveFailure() async {
-        let reply = Message(role: .assistant, content: "world", createdAt: Self.fixedDate)
+    @Test("sendTapped 중 save 실패해도 stream 요청은 진행된다")
+    func sendTappedContinuesStreamDespiteSaveFailure() async {
         let llmCalled = LockIsolated<Bool>(false)
 
         let store = TestStore(initialState: makeState(inputText: "hello")) {
             ChatFeature()
         } withDependencies: {
             $0.date = .constant(Self.fixedDate)
-            $0.llmClient.sendMessage = { @Sendable _, _ in
+            $0.llmClient.streamMessage = { @Sendable _, _ in
                 llmCalled.setValue(true)
-                return reply
+                return AsyncThrowingStream { continuation in
+                    continuation.yield("ok")
+                    continuation.finish()
+                }
             }
             $0.conversationStore.save = { @Sendable _ in
                 throw SaveTestError.failed
@@ -215,9 +262,9 @@ struct ChatFeatureTests {
         }
 
         await store.send(.sendTapped) {
-            $0.conversation = $0.conversation.appending(
-                Message(role: .user, content: "hello", createdAt: Self.fixedDate)
-            )
+            $0.conversation = $0.conversation
+                .appending(Message(role: .user, content: "hello", createdAt: Self.fixedDate))
+                .appending(Message(role: .assistant, content: "", createdAt: Self.fixedDate))
             $0.inputText = ""
             $0.isStreaming = true
         }
@@ -226,8 +273,13 @@ struct ChatFeatureTests {
             $0.persistenceError = SaveTestError.failed.localizedDescription
         }
 
-        await store.receive(.messageReceived(reply)) {
-            $0.conversation = $0.conversation.appending(reply)
+        await store.receive(.streamChunkReceived("ok")) {
+            var msgs = $0.conversation.messages
+            msgs[msgs.count - 1] = Message(role: .assistant, content: "ok", createdAt: Self.fixedDate)
+            $0.conversation.messages = msgs
+        }
+
+        await store.receive(.streamFinished) {
             $0.isStreaming = false
         }
 
