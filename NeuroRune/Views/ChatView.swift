@@ -46,15 +46,22 @@ struct ChatView: View {
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar {
                     ToolbarItem(placement: .principal) {
+                        let modelName = LLMModel.resolve(id: viewStore.conversation.modelId).displayName
                         HStack(spacing: 4) {
-                            Text(LLMModel.resolve(id: viewStore.conversation.modelId).displayName)
+                            Text(modelName)
                                 .font(.headline)
                             if viewStore.conversation.thinkingEnabled {
                                 Image(systemName: "brain")
                                     .foregroundStyle(.purple)
-                                    .accessibilityLabel(String(localized: "a11y.chat.thinkingEnabled"))
+                                    .accessibilityHidden(true)
                             }
                         }
+                        .accessibilityElement(children: .combine)
+                        .accessibilityLabel(
+                            viewStore.conversation.thinkingEnabled
+                                ? "\(modelName), \(String(localized: "a11y.chat.thinkingEnabled"))"
+                                : modelName
+                        )
                     }
                 }
                 .onChange(of: viewStore.error) { _, newError in

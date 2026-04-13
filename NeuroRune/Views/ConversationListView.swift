@@ -185,10 +185,16 @@ struct ConversationListView: View {
                                 if model.thinkingBudgetTokens != nil {
                                     Image(systemName: "brain")
                                         .foregroundStyle(.purple.opacity(0.7))
-                                        .accessibilityLabel(String(localized: "a11y.modelPicker.thinkingSupported"))
+                                        .accessibilityHidden(true)
                                 }
                             }
                             .contentShape(Rectangle())
+                            .accessibilityElement(children: .combine)
+                            .accessibilityLabel(
+                                model.thinkingBudgetTokens != nil
+                                    ? "\(model.displayName), \(String(localized: "a11y.modelPicker.thinkingSupported"))"
+                                    : model.displayName
+                            )
                         }
                     }
                 }
