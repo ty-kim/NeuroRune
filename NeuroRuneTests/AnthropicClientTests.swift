@@ -147,6 +147,31 @@ struct AnthropicClientTests {
         #expect(collected == ["partial"])
     }
 
+    @Test("message_stop 없이 바이트 스트림 종료 시 LLMError.decoding throw")
+    func streamEndWithoutStopThrowsDecoding() async throws {
+        let sse = """
+        event: content_block_delta
+        data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"partial"}}
+
+        """
+        let stub = stubStatus(200, body: sse)
+        let client = LLMClient.anthropic(session: stub.session, apiKey: "sk-test")
+
+        var collected: [String] = []
+        let stream = try await client.streamMessage([Self.userMessage], .opus46, nil)
+
+        await #expect {
+            for try await chunk in stream {
+                collected.append(chunk)
+            }
+        } throws: { error in
+            guard case LLMError.decoding = error else { return false }
+            return true
+        }
+
+        #expect(collected == ["partial"])
+    }
+
     // MARK: - Helpers
 
     static let userMessage = Message(
