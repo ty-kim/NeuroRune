@@ -20,7 +20,16 @@ nonisolated struct MemoryCreateFeature: Reducer {
         var createdFile: GitHubFile?
 
         var isValid: Bool {
-            !filename.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            let trimmed = filename.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !trimmed.isEmpty else { return false }
+            // 단일 파일만 허용. 디렉터리 traversal/escape/숨김파일 차단.
+            // basePath는 credentials에서 설정 (별도 위치).
+            let invalid = CharacterSet(charactersIn: "/\\")
+                .union(.controlCharacters)
+            guard trimmed.rangeOfCharacter(from: invalid) == nil else { return false }
+            guard !trimmed.hasPrefix(".") else { return false }
+            guard !trimmed.contains("..") else { return false }
+            return true
         }
 
         var fullPath: String {

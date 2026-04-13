@@ -43,6 +43,25 @@ struct MemoryCreateFeatureTests {
         #expect(state.isValid == false)
     }
 
+    @Test("isValid는 path traversal/escape/숨김파일을 거부한다")
+    func isValidRejectsUnsafeFilenames() {
+        var state = MemoryCreateFeature.State()
+        let bad = [
+            "../escape",
+            "..",
+            "foo/bar",
+            "foo\\bar",
+            "/leading",
+            ".hidden",
+            ".github/workflows",
+            "a\u{00}b",
+        ]
+        for name in bad {
+            state.filename = name
+            #expect(state.isValid == false, "\(name)이 isValid==true로 통과")
+        }
+    }
+
     @Test("fullPath는 basePath + filename + .md 자동 부착")
     func fullPathComposition() {
         var state = MemoryCreateFeature.State(basePath: "memory")
