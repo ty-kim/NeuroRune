@@ -13,13 +13,9 @@ nonisolated struct LLMClient: Sendable {
 
 nonisolated extension LLMClient: DependencyKey {
     static let liveValue: LLMClient = {
-        let keychainClient = KeychainClient.liveValue
-        return LLMClient(
+        LLMClient(
             sendMessage: { messages, model in
-                guard let apiKey = try keychainClient.load(OnboardingFeature.anthropicKeyName) else {
-                    Logger.llm.error("api key not found")
-                    throw LLMError.unauthorized
-                }
+                let apiKey = try loadAnthropicAPIKey()
                 Logger.llm.info("send, model: \(model.id, privacy: .public), messages: \(messages.count)")
                 let client = LLMClient.anthropic(session: .shared, apiKey: apiKey)
                 let reply = try await client.sendMessage(messages, model)
@@ -28,6 +24,14 @@ nonisolated extension LLMClient: DependencyKey {
             }
         )
     }()
+
+    private static func loadAnthropicAPIKey() throws -> String {
+        guard let apiKey = try KeychainClient.liveValue.load(OnboardingFeature.anthropicKeyName) else {
+            Logger.llm.error("api key not found")
+            throw LLMError.unauthorized
+        }
+        return apiKey
+    }
 
     static let testValue = LLMClient(
         sendMessage: unimplemented("LLMClient.sendMessage")
