@@ -53,7 +53,7 @@ nonisolated struct MemoryListFeature: Reducer {
                     // 디렉터리가 아직 없음 = 빈 상태
                     await send(.filesLoaded([]))
                 } catch let error as GitHubError {
-                    await send(.loadFailed(errorMessage(for: error)))
+                    await send(.loadFailed(error.localizedMessage))
                 } catch {
                     await send(.loadFailed(error.localizedDescription))
                 }
@@ -94,7 +94,7 @@ nonisolated struct MemoryListFeature: Reducer {
                     try await github.deleteFile(config, path, sha, "Delete \(path)")
                     await send(.deleteSucceeded(path))
                 } catch let error as GitHubError {
-                    await send(.deleteFailed(errorMessage(for: error)))
+                    await send(.deleteFailed(error.localizedMessage))
                 } catch {
                     await send(.deleteFailed(error.localizedDescription))
                 }
@@ -116,17 +116,5 @@ nonisolated struct MemoryListFeature: Reducer {
 
     private func loadConfig(creds: GitHubCredentialsClient) -> GitHubRepoConfig? {
         (try? creds.load())??.repoConfig
-    }
-
-    private func errorMessage(for error: GitHubError) -> String {
-        switch error {
-        case .unauthorized: return String(localized: "memory.error.unauthorized")
-        case .notFound: return String(localized: "memory.error.notFound")
-        case .rateLimited: return String(localized: "memory.error.rateLimited")
-        case .conflict: return String(localized: "memory.error.conflict")
-        case let .server(_, message): return message
-        case let .network(message): return message
-        case let .decoding(message): return message
-        }
     }
 }

@@ -70,7 +70,7 @@ nonisolated struct MemoryCreateFeature: Reducer {
                     let file = try await github.saveFile(loaded.repoConfig, path, content, nil, message)
                     await send(.saveSucceeded(file))
                 } catch let error as GitHubError {
-                    await send(.saveFailed(errorMessage(for: error)))
+                    await send(.saveFailed(error.localizedMessage))
                 } catch {
                     await send(.saveFailed(error.localizedDescription))
                 }
@@ -92,15 +92,4 @@ nonisolated struct MemoryCreateFeature: Reducer {
         }
     }
 
-    private func errorMessage(for error: GitHubError) -> String {
-        switch error {
-        case .unauthorized: return String(localized: "memory.error.unauthorized")
-        case .notFound: return String(localized: "memory.error.notFound")
-        case .rateLimited: return String(localized: "memory.error.rateLimited")
-        case .conflict: return String(localized: "memory.error.conflict")
-        case let .server(_, message): return message
-        case let .network(message): return message
-        case let .decoding(message): return message
-        }
-    }
 }

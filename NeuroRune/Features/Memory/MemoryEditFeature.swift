@@ -51,7 +51,7 @@ nonisolated struct MemoryEditFeature: Reducer {
                     let file = try await github.loadFile(loaded.repoConfig, path)
                     await send(.contentLoaded(content: file.content, sha: file.sha))
                 } catch let error as GitHubError {
-                    await send(.loadFailed(errorMessage(for: error)))
+                    await send(.loadFailed(error.localizedMessage))
                 } catch {
                     await send(.loadFailed(error.localizedDescription))
                 }
@@ -97,7 +97,7 @@ nonisolated struct MemoryEditFeature: Reducer {
                     let saved = try await github.saveFile(loaded.repoConfig, path, content, sha, message)
                     await send(.saveSucceeded(saved))
                 } catch let error as GitHubError {
-                    await send(.saveFailed(errorMessage(for: error)))
+                    await send(.saveFailed(error.localizedMessage))
                 } catch {
                     await send(.saveFailed(error.localizedDescription))
                 }
@@ -120,15 +120,4 @@ nonisolated struct MemoryEditFeature: Reducer {
         }
     }
 
-    private func errorMessage(for error: GitHubError) -> String {
-        switch error {
-        case .unauthorized: return String(localized: "memory.error.unauthorized")
-        case .notFound: return String(localized: "memory.error.notFound")
-        case .rateLimited: return String(localized: "memory.error.rateLimited")
-        case .conflict: return String(localized: "memory.error.conflict")
-        case let .server(_, message): return message
-        case let .network(message): return message
-        case let .decoding(message): return message
-        }
-    }
 }
