@@ -69,6 +69,31 @@ struct AnthropicRequestBuilderTests {
         #expect(body["output_config"] == nil)
     }
 
+    @Test("system 인자가 있으면 body의 system 필드에 그대로 전달")
+    func systemFieldEncodedWhenProvided() throws {
+        let request = try AnthropicRequestBuilder.build(
+            messages: [Self.testMessage],
+            model: .opus46,
+            apiKey: "sk-test",
+            system: "You are a helpful assistant."
+        )
+
+        let body = try decodeBody(request)
+        #expect(body["system"] as? String == "You are a helpful assistant.")
+    }
+
+    @Test("system 미지정 시 body에 system 필드가 없다")
+    func systemOmittedWhenNil() throws {
+        let request = try AnthropicRequestBuilder.build(
+            messages: [Self.testMessage],
+            model: .opus46,
+            apiKey: "sk-test"
+        )
+
+        let body = try decodeBody(request)
+        #expect(body["system"] == nil)
+    }
+
     @Test("supportsEffort=false 모델은 effort를 지정해도 thinking/output_config omit")
     func effortOmittedForUnsupportedModel() throws {
         let request = try AnthropicRequestBuilder.build(
