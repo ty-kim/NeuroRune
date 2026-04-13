@@ -14,7 +14,7 @@ nonisolated struct OnboardingFeature: Reducer {
         var isSaving: Bool = false
 
         var isValid: Bool {
-            apiKeyInput.hasPrefix("sk-ant-")
+            apiKeyInput.trimmingCharacters(in: .whitespacesAndNewlines).hasPrefix("sk-ant-")
         }
     }
 
@@ -40,7 +40,7 @@ nonisolated struct OnboardingFeature: Reducer {
             }
             state.isSaving = true
             state.error = nil
-            let apiKey = state.apiKeyInput
+            let apiKey = state.apiKeyInput.trimmingCharacters(in: .whitespacesAndNewlines)
             @Dependency(\.keychainClient) var keychainClient
             let client = keychainClient
             return .run { send in
@@ -55,6 +55,7 @@ nonisolated struct OnboardingFeature: Reducer {
         case .saveSucceeded:
             state.isSaving = false
             state.error = nil
+            state.apiKeyInput = ""
             return .none
 
         case let .saveFailed(message):

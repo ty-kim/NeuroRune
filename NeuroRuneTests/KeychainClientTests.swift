@@ -5,16 +5,18 @@
 
 import Testing
 import Foundation
+import Security
 @testable import NeuroRune
 
 struct KeychainClientTests {
 
     // 각 테스트가 struct instance 재생성 시 고유 service로 격리
     let client: KeychainClient
+    let service: String
 
     init() {
-        let uniqueService = "com.neurorune.tests.keychain.\(UUID().uuidString)"
-        client = .liveBacked(service: uniqueService)
+        service = "com.neurorune.tests.keychain.\(UUID().uuidString)"
+        client = .liveBacked(service: service)
     }
 
     @Test("save 후 load는 같은 값을 반환한다")
@@ -51,6 +53,26 @@ struct KeychainClientTests {
         let loaded = try client.load("github_pat")
 
         #expect(loaded == nil)
+    }
+
+    @Test("저장된 item은 WhenUnlockedThisDeviceOnly 접근 정책을 가진다")
+    func savedItemHasThisDeviceOnlyAccessibility() throws {
+        try client.save("token", "value")
+
+        let query: [String: Any] = [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrService as String: service,
+            kSecAttrAccount as String: "token",
+            kSecReturnAttributes as String: true,
+            kSecMatchLimit as String: kSecMatchLimitOne
+        ]
+        var result: AnyObject?
+        let status = SecItemCopyMatching(query as CFDictionary, &result)
+        #expect(status == errSecSuccess)
+
+        let attrs = result as? [String: Any]
+        let accessible = attrs?[kSecAttrAccessible as String] as? String
+        #expect(accessible == (kSecAttrAccessibleWhenUnlockedThisDeviceOnly as String))
     }
 
     @Test("서로 다른 key는 독립적으로 저장된다")
