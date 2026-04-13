@@ -15,6 +15,7 @@ struct ConversationListView: View {
     @State private var showModelPicker = false
     @State private var selectedModel: LLMModel = .sonnet46
     @State private var showResetConfirmation = false
+    @State private var listError: String?
 
     var body: some View {
         NavigationStack {
@@ -69,6 +70,20 @@ struct ConversationListView: View {
         }
         .task(id: selectedConversation) {
             await loadConversations()
+        }
+        .alert(
+            String(localized: "error.prefix"),
+            isPresented: .init(
+                get: { listError != nil },
+                set: { if !$0 { listError = nil } }
+            ),
+            presenting: listError
+        ) { _ in
+            Button(String(localized: "error.cancel"), role: .cancel) {
+                listError = nil
+            }
+        } message: { message in
+            Text(message)
         }
         .confirmationDialog(
             String(localized: "chat.menu.title"),
@@ -127,8 +142,12 @@ struct ConversationListView: View {
     private func deleteConversation(_ conversation: Conversation) {
         Task {
             let store = ConversationStore.liveValue
-            try? await store.delete(conversation.id)
-            conversations.removeAll { $0.id == conversation.id }
+            do {
+                try await store.delete(conversation.id)
+                conversations.removeAll { $0.id == conversation.id }
+            } catch {
+                listError = String(localized: "list.deleteFailed")
+            }
         }
     }
 
@@ -166,9 +185,8 @@ struct ConversationListView: View {
             let loaded = try await store.loadAll()
             conversations = loaded
         } catch {
-            if conversations.isEmpty {
-                conversations = []
-            }
+            // 기존 목록 유지, 사용자에게 실패 알림
+            listError = String(localized: "list.loadFailed")
         }
         if isLoading { isLoading = false }
     }

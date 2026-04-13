@@ -155,6 +155,25 @@ struct ConversationStoreTests {
         #expect(all.count == 1)
     }
 
+    @Test("failing store는 모든 연산에서 containerUnavailable을 throw한다")
+    func failingStoreThrowsContainerUnavailable() async {
+        let failing = ConversationStore.failing
+        let sample = Self.sampleConversation()
+
+        await #expect(throws: PersistenceError.containerUnavailable) {
+            try await failing.save(sample)
+        }
+        await #expect(throws: PersistenceError.containerUnavailable) {
+            _ = try await failing.load(sample.id)
+        }
+        await #expect(throws: PersistenceError.containerUnavailable) {
+            _ = try await failing.loadAll()
+        }
+        await #expect(throws: PersistenceError.containerUnavailable) {
+            try await failing.delete(sample.id)
+        }
+    }
+
     static func sampleConversation(
         id: UUID = UUID(),
         title: String = "sample",

@@ -70,15 +70,12 @@ nonisolated struct ChatFeature: Reducer {
             state.isStreaming = true
             state.error = nil
 
-            let conversation = state.conversation
-            let messagesForAPI = Array(conversation.messages.dropLast())
-            let model = LLMModel.resolve(id: conversation.modelId)
+            // 디스크엔 placeholder 없이 저장. placeholder는 UI 전용 스트리밍 타겟.
+            let conversationForDisk = state.conversation.droppingLastMessage()
+            let messagesForAPI = conversationForDisk.messages
+            let model = LLMModel.resolve(id: state.conversation.modelId)
             return .run { send in
-                do {
-                    try await conversationStore.save(conversation)
-                } catch {
-                    await send(.persistenceFailed(error.localizedDescription))
-                }
+                await Self.save(conversationForDisk, using: conversationStore, send: send)
                 do {
                     let stream = try await llmClient.streamMessage(messagesForAPI, model)
                     for try await chunk in stream {
@@ -101,25 +98,29 @@ nonisolated struct ChatFeature: Reducer {
                 content: last.content + chunk,
                 createdAt: last.createdAt
             )
-            var newMessages = state.conversation.messages
-            newMessages[newMessages.count - 1] = updated
-            state.conversation.messages = newMessages
+            state.conversation = state.conversation.replacingLastMessage(with: updated)
             return .none
 
         case .streamFinished:
             state.isStreaming = false
             let conversation = state.conversation
             return .run { send in
-                do {
-                    try await conversationStore.save(conversation)
-                } catch {
-                    await send(.persistenceFailed(error.localizedDescription))
-                }
+                await Self.save(conversation, using: conversationStore, send: send)
             }
 
         case let .errorOccurred(llmError):
             state.error = llmError
             state.isStreaming = false
+            // 스트리밍 중 실패면 trailing assistant(placeholder/부분응답) 제거 + 재저장.
+            // 부분 응답 보존 X — "이게 진짜 답인가" 혼란 방지, 사용자는 재시도.
+            let hadTrailingAssistant = state.conversation.messages.last?.role == .assistant
+            if hadTrailingAssistant {
+                state.conversation = state.conversation.droppingLastMessage()
+                let conversation = state.conversation
+                return .run { send in
+                    await Self.save(conversation, using: conversationStore, send: send)
+                }
+            }
             return .none
 
         case let .persistenceFailed(message):
@@ -129,6 +130,20 @@ nonisolated struct ChatFeature: Reducer {
         case .persistenceErrorDismissed:
             state.persistenceError = nil
             return .none
+        }
+    }
+
+    /// 저장 실패 시 `.persistenceFailed(String)` 액션을 디스패치한다.
+    /// sendTapped/streamFinished/errorOccurred의 공통 save 패턴 추출.
+    private static func save(
+        _ conversation: Conversation,
+        using store: ConversationStore,
+        send: Send<Action>
+    ) async {
+        do {
+            try await store.save(conversation)
+        } catch {
+            await send(.persistenceFailed(error.localizedDescription))
         }
     }
 }
