@@ -8,7 +8,7 @@ import Foundation
 import ComposableArchitecture
 @testable import NeuroRune
 
-private enum SaveTestError: LocalizedError {
+enum SaveTestError: LocalizedError {
     case failed
     var errorDescription: String? { "save failed" }
 }
@@ -16,9 +16,9 @@ private enum SaveTestError: LocalizedError {
 @MainActor
 struct ChatFeatureTests {
 
-    private static let fixedDate = Date(timeIntervalSince1970: 1_000_000)
+    static let fixedDate = Date(timeIntervalSince1970: 1_000_000)
 
-    private func makeState(
+    func makeState(
         inputText: String = "",
         isStreaming: Bool = false,
         error: LLMError? = nil
@@ -664,8 +664,8 @@ struct ChatFeatureTests {
             }
         }
 
-        await store.send(.errorOccurred(.rateLimited)) {
-            $0.error = .rateLimited
+        await store.send(.errorOccurred(.rateLimited(retryAfter: nil, state: nil))) {
+            $0.error = .rateLimited(retryAfter: nil, state: nil)
             $0.isStreaming = false
             $0.conversation.messages = [
                 Message(role: .user, content: "hi", createdAt: Self.fixedDate)
@@ -702,8 +702,8 @@ struct ChatFeatureTests {
 
         let store = TestStore(initialState: state) { ChatFeature() }
 
-        await store.send(.errorOccurred(.rateLimited)) {
-            $0.error = .rateLimited
+        await store.send(.errorOccurred(.rateLimited(retryAfter: nil, state: nil))) {
+            $0.error = .rateLimited(retryAfter: nil, state: nil)
             $0.isStreaming = false
             $0.activeToolCalls = []
             $0.pendingWrite = nil

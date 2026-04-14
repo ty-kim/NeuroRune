@@ -39,20 +39,39 @@ nonisolated struct ChatFeature: Reducer {
     }
 
     enum Action: Equatable {
+        // MARK: - Input & Send
         case inputChanged(String)
         case sendTapped
+
+        // MARK: - Streaming
         case streamChunkReceived(String)
         case streamFinished
+
+        // MARK: - Errors & Retry
         case errorOccurred(LLMError)
+        /// 에러 버블의 [재시도] 버튼. 마지막 user 메시지를 다시 보낸다.
+        case retryTapped
+        /// 에러 버블의 [닫기] 버튼 또는 사용자 수동 해제.
+        case errorDismissed
+
+        // MARK: - Persistence
         case persistenceFailed(String)
         case persistenceErrorDismissed
+
+        // MARK: - Conversation lifecycle
         case newConversationStarted(modelId: String)
+
+        // MARK: - Rate limit
+        case rateLimitUpdated(RateLimitState)
+
+        // MARK: - Tools
         case toolUseRequested(id: String, name: String, input: [String: String])
         case toolUseCompleted(id: String)
+
+        // MARK: - Write approval
         case writeApprovalRequested(WriteRequest)
         case writeApproved(id: String)
         case writeRejected(id: String, reason: String?)
-        case rateLimitUpdated(RateLimitState)
     }
 
     func reduce(into state: inout State, action: Action) -> Effect<Action> {
@@ -181,6 +200,10 @@ nonisolated struct ChatFeature: Reducer {
             // 미해결 continuation은 effect cancel로 함께 사라짐.
             state.activeToolCalls = []
             state.pendingWrite = nil
+            // 429 응답에 담긴 rate limit 쿼터를 state로 끌어올려 배지에 반영.
+            if case let .rateLimited(_, rateLimit?) = llmError {
+                state.rateLimit = rateLimit
+            }
             // 스트리밍 중 실패면 trailing assistant(placeholder/부분응답) 제거 + 재저장.
             // 부분 응답 보존 X — "이게 진짜 답인가" 혼란 방지, 사용자는 재시도.
             let hadTrailingAssistant = state.conversation.messages.last?.role == .assistant
@@ -227,6 +250,21 @@ nonisolated struct ChatFeature: Reducer {
 
         case let .rateLimitUpdated(rateLimit):
             state.rateLimit = rateLimit
+            return .none
+
+        case .retryTapped:
+            // errorOccurred에서 trailing assistant placeholder는 이미 드롭된 상태.
+            // 마지막 user 메시지를 꺼내고, 제거한 뒤 sendTapped로 재전송.
+            guard let last = state.conversation.messages.last, last.role == .user else {
+                return .none
+            }
+            state.error = nil
+            state.conversation = state.conversation.droppingLastMessage()
+            state.inputText = last.content
+            return .send(.sendTapped)
+
+        case .errorDismissed:
+            state.error = nil
             return .none
         }
     }
