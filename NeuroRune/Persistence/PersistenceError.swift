@@ -2,6 +2,8 @@
 //  PersistenceError.swift
 //  NeuroRune
 //
+//  Created by tykim
+//
 
 nonisolated enum PersistenceError: Error, Equatable {
     /// SwiftData 레이어의 `roleRaw` 값이 `Message.Role`로 디코딩되지 않음.

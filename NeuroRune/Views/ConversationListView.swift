@@ -2,6 +2,8 @@
 //  ConversationListView.swift
 //  NeuroRune
 //
+//  Created by tykim
+//
 
 import SwiftUI
 import ComposableArchitecture
@@ -22,11 +24,26 @@ struct ConversationListView: View {
                         conversationList(viewStore)
                     }
                 }
-                .navigationTitle("NeuroRune")
+                .navigationTitle(String(localized: "list.title"))
                 .toolbar {
                     ToolbarItem(placement: .topBarLeading) {
-                        Button {
-                            viewStore.send(.resetApiKeyTapped)
+                        Menu {
+                            Button {
+                                viewStore.send(.groqCredentialsTapped)
+                            } label: {
+                                Label(
+                                    String(localized: "settings.groqKey"),
+                                    systemImage: "waveform"
+                                )
+                            }
+                            Button(role: .destructive) {
+                                viewStore.send(.resetApiKeyTapped)
+                            } label: {
+                                Label(
+                                    String(localized: "settings.anthropicKey"),
+                                    systemImage: "key"
+                                )
+                            }
                         } label: {
                             Image(systemName: "gearshape")
                                 .font(.title3)
@@ -67,6 +84,21 @@ struct ConversationListView: View {
                     )
                 ) {
                     MemoryHubView()
+                }
+                .sheet(
+                    isPresented: viewStore.binding(
+                        get: \.showGroqCredentials,
+                        send: ConversationListFeature.Action.groqCredentialsDismissed
+                    )
+                ) {
+                    GroqCredentialsView(
+                        store: Store(initialState: GroqCredentialsFeature.State()) {
+                            GroqCredentialsFeature()
+                        },
+                        onSaved: {
+                            viewStore.send(.groqCredentialsDismissed)
+                        }
+                    )
                 }
                 .navigationDestination(
                     item: viewStore.binding(
@@ -246,7 +278,7 @@ private struct ConversationRow: View {
                     .font(.subheadline)
                     .foregroundStyle(.primary.opacity(0.6))
                 Spacer()
-                Text(conversation.createdAt.formatted(.relative(presentation: .named)))
+                Text(lastActivityAt.formatted(.relative(presentation: .named)))
                     .font(.subheadline)
                     .foregroundStyle(.primary.opacity(0.6))
             }
@@ -255,10 +287,16 @@ private struct ConversationRow: View {
         .accessibilityElement(children: .combine)
     }
 
+    /// 마지막 메시지 내용(최대 50자). 메시지가 없으면 untitled.
     private var conversationTitle: String {
-        if let firstMessage = conversation.messages.first {
-            return String(firstMessage.content.prefix(50))
+        if let lastMessage = conversation.messages.last {
+            return String(lastMessage.content.prefix(50))
         }
         return String(localized: "list.untitled")
+    }
+
+    /// 마지막 메시지 시각. 메시지 없으면 대화 생성 시각.
+    private var lastActivityAt: Date {
+        conversation.messages.last?.createdAt ?? conversation.createdAt
     }
 }

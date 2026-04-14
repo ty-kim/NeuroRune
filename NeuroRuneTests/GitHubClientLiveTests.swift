@@ -2,6 +2,8 @@
 //  GitHubClientLiveTests.swift
 //  NeuroRuneTests
 //
+//  Created by tykim
+//
 //  GitHubClient.live(session:pat:) 통합 테스트.
 //  URLProtocolStub로 REST 응답 주입, CRUD 경로 및 상태 매핑 검증.
 //

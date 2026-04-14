@@ -2,11 +2,18 @@
 //  ChatFeature.swift
 //  NeuroRune
 //
+//  Created by tykim
+//
 
 import Foundation
 import ComposableArchitecture
 
 nonisolated struct ChatFeature: Reducer {
+
+    /// Effect 취소 ID. Phase 20: 스트리밍 중 [Stop] 버튼으로 현재 LLM 요청 취소.
+    enum CancelID: Hashable {
+        case streaming
+    }
 
     struct State: Equatable {
         var conversation: Conversation
@@ -18,6 +25,12 @@ nonisolated struct ChatFeature: Reducer {
         var activeToolCalls: [ToolCallStatus] = []
         /// Claude가 write_memory 요청. nil이 아니면 confirm modal 열림.
         var pendingWrite: WriteRequest? = nil
+        /// 가장 최근 응답에서 파싱된 Anthropic rate limit 쿼터. nil이면 아직 정보 없음.
+        var rateLimit: RateLimitState? = nil
+        /// Phase 21 — 마이크 녹음 중 여부.
+        var isRecording: Bool = false
+        /// STT 에러. LLMError와 별개 타입이라 별도 슬롯에 보관.
+        var sttError: STTError? = nil
     }
 
     /// 사용자에게 보여줄 tool 호출 정보 (id로 lifecycle 추적).
@@ -37,19 +50,50 @@ nonisolated struct ChatFeature: Reducer {
     }
 
     enum Action: Equatable {
+        // MARK: - Input & Send
         case inputChanged(String)
         case sendTapped
+
+        // MARK: - Streaming
         case streamChunkReceived(String)
         case streamFinished
+        /// 스트리밍 중 [Stop] 버튼. 현재 effect를 취소하고 partial 응답을 보존한 채 종료.
+        case stopTapped
+
+        // MARK: - Errors & Retry
         case errorOccurred(LLMError)
+        /// 에러 버블의 [재시도] 버튼. 마지막 user 메시지를 다시 보낸다.
+        case retryTapped
+        /// 에러 버블의 [닫기] 버튼 또는 사용자 수동 해제.
+        case errorDismissed
+
+        // MARK: - Persistence
         case persistenceFailed(String)
         case persistenceErrorDismissed
+
+        // MARK: - Conversation lifecycle
         case newConversationStarted(modelId: String)
+
+        // MARK: - Rate limit
+        case rateLimitUpdated(RateLimitState)
+
+        // MARK: - Tools
         case toolUseRequested(id: String, name: String, input: [String: String])
         case toolUseCompleted(id: String)
+
+        // MARK: - Write approval
         case writeApprovalRequested(WriteRequest)
         case writeApproved(id: String)
         case writeRejected(id: String, reason: String?)
+
+        // MARK: - STT (Phase 21)
+        /// 마이크 버튼 토글. 녹음 중이면 stop, 아니면 권한→start.
+        case micTapped
+        case recordingStarted
+        case recordingStopped(Data)
+        case transcribed(STTResult)
+        case sttErrorOccurred(STTError)
+        case sttErrorDismissed
     }
 
     func reduce(into state: inout State, action: Action) -> Effect<Action> {
@@ -127,6 +171,8 @@ nonisolated struct ChatFeature: Reducer {
                                 await send(.streamChunkReceived(text))
                             case let .toolUseRequest(id, name, inputJSON):
                                 roundToolUses.append((id, name, inputJSON))
+                            case let .rateLimitUpdate(state):
+                                await send(.rateLimitUpdated(state))
                             }
                         }
                         if roundToolUses.isEmpty { break }
@@ -143,12 +189,24 @@ nonisolated struct ChatFeature: Reducer {
                         roundMessages.append(APIMessage(role: "user", content: .blocks(resultBlocks)))
                     }
                     await send(.streamFinished)
+                } catch is CancellationError {
+                    // stopTapped가 streamFinished를 명시적으로 보낸다.
+                    // 취소된 effect는 후속 액션을 중복 발행하지 않는다.
                 } catch let error as LLMError {
                     await send(.errorOccurred(error))
                 } catch {
                     await send(.errorOccurred(.network(error.localizedDescription)))
                 }
             }
+            .cancellable(id: CancelID.streaming, cancelInFlight: true)
+
+        case .stopTapped:
+            // 현재 진행 중인 스트리밍 effect를 취소하고 기존 완료 경로로 정리한다.
+            guard state.isStreaming else { return .none }
+            return .concatenate(
+                .cancel(id: CancelID.streaming),
+                .send(.streamFinished)
+            )
 
         case let .streamChunkReceived(chunk):
             guard let last = state.conversation.messages.last, last.role == .assistant else {
@@ -176,6 +234,10 @@ nonisolated struct ChatFeature: Reducer {
             // 미해결 continuation은 effect cancel로 함께 사라짐.
             state.activeToolCalls = []
             state.pendingWrite = nil
+            // 429 응답에 담긴 rate limit 쿼터를 state로 끌어올려 배지에 반영.
+            if case let .rateLimited(_, rateLimit?) = llmError {
+                state.rateLimit = rateLimit
+            }
             // 스트리밍 중 실패면 trailing assistant(placeholder/부분응답) 제거 + 재저장.
             // 부분 응답 보존 X — "이게 진짜 답인가" 혼란 방지, 사용자는 재시도.
             let hadTrailingAssistant = state.conversation.messages.last?.role == .assistant
@@ -219,6 +281,100 @@ nonisolated struct ChatFeature: Reducer {
             return .run { _ in
                 writeApprovalGate.setApproval(id, .reject(reason: reason))
             }
+
+        case let .rateLimitUpdated(rateLimit):
+            state.rateLimit = rateLimit
+            return .none
+
+        case .retryTapped:
+            // errorOccurred에서 trailing assistant placeholder는 이미 드롭된 상태.
+            // 마지막 user 메시지를 꺼내고, 제거한 뒤 sendTapped로 재전송.
+            guard let last = state.conversation.messages.last, last.role == .user else {
+                return .none
+            }
+            state.error = nil
+            state.conversation = state.conversation.droppingLastMessage()
+            state.inputText = last.content
+            return .send(.sendTapped)
+
+        case .errorDismissed:
+            state.error = nil
+            return .none
+
+        // MARK: - STT
+
+        case .micTapped:
+            @Dependency(\.audioRecorder) var recorder
+            if state.isRecording {
+                // 중단 → stop → transcribe 파이프라인
+                return .run { send in
+                    do {
+                        let data = try await recorder.stop()
+                        await send(.recordingStopped(data))
+                    } catch let e as STTError {
+                        await send(.sttErrorOccurred(e))
+                    } catch {
+                        await send(.sttErrorOccurred(.recordingFailed(error.localizedDescription)))
+                    }
+                }
+            } else {
+                // 권한 → 시작
+                return .run { send in
+                    let granted = await recorder.requestPermission()
+                    guard granted else {
+                        await send(.sttErrorOccurred(.microphonePermissionDenied))
+                        return
+                    }
+                    do {
+                        try await recorder.start()
+                        await send(.recordingStarted)
+                    } catch let e as STTError {
+                        await send(.sttErrorOccurred(e))
+                    } catch {
+                        await send(.sttErrorOccurred(.recordingFailed(error.localizedDescription)))
+                    }
+                }
+            }
+
+        case .recordingStarted:
+            state.isRecording = true
+            state.sttError = nil
+            return .none
+
+        case let .recordingStopped(audio):
+            state.isRecording = false
+            @Dependency(\.locale) var locale
+            // BCP-47 언어 부분만. zh-Hans/zh-Hant는 "zh"로 축약 → Whisper 간체/번체 구분 안 함.
+            let language = locale.language.languageCode?.identifier ?? "ko"
+            return .run { send in
+                @Dependency(\.sttClient) var stt
+                do {
+                    let result = try await stt.transcribe(audio, language)
+                    await send(.transcribed(result))
+                } catch let e as STTError {
+                    await send(.sttErrorOccurred(e))
+                } catch {
+                    await send(.sttErrorOccurred(.network(error.localizedDescription)))
+                }
+            }
+
+        case let .transcribed(result):
+            // 전사 텍스트를 inputText에 삽입. 기존 내용이 있으면 공백 구분자로 이어붙임.
+            if state.inputText.isEmpty {
+                state.inputText = result.text
+            } else {
+                state.inputText += " " + result.text
+            }
+            return .none
+
+        case let .sttErrorOccurred(error):
+            state.isRecording = false
+            state.sttError = error
+            return .none
+
+        case .sttErrorDismissed:
+            state.sttError = nil
+            return .none
         }
     }
 

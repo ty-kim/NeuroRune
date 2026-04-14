@@ -2,6 +2,8 @@
 //  Log.swift
 //  NeuroRune
 //
+//  Created by tykim
+//
 
 import os
 

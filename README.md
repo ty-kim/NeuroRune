@@ -14,7 +14,7 @@ during sleep, moving short-term experience into long-term knowledge.
 NeuroRune does this for your AI sessions.
 
 Built as a BYOK (Bring Your Own Key) app: you provide your own Anthropic
-API key, GitHub Personal Access Token, and optionally a Clova Note STT key.
+API key, GitHub Personal Access Token, and optionally a Groq API key (Whisper STT).
 No API keys are bundled with the app.
 
 ## Inspired by
@@ -49,7 +49,7 @@ each generation passes what it learned to the next.
 - [x] write_memory tool with confirm modal (role/path/commit/content → user accept)
 
 ### Sprint 3 — Voice & Consolidation (Future)
-- [ ] Clova Note voice input
+- [ ] Groq Whisper voice input (multilingual, better Korean accuracy than Clova/SFSpeechRecognizer)
 - [ ] Consolidation (raw chat → distilled memory proposals)
 
 ## Stack

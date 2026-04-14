@@ -2,6 +2,8 @@
 //  AnthropicClientTests.swift
 //  NeuroRuneTests
 //
+//  Created by tykim
+//
 //  LLMClient.anthropic(session:apiKey:) 통합 테스트.
 //  URLProtocolStub로 HTTP layer 가짜 응답을 주입, streamMessage의
 //  status 매핑, SSE chunk 수집, 에러 전파를 검증한다.
@@ -77,13 +79,58 @@ struct AnthropicClientTests {
         }
     }
 
-    @Test("429 → LLMError.rateLimited")
+    @Test("429 → LLMError.rateLimited (retryAfter/state nil)")
     func mapsRateLimited() async throws {
         let stub = stubStatus(429, body: #"{"error":{"type":"rate_limit_error"}}"#)
         let client = LLMClient.anthropic(session: stub.session, apiKey: "sk-test")
 
-        await #expect(throws: LLMError.rateLimited) {
+        await #expect(throws: LLMError.rateLimited(retryAfter: nil, state: nil)) {
             _ = try await client.streamMessage([Self.userMessage], .opus46, nil, nil, nil)
+        }
+    }
+
+    @Test("429 + retry-after 헤더 → retryAfter에 초 단위 값")
+    func mapsRateLimitedWithRetryAfter() async throws {
+        let stub = stubStatus(
+            429,
+            body: #"{"error":{"type":"rate_limit_error"}}"#,
+            extraHeaders: ["retry-after": "42"]
+        )
+        let client = LLMClient.anthropic(session: stub.session, apiKey: "sk-test")
+
+        do {
+            _ = try await client.streamMessage([Self.userMessage], .opus46, nil, nil, nil)
+            Issue.record("expected rateLimited to throw")
+        } catch let LLMError.rateLimited(retryAfter, state) {
+            #expect(retryAfter == 42)
+            #expect(state == nil)
+        } catch {
+            Issue.record("unexpected error: \(error)")
+        }
+    }
+
+    @Test("429 + rate limit 헤더 → state에 RateLimitState 담김")
+    func mapsRateLimitedWithState() async throws {
+        let stub = stubStatus(
+            429,
+            body: #"{"error":{"type":"rate_limit_error"}}"#,
+            extraHeaders: [
+                "retry-after": "30",
+                "anthropic-ratelimit-tokens-limit": "80000",
+                "anthropic-ratelimit-tokens-remaining": "0",
+                "anthropic-ratelimit-tokens-reset": "2026-04-14T14:00:00Z"
+            ]
+        )
+        let client = LLMClient.anthropic(session: stub.session, apiKey: "sk-test")
+
+        do {
+            _ = try await client.streamMessage([Self.userMessage], .opus46, nil, nil, nil)
+            Issue.record("expected rateLimited to throw")
+        } catch let LLMError.rateLimited(retryAfter, state) {
+            #expect(retryAfter == 30)
+            #expect(state?.tokens?.remaining == 0)
+        } catch {
+            Issue.record("unexpected error: \(error)")
         }
     }
 
@@ -172,18 +219,79 @@ struct AnthropicClientTests {
         #expect(collected == ["partial"])
     }
 
+    // MARK: - Rate limit
+
+    @Test("200 응답 헤더에 rate limit가 있으면 첫 event로 rateLimitUpdate emit")
+    func yieldsRateLimitUpdateBeforeTextDelta() async throws {
+        let sse = """
+        event: content_block_delta
+        data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"x"}}
+
+        event: message_stop
+        data: {"type":"message_stop"}
+
+        """
+        let stub = stubStatus(
+            200,
+            body: sse,
+            extraHeaders: [
+                "anthropic-ratelimit-tokens-limit": "80000",
+                "anthropic-ratelimit-tokens-remaining": "62400",
+                "anthropic-ratelimit-tokens-reset": "2026-04-14T14:00:00Z"
+            ]
+        )
+        let client = LLMClient.anthropic(session: stub.session, apiKey: "sk-test")
+
+        var events: [LLMStreamEvent] = []
+        let stream = try await client.streamMessage([Self.userMessage], .opus46, nil, nil, nil)
+        for try await event in stream {
+            events.append(event)
+        }
+
+        guard case let .rateLimitUpdate(state) = events.first else {
+            Issue.record("first event is not rateLimitUpdate: \(events)")
+            return
+        }
+        #expect(state.tokens?.limit == 80000)
+        #expect(state.tokens?.remaining == 62400)
+    }
+
+    @Test("rate limit 헤더가 없으면 rateLimitUpdate emit 안 함")
+    func skipsRateLimitUpdateWhenHeadersAbsent() async throws {
+        let sse = """
+        event: content_block_delta
+        data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"x"}}
+
+        event: message_stop
+        data: {"type":"message_stop"}
+
+        """
+        let stub = stubStatus(200, body: sse)
+        let client = LLMClient.anthropic(session: stub.session, apiKey: "sk-test")
+
+        var hasRateLimitEvent = false
+        let stream = try await client.streamMessage([Self.userMessage], .opus46, nil, nil, nil)
+        for try await event in stream {
+            if case .rateLimitUpdate = event { hasRateLimitEvent = true }
+        }
+
+        #expect(hasRateLimitEvent == false)
+    }
+
     // MARK: - Helpers
 
     static let userMessage = APIMessage.text(role: "user", content: "hi")
 
-    private func stubStatus(_ status: Int, body: String) -> URLProtocolStub.Stub {
+    private func stubStatus(_ status: Int, body: String, extraHeaders: [String: String] = [:]) -> URLProtocolStub.Stub {
         let stub = URLProtocolStub.Stub()
         stub.setHandler { request in
+            var headers = ["Content-Type": "text/event-stream"]
+            for (k, v) in extraHeaders { headers[k] = v }
             let http = HTTPURLResponse(
                 url: request.url!,
                 statusCode: status,
                 httpVersion: "HTTP/1.1",
-                headerFields: ["Content-Type": "text/event-stream"]
+                headerFields: headers
             )!
             return (http, Data(body.utf8), nil)
         }

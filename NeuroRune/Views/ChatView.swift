@@ -2,6 +2,8 @@
 //  ChatView.swift
 //  NeuroRune
 //
+//  Created by tykim
+//
 
 import SwiftUI
 import ComposableArchitecture
@@ -60,28 +62,11 @@ struct ChatView: View {
                 VStack(spacing: 0) {
                     ChatMessageList(
                         messages: viewStore.conversation.messages,
+                        isStreaming: viewStore.isStreaming,
+                        isInputFocused: isInputFocused,
                         onTap: { isInputFocused = false }
                     )
-                    if let error = viewStore.error {
-                        ChatErrorBanner(error: error)
-                            .offset(y: reduceMotion ? 0 : (errorShakeTrigger % 2 == 0 ? 0 : -4))
-                            .animation(reduceMotion ? nil : .default.repeatCount(3, autoreverses: true).speed(6), value: errorShakeTrigger)
-                            .transition(reduceMotion ? .opacity : .move(edge: .bottom).combined(with: .opacity))
-                            .animation(reduceMotion ? nil : .easeInOut(duration: 0.3), value: viewStore.error)
-                    }
-                    if !viewStore.activeToolCalls.isEmpty {
-                        ToolCallChips(calls: viewStore.activeToolCalls)
-                            .transition(.opacity)
-                            .animation(reduceMotion ? nil : .easeInOut(duration: 0.2), value: viewStore.activeToolCalls)
-                    }
-                    if let persistenceError = viewStore.persistenceError {
-                        ChatPersistenceBanner(
-                            message: persistenceError,
-                            onDismiss: { viewStore.send(.persistenceErrorDismissed) }
-                        )
-                        .transition(reduceMotion ? .opacity : .move(edge: .bottom).combined(with: .opacity))
-                        .animation(reduceMotion ? nil : .easeInOut(duration: 0.3), value: viewStore.persistenceError)
-                    }
+                    overlays(viewStore)
                     ChatInputBar(
                         text: viewStore.binding(
                             get: \.inputText,
@@ -89,6 +74,9 @@ struct ChatView: View {
                         ),
                         isStreaming: viewStore.isStreaming,
                         onSend: { viewStore.send(.sendTapped) },
+                        onStop: { viewStore.send(.stopTapped) },
+                        isRecording: viewStore.isRecording,
+                        onMicTapped: { viewStore.send(.micTapped) },
                         focus: $isInputFocused
                     )
                 }
@@ -161,6 +149,50 @@ struct ChatView: View {
                     Button(String(localized: "error.cancel"), role: .cancel) {}
                 }
             }
+        }
+    }
+
+    // MARK: - Overlays (메시지 리스트와 입력바 사이에 쌓이는 배너·배지 모음)
+
+    /// 표시 순서: 상단(rate limit) → 에러 → 진행 tool 칩 → 영속화 실패 배너.
+    /// 각 오버레이는 독립 optional이며 동시 노출 가능.
+    @ViewBuilder
+    private func overlays(_ viewStore: ViewStoreOf<ChatFeature>) -> some View {
+        if let rateLimit = viewStore.rateLimit {
+            RateLimitBadge(state: rateLimit)
+                .transition(reduceMotion ? .opacity : .move(edge: .top).combined(with: .opacity))
+                .animation(reduceMotion ? nil : .easeInOut(duration: 0.3), value: viewStore.rateLimit)
+        }
+        if let error = viewStore.error {
+            ErrorBubbleView(
+                error: error,
+                onRetry: { viewStore.send(.retryTapped) },
+                onDismiss: { viewStore.send(.errorDismissed) }
+            )
+            .offset(y: reduceMotion ? 0 : (errorShakeTrigger % 2 == 0 ? 0 : -4))
+            .animation(reduceMotion ? nil : .default.repeatCount(3, autoreverses: true).speed(6), value: errorShakeTrigger)
+            .animation(reduceMotion ? nil : .easeInOut(duration: 0.3), value: viewStore.error)
+        }
+        if !viewStore.activeToolCalls.isEmpty {
+            ToolCallChips(calls: viewStore.activeToolCalls)
+                .transition(.opacity)
+                .animation(reduceMotion ? nil : .easeInOut(duration: 0.2), value: viewStore.activeToolCalls)
+        }
+        if let sttError = viewStore.sttError {
+            STTErrorBanner(
+                error: sttError,
+                onDismiss: { viewStore.send(.sttErrorDismissed) }
+            )
+            .transition(reduceMotion ? .opacity : .move(edge: .bottom).combined(with: .opacity))
+            .animation(reduceMotion ? nil : .easeInOut(duration: 0.3), value: viewStore.sttError)
+        }
+        if let persistenceError = viewStore.persistenceError {
+            ChatPersistenceBanner(
+                message: persistenceError,
+                onDismiss: { viewStore.send(.persistenceErrorDismissed) }
+            )
+            .transition(reduceMotion ? .opacity : .move(edge: .bottom).combined(with: .opacity))
+            .animation(reduceMotion ? nil : .easeInOut(duration: 0.3), value: viewStore.persistenceError)
         }
     }
 }

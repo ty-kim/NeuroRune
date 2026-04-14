@@ -2,6 +2,8 @@
 //  GitHubClient.swift
 //  NeuroRune
 //
+//  Created by tykim
+//
 
 import Foundation
 import Dependencies
