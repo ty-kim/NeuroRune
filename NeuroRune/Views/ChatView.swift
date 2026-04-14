@@ -73,6 +73,8 @@ struct ChatView: View {
                         isStreaming: viewStore.isStreaming,
                         onSend: { viewStore.send(.sendTapped) },
                         onStop: { viewStore.send(.stopTapped) },
+                        isRecording: viewStore.isRecording,
+                        onMicTapped: { viewStore.send(.micTapped) },
                         focus: $isInputFocused
                     )
                 }

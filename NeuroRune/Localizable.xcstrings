@@ -91,6 +91,24 @@
         }
       }
     },
+    "a11y.chat.startRecording" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Start voice recording" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "音声録音を開始" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "음성 녹음 시작" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "开始录音" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "開始錄音" } }
+      }
+    },
+    "a11y.chat.stopRecording" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Stop voice recording" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "音声録音を停止" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "음성 녹음 종료" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "停止录音" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "停止錄音" } }
+      }
+    },
     "a11y.chat.stopButton" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Stop streaming" } },

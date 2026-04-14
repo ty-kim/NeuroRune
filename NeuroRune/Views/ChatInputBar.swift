@@ -11,10 +11,29 @@ struct ChatInputBar: View {
     let onSend: () -> Void
     /// 스트리밍 중 [Stop] 버튼 탭 — Phase 20에서 도입. nil 넘기면 Stop 비활성.
     var onStop: (() -> Void)? = nil
+    /// Phase 21 — 마이크 버튼 상태·토글 핸들러. nil이면 마이크 버튼 숨김.
+    var isRecording: Bool = false
+    var onMicTapped: (() -> Void)? = nil
     var focus: FocusState<Bool>.Binding
 
     var body: some View {
         HStack(spacing: 8) {
+            if let onMicTapped, !isStreaming {
+                Button(action: {
+                    UIImpactFeedbackGenerator(style: isRecording ? .medium : .light).impactOccurred()
+                    onMicTapped()
+                }) {
+                    Image(systemName: isRecording ? "mic.fill" : "mic")
+                        .font(.title2)
+                        .foregroundStyle(isRecording ? .red : .secondary)
+                        .symbolEffect(.pulse, options: isRecording ? .repeating : .nonRepeating,
+                                      value: isRecording)
+                }
+                .accessibilityLabel(String(localized: isRecording
+                    ? "a11y.chat.stopRecording"
+                    : "a11y.chat.startRecording"))
+            }
+
             TextField(String(localized: "chat.inputPlaceholder"), text: $text)
                 .textFieldStyle(.roundedBorder)
                 .submitLabel(.send)
@@ -23,6 +42,7 @@ struct ChatInputBar: View {
                     onSend()
                 }
                 .focused(focus)
+                .disabled(isRecording)
 
             if isStreaming, let onStop {
                 Button(action: {
@@ -42,7 +62,7 @@ struct ChatInputBar: View {
                     Image(systemName: "arrow.up.circle.fill")
                         .font(.title2)
                 }
-                .disabled(text.isEmpty || isStreaming)
+                .disabled(text.isEmpty || isStreaming || isRecording)
                 .accessibilityLabel(String(localized: "a11y.chat.sendButton"))
             }
         }
