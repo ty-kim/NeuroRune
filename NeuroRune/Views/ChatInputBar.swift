@@ -20,6 +20,16 @@ struct ChatInputBar: View {
 
     var body: some View {
         HStack(spacing: 8) {
+            TextField(String(localized: "chat.inputPlaceholder"), text: $text)
+                .textFieldStyle(.roundedBorder)
+                .submitLabel(.send)
+                .onSubmit {
+                    guard !isStreaming else { return }
+                    onSend()
+                }
+                .focused(focus)
+                .disabled(isRecording)
+
             if let onMicTapped, !isStreaming {
                 Button(action: {
                     UIImpactFeedbackGenerator(style: isRecording ? .medium : .light).impactOccurred()
@@ -34,17 +44,8 @@ struct ChatInputBar: View {
                 .accessibilityLabel(String(localized: isRecording
                     ? "a11y.chat.stopRecording"
                     : "a11y.chat.startRecording"))
+                .padding(.trailing, 4)
             }
-
-            TextField(String(localized: "chat.inputPlaceholder"), text: $text)
-                .textFieldStyle(.roundedBorder)
-                .submitLabel(.send)
-                .onSubmit {
-                    guard !isStreaming else { return }
-                    onSend()
-                }
-                .focused(focus)
-                .disabled(isRecording)
 
             if isStreaming, let onStop {
                 Button(action: {
