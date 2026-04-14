@@ -664,8 +664,8 @@ struct ChatFeatureTests {
             }
         }
 
-        await store.send(.errorOccurred(.rateLimited)) {
-            $0.error = .rateLimited
+        await store.send(.errorOccurred(.rateLimited(retryAfter: nil, state: nil))) {
+            $0.error = .rateLimited(retryAfter: nil, state: nil)
             $0.isStreaming = false
             $0.conversation.messages = [
                 Message(role: .user, content: "hi", createdAt: Self.fixedDate)
@@ -702,8 +702,8 @@ struct ChatFeatureTests {
 
         let store = TestStore(initialState: state) { ChatFeature() }
 
-        await store.send(.errorOccurred(.rateLimited)) {
-            $0.error = .rateLimited
+        await store.send(.errorOccurred(.rateLimited(retryAfter: nil, state: nil))) {
+            $0.error = .rateLimited(retryAfter: nil, state: nil)
             $0.isStreaming = false
             $0.activeToolCalls = []
             $0.pendingWrite = nil

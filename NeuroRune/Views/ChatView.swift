@@ -68,11 +68,14 @@ struct ChatView: View {
                             .animation(reduceMotion ? nil : .easeInOut(duration: 0.3), value: viewStore.rateLimit)
                     }
                     if let error = viewStore.error {
-                        ChatErrorBanner(error: error)
-                            .offset(y: reduceMotion ? 0 : (errorShakeTrigger % 2 == 0 ? 0 : -4))
-                            .animation(reduceMotion ? nil : .default.repeatCount(3, autoreverses: true).speed(6), value: errorShakeTrigger)
-                            .transition(reduceMotion ? .opacity : .move(edge: .bottom).combined(with: .opacity))
-                            .animation(reduceMotion ? nil : .easeInOut(duration: 0.3), value: viewStore.error)
+                        ErrorBubbleView(
+                            error: error,
+                            onRetry: { viewStore.send(.retryTapped) },
+                            onDismiss: { viewStore.send(.errorDismissed) }
+                        )
+                        .offset(y: reduceMotion ? 0 : (errorShakeTrigger % 2 == 0 ? 0 : -4))
+                        .animation(reduceMotion ? nil : .default.repeatCount(3, autoreverses: true).speed(6), value: errorShakeTrigger)
+                        .animation(reduceMotion ? nil : .easeInOut(duration: 0.3), value: viewStore.error)
                     }
                     if !viewStore.activeToolCalls.isEmpty {
                         ToolCallChips(calls: viewStore.activeToolCalls)

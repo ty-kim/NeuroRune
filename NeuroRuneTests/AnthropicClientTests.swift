@@ -77,13 +77,58 @@ struct AnthropicClientTests {
         }
     }
 
-    @Test("429 → LLMError.rateLimited")
+    @Test("429 → LLMError.rateLimited (retryAfter/state nil)")
     func mapsRateLimited() async throws {
         let stub = stubStatus(429, body: #"{"error":{"type":"rate_limit_error"}}"#)
         let client = LLMClient.anthropic(session: stub.session, apiKey: "sk-test")
 
-        await #expect(throws: LLMError.rateLimited) {
+        await #expect(throws: LLMError.rateLimited(retryAfter: nil, state: nil)) {
             _ = try await client.streamMessage([Self.userMessage], .opus46, nil, nil, nil)
+        }
+    }
+
+    @Test("429 + retry-after 헤더 → retryAfter에 초 단위 값")
+    func mapsRateLimitedWithRetryAfter() async throws {
+        let stub = stubStatus(
+            429,
+            body: #"{"error":{"type":"rate_limit_error"}}"#,
+            extraHeaders: ["retry-after": "42"]
+        )
+        let client = LLMClient.anthropic(session: stub.session, apiKey: "sk-test")
+
+        do {
+            _ = try await client.streamMessage([Self.userMessage], .opus46, nil, nil, nil)
+            Issue.record("expected rateLimited to throw")
+        } catch let LLMError.rateLimited(retryAfter, state) {
+            #expect(retryAfter == 42)
+            #expect(state == nil)
+        } catch {
+            Issue.record("unexpected error: \(error)")
+        }
+    }
+
+    @Test("429 + rate limit 헤더 → state에 RateLimitState 담김")
+    func mapsRateLimitedWithState() async throws {
+        let stub = stubStatus(
+            429,
+            body: #"{"error":{"type":"rate_limit_error"}}"#,
+            extraHeaders: [
+                "retry-after": "30",
+                "anthropic-ratelimit-tokens-limit": "80000",
+                "anthropic-ratelimit-tokens-remaining": "0",
+                "anthropic-ratelimit-tokens-reset": "2026-04-14T14:00:00Z"
+            ]
+        )
+        let client = LLMClient.anthropic(session: stub.session, apiKey: "sk-test")
+
+        do {
+            _ = try await client.streamMessage([Self.userMessage], .opus46, nil, nil, nil)
+            Issue.record("expected rateLimited to throw")
+        } catch let LLMError.rateLimited(retryAfter, state) {
+            #expect(retryAfter == 30)
+            #expect(state?.tokens?.remaining == 0)
+        } catch {
+            Issue.record("unexpected error: \(error)")
         }
     }
 
