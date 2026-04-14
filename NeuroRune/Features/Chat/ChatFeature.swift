@@ -343,10 +343,13 @@ nonisolated struct ChatFeature: Reducer {
 
         case let .recordingStopped(audio):
             state.isRecording = false
+            @Dependency(\.locale) var locale
+            // BCP-47 언어 부분만. zh-Hans/zh-Hant는 "zh"로 축약 → Whisper 간체/번체 구분 안 함.
+            let language = locale.language.languageCode?.identifier ?? "ko"
             return .run { send in
                 @Dependency(\.sttClient) var stt
                 do {
-                    let result = try await stt.transcribe(audio, "Kor")
+                    let result = try await stt.transcribe(audio, language)
                     await send(.transcribed(result))
                 } catch let e as STTError {
                     await send(.sttErrorOccurred(e))

@@ -4,7 +4,7 @@
 //
 //  Created by tykim
 //
-//  STTResult, STTError, NCPCredentials 도메인 테스트.
+//  STTResult, STTError, GroqCredentials 도메인 테스트.
 //
 
 import Foundation
@@ -60,32 +60,29 @@ struct STTErrorTests {
     }
 }
 
-struct NCPCredentialsTests {
-    @Test func 둘다_있으면_유효() {
-        let c = NCPCredentials(apiKeyID: "id1", apiKey: "secret1")
-        #expect(c.isValid == true)
+struct GroqCredentialsTests {
+    @Test func 키가_있으면_유효() {
+        #expect(GroqCredentials(apiKey: "gsk_xyz").isValid == true)
     }
 
-    @Test func 하나라도_비면_무효() {
-        #expect(NCPCredentials(apiKeyID: "", apiKey: "x").isValid == false)
-        #expect(NCPCredentials(apiKeyID: "x", apiKey: "").isValid == false)
+    @Test func 빈_문자열은_무효() {
+        #expect(GroqCredentials(apiKey: "").isValid == false)
     }
 
     @Test func 공백만_있으면_무효() {
-        #expect(NCPCredentials(apiKeyID: "   ", apiKey: "x").isValid == false)
-        #expect(NCPCredentials(apiKeyID: "x", apiKey: " \n ").isValid == false)
+        #expect(GroqCredentials(apiKey: "   ").isValid == false)
+        #expect(GroqCredentials(apiKey: " \n ").isValid == false)
     }
 
     @Test func Equatable() {
-        let a = NCPCredentials(apiKeyID: "id", apiKey: "key")
-        let b = NCPCredentials(apiKeyID: "id", apiKey: "key")
-        let c = NCPCredentials(apiKeyID: "id2", apiKey: "key")
+        let a = GroqCredentials(apiKey: "k")
+        let b = GroqCredentials(apiKey: "k")
+        let c = GroqCredentials(apiKey: "k2")
         #expect(a == b)
         #expect(a != c)
     }
 
     @Test func Keychain_키_이름_고정() {
-        #expect(NCPCredentials.KeychainKey.apiKeyID == "ncp.apiKeyID")
-        #expect(NCPCredentials.KeychainKey.apiKey == "ncp.apiKey")
+        #expect(GroqCredentials.KeychainKey.apiKey == "groq.apiKey")
     }
 }

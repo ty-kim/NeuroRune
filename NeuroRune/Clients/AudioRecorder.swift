@@ -4,8 +4,8 @@
 //
 //  Created by tykim
 //
-//  Phase 21 Step 3 — 마이크에서 녹음해 Clova CSR에 보낼 WAV 바이트를 반환.
-//  포맷: 16kHz mono 16-bit Linear PCM (.wav) — Clova CSR short-sentence 규격.
+//  Phase 21 Step 3 — 마이크에서 녹음해 STT 백엔드(Groq Whisper)에 보낼 WAV 바이트를 반환.
+//  포맷: 16kHz mono 16-bit Linear PCM (.wav) — Whisper 권장 입력 규격.
 //
 
 import Foundation
@@ -17,7 +17,7 @@ nonisolated struct AudioRecorder: Sendable {
     var requestPermission: @Sendable () async -> Bool
     /// 녹음 시작. 권한 없거나 엔진 실패 시 `STTError` throw.
     var start: @Sendable () async throws -> Void
-    /// 녹음 종료 후 WAV 바이트(16kHz mono 16-bit PCM, Clova CSR 호환) 반환.
+    /// 녹음 종료 후 WAV 바이트(16kHz mono 16-bit PCM, Whisper 권장 포맷) 반환.
     var stop: @Sendable () async throws -> Data
     /// 현재 녹음 중인지.
     var isRecording: @Sendable () async -> Bool
@@ -137,7 +137,7 @@ nonisolated extension AudioRecorder: DependencyKey {
         requestPermission: { true },
         start: { },
         stop: {
-            // Minimal WAV stub: 44-byte header + 0 samples. Clova CSR은 거부하겠지만
+            // Minimal WAV stub: 44-byte header + 0 samples. 실제 API는 거부하겠지만
             // UI 경로 테스트용으로만 쓰인다.
             Data(count: 44)
         },

@@ -5,7 +5,7 @@
 //  Created by tykim
 //
 //  Phase 21 — STT 파이프라인 에러.
-//  녹음(마이크 권한·AVAudioEngine)과 전사(Clova CSR 네트워크) 단계를 모두 포함.
+//  녹음(마이크 권한·AVAudioEngine)과 전사(Groq Whisper 네트워크) 단계를 모두 포함.
 //
 
 import Foundation
@@ -15,11 +15,11 @@ nonisolated enum STTError: Error, Equatable, Sendable {
     case microphonePermissionDenied
     /// AVAudioEngine 등 로컬 녹음 실패. detail은 로그용.
     case recordingFailed(String)
-    /// 60초 초과. Clova CSR short sentence 한도.
+    /// 60초 초과. Whisper는 25MB 한도지만 보수적으로 60초 컷.
     case audioTooLong
     /// 네트워크 연결·타임아웃.
     case network(String)
-    /// 401 — NCP 키 불일치 또는 구독 미활성화.
+    /// 401 — Groq API 키 불일치 또는 만료.
     case unauthorized
     /// 429 — 쿼터 초과.
     case rateLimited

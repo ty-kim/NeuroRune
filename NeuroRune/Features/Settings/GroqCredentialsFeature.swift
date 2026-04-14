@@ -1,32 +1,28 @@
 //
-//  NCPCredentialsFeature.swift
+//  GroqCredentialsFeature.swift
 //  NeuroRune
 //
 //  Created by tykim
 //
-//  Phase 21 — Naver Cloud Platform API 자격 증명 입력/저장.
-//  GitHubCredentialsFeature 패턴을 따름.
+//  Phase 21 — Groq API 키 입력/저장.
 //
 
 import Foundation
 import ComposableArchitecture
 
-nonisolated struct NCPCredentialsFeature: Reducer {
+nonisolated struct GroqCredentialsFeature: Reducer {
 
     struct State: Equatable {
-        var apiKeyID: String = ""
         var apiKey: String = ""
         var isSaving: Bool = false
         var error: String?
 
         var isValid: Bool {
-            !apiKeyID.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-                && !apiKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            !apiKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
         }
     }
 
     enum Action: Equatable {
-        case apiKeyIDChanged(String)
         case apiKeyChanged(String)
         case saveTapped
         case saveSucceeded
@@ -34,18 +30,13 @@ nonisolated struct NCPCredentialsFeature: Reducer {
         case clearTapped
         case cleared
         case loadExisting
-        case existingLoaded(NCPCredentials?)
+        case existingLoaded(GroqCredentials?)
     }
 
     func reduce(into state: inout State, action: Action) -> Effect<Action> {
-        @Dependency(\.ncpCredentialsClient) var client
+        @Dependency(\.groqCredentialsClient) var client
 
         switch action {
-        case let .apiKeyIDChanged(v):
-            state.apiKeyID = v
-            state.error = nil
-            return .none
-
         case let .apiKeyChanged(v):
             state.apiKey = v
             state.error = nil
@@ -55,8 +46,7 @@ nonisolated struct NCPCredentialsFeature: Reducer {
             guard state.isValid else { return .none }
             state.isSaving = true
             state.error = nil
-            let creds = NCPCredentials(
-                apiKeyID: state.apiKeyID.trimmingCharacters(in: .whitespacesAndNewlines),
+            let creds = GroqCredentials(
                 apiKey: state.apiKey.trimmingCharacters(in: .whitespacesAndNewlines)
             )
             return .run { send in
@@ -85,7 +75,6 @@ nonisolated struct NCPCredentialsFeature: Reducer {
             }
 
         case .cleared:
-            state.apiKeyID = ""
             state.apiKey = ""
             return .none
 
@@ -97,7 +86,6 @@ nonisolated struct NCPCredentialsFeature: Reducer {
 
         case let .existingLoaded(creds):
             if let creds {
-                state.apiKeyID = creds.apiKeyID
                 state.apiKey = creds.apiKey
             }
             return .none

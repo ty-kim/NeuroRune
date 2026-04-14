@@ -1,18 +1,17 @@
 //
-//  NCPCredentialsView.swift
+//  GroqCredentialsView.swift
 //  NeuroRune
 //
 //  Created by tykim
 //
-//  Phase 21 — Naver Cloud Platform API 자격 증명 입력 화면.
-//  STT(Clova CSR)·향후 다른 NCP 서비스 공용 키.
+//  Phase 21 — Groq API 키 입력 화면. Whisper(STT)·향후 다른 Groq 서비스 공용.
 //
 
 import SwiftUI
 import ComposableArchitecture
 
-struct NCPCredentialsView: View {
-    let store: StoreOf<NCPCredentialsFeature>
+struct GroqCredentialsView: View {
+    let store: StoreOf<GroqCredentialsFeature>
     var onSaved: () -> Void = {}
 
     @State private var isKeyRevealed = false
@@ -23,37 +22,22 @@ struct NCPCredentialsView: View {
             NavigationStack {
                 Form {
                     Section {
-                        TextField(
-                            String(localized: "ncp.apiKeyID.placeholder"),
-                            text: viewStore.binding(
-                                get: \.apiKeyID,
-                                send: NCPCredentialsFeature.Action.apiKeyIDChanged
-                            )
-                        )
-                        .autocorrectionDisabled()
-                        .textInputAutocapitalization(.never)
-                        .textContentType(.username)
-                    } header: {
-                        Text(String(localized: "ncp.apiKeyID"))
-                    }
-
-                    Section {
                         HStack(spacing: 8) {
                             Group {
                                 if isKeyRevealed {
                                     TextField(
-                                        String(localized: "ncp.apiKey.placeholder"),
+                                        String(localized: "groq.apiKey.placeholder"),
                                         text: viewStore.binding(
                                             get: \.apiKey,
-                                            send: NCPCredentialsFeature.Action.apiKeyChanged
+                                            send: GroqCredentialsFeature.Action.apiKeyChanged
                                         )
                                     )
                                 } else {
                                     SecureField(
-                                        String(localized: "ncp.apiKey.placeholder"),
+                                        String(localized: "groq.apiKey.placeholder"),
                                         text: viewStore.binding(
                                             get: \.apiKey,
-                                            send: NCPCredentialsFeature.Action.apiKeyChanged
+                                            send: GroqCredentialsFeature.Action.apiKeyChanged
                                         )
                                     )
                                 }
@@ -70,9 +54,9 @@ struct NCPCredentialsView: View {
                             }
                         }
                     } header: {
-                        Text(String(localized: "ncp.apiKey"))
+                        Text(String(localized: "groq.apiKey"))
                     } footer: {
-                        Text(String(localized: "ncp.footer"))
+                        Text(String(localized: "groq.footer"))
                     }
 
                     if let error = viewStore.error {
@@ -83,17 +67,17 @@ struct NCPCredentialsView: View {
                         }
                     }
 
-                    if !viewStore.apiKeyID.isEmpty || !viewStore.apiKey.isEmpty {
+                    if !viewStore.apiKey.isEmpty {
                         Section {
                             Button(role: .destructive) {
                                 viewStore.send(.clearTapped)
                             } label: {
-                                Text(String(localized: "ncp.clear"))
+                                Text(String(localized: "groq.clear"))
                             }
                         }
                     }
                 }
-                .navigationTitle(String(localized: "ncp.title"))
+                .navigationTitle(String(localized: "groq.title"))
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar {
                     ToolbarItem(placement: .cancellationAction) {
@@ -122,9 +106,9 @@ struct NCPCredentialsView: View {
 }
 
 #Preview {
-    NCPCredentialsView(
-        store: Store(initialState: NCPCredentialsFeature.State()) {
-            NCPCredentialsFeature()
+    GroqCredentialsView(
+        store: Store(initialState: GroqCredentialsFeature.State()) {
+            GroqCredentialsFeature()
         }
     )
 }

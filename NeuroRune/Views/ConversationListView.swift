@@ -29,10 +29,10 @@ struct ConversationListView: View {
                     ToolbarItem(placement: .topBarLeading) {
                         Menu {
                             Button {
-                                viewStore.send(.ncpCredentialsTapped)
+                                viewStore.send(.groqCredentialsTapped)
                             } label: {
                                 Label(
-                                    String(localized: "settings.ncpKey"),
+                                    String(localized: "settings.groqKey"),
                                     systemImage: "waveform"
                                 )
                             }
@@ -87,16 +87,16 @@ struct ConversationListView: View {
                 }
                 .sheet(
                     isPresented: viewStore.binding(
-                        get: \.showNCPCredentials,
-                        send: ConversationListFeature.Action.ncpCredentialsDismissed
+                        get: \.showGroqCredentials,
+                        send: ConversationListFeature.Action.groqCredentialsDismissed
                     )
                 ) {
-                    NCPCredentialsView(
-                        store: Store(initialState: NCPCredentialsFeature.State()) {
-                            NCPCredentialsFeature()
+                    GroqCredentialsView(
+                        store: Store(initialState: GroqCredentialsFeature.State()) {
+                            GroqCredentialsFeature()
                         },
                         onSaved: {
-                            viewStore.send(.ncpCredentialsDismissed)
+                            viewStore.send(.groqCredentialsDismissed)
                         }
                     )
                 }

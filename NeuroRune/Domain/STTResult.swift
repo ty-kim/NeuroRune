@@ -4,7 +4,7 @@
 //
 //  Created by tykim
 //
-//  Phase 21 — Clova CSR STT 결과 도메인 객체.
+//  Phase 21 — STT 결과 도메인 객체 (Groq Whisper).
 //
 
 import Foundation

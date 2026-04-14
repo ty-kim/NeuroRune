@@ -90,6 +90,7 @@ extension ChatFeatureTests {
         state.isRecording = true
 
         let store = TestStore(initialState: state) { ChatFeature() } withDependencies: {
+            $0.locale = Locale(identifier: "ko_KR")
             $0.audioRecorder = AudioRecorder(
                 requestPermission: { true },
                 start: { },
@@ -99,7 +100,7 @@ extension ChatFeatureTests {
             $0.sttClient = STTClient(
                 transcribe: { audio, lang in
                     #expect(audio == Data([0xAB, 0xCD]))
-                    #expect(lang == "Kor")
+                    #expect(lang == "ko")
                     return STTResult(text: "변환된 텍스트")
                 }
             )
@@ -140,6 +141,7 @@ extension ChatFeatureTests {
         state.isRecording = true
 
         let store = TestStore(initialState: state) { ChatFeature() } withDependencies: {
+            $0.locale = Locale(identifier: "ko_KR")
             $0.audioRecorder = AudioRecorder(
                 requestPermission: { true },
                 start: { },

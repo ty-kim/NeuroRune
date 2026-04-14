@@ -4,7 +4,7 @@
 //
 //  Created by tykim
 //
-//  STTClient.clovaCSR 통합 테스트. URLProtocolStub로 HTTP 응답 주입.
+//  STTClient.groqWhisper 통합 테스트. URLProtocolStub로 HTTP 응답 주입.
 //
 
 import Foundation
@@ -13,29 +13,38 @@ import Testing
 
 struct STTClientTests {
 
-    private let credentials = NCPCredentials(apiKeyID: "id-test", apiKey: "key-test")
+    private let credentials = GroqCredentials(apiKey: "gsk_test-key")
 
     // MARK: - Request 구성
 
-    @Test("buildCSRRequest는 lang 쿼리와 두 헤더, octet-stream, body를 채운다")
+    @Test("buildGroqRequest는 endpoint·Bearer·multipart Content-Type을 세팅한다")
     func buildRequestFields() throws {
         let audio = Data([0x01, 0x02, 0x03])
-        let req = try STTClient.buildCSRRequest(audio: audio, language: "Kor", credentials: credentials)
+        let req = try STTClient.buildGroqRequest(audio: audio, language: "ko", credentials: credentials)
 
         #expect(req.httpMethod == "POST")
-        #expect(req.url?.absoluteString == "https://naveropenapi.apigw.ntruss.com/recog/v1/stt?lang=Kor")
-        #expect(req.value(forHTTPHeaderField: "X-NCP-APIGW-API-KEY-ID") == "id-test")
-        #expect(req.value(forHTTPHeaderField: "X-NCP-APIGW-API-KEY") == "key-test")
-        #expect(req.value(forHTTPHeaderField: "Content-Type") == "application/octet-stream")
-        #expect(req.httpBody == audio)
+        #expect(req.url?.absoluteString == "https://api.groq.com/openai/v1/audio/transcriptions")
+        #expect(req.value(forHTTPHeaderField: "Authorization") == "Bearer gsk_test-key")
+        let contentType = req.value(forHTTPHeaderField: "Content-Type") ?? ""
+        #expect(contentType.hasPrefix("multipart/form-data; boundary="))
     }
 
-    @Test("buildCSRRequest는 언어 코드를 그대로 lang 쿼리로 넘긴다")
-    func languageCodePassthrough() throws {
-        for lang in ["Kor", "Eng", "Jpn", "Chn"] {
-            let req = try STTClient.buildCSRRequest(audio: Data(), language: lang, credentials: credentials)
-            #expect(req.url?.absoluteString.contains("lang=\(lang)") == true)
-        }
+    @Test("multipart body에 file·model·language·response_format이 포함된다")
+    func multipartBodyFields() throws {
+        // ASCII 전용 오디오 바이트로 utf-8 디코딩 가능하게 유지
+        let audio = Data("AB".utf8)
+        let body = STTClient.buildMultipartBody(boundary: "BOUND", audio: audio, language: "ko")
+        let text = String(data: body, encoding: .utf8) ?? ""
+
+        #expect(text.contains("name=\"file\"; filename=\"audio.wav\""))
+        #expect(text.contains("Content-Type: audio/wav"))
+        #expect(text.contains("name=\"model\""))
+        #expect(text.contains("whisper-large-v3"))
+        #expect(text.contains("name=\"language\""))
+        #expect(text.contains("ko"))
+        #expect(text.contains("name=\"response_format\""))
+        #expect(text.contains("json"))
+        #expect(text.hasSuffix("--BOUND--\r\n"))
     }
 
     // MARK: - Success
@@ -43,9 +52,9 @@ struct STTClientTests {
     @Test("200 + 정상 JSON → STTResult.text")
     func success200ReturnsText() async throws {
         let stub = stubStatus(200, jsonBody: #"{"text":"안녕하세요"}"#)
-        let client = STTClient.clovaCSR(session: stub.session, credentials: credentials)
+        let client = STTClient.groqWhisper(session: stub.session, credentials: credentials)
 
-        let result = try await client.transcribe(Data([0xAA]), "Kor")
+        let result = try await client.transcribe(Data([0xAA]), "ko")
         #expect(result.text == "안녕하세요")
     }
 
@@ -53,31 +62,31 @@ struct STTClientTests {
 
     @Test("401 → STTError.unauthorized")
     func unauthorized() async throws {
-        let stub = stubStatus(401, jsonBody: #"{"error":{"message":"bad key"}}"#)
-        let client = STTClient.clovaCSR(session: stub.session, credentials: credentials)
+        let stub = stubStatus(401, jsonBody: #"{"error":{"message":"Invalid API Key"}}"#)
+        let client = STTClient.groqWhisper(session: stub.session, credentials: credentials)
 
         await #expect(throws: STTError.unauthorized) {
-            _ = try await client.transcribe(Data(), "Kor")
+            _ = try await client.transcribe(Data(), "ko")
         }
     }
 
     @Test("429 → STTError.rateLimited")
     func rateLimited() async throws {
         let stub = stubStatus(429, jsonBody: "")
-        let client = STTClient.clovaCSR(session: stub.session, credentials: credentials)
+        let client = STTClient.groqWhisper(session: stub.session, credentials: credentials)
 
         await #expect(throws: STTError.rateLimited) {
-            _ = try await client.transcribe(Data(), "Kor")
+            _ = try await client.transcribe(Data(), "ko")
         }
     }
 
     @Test("5xx → STTError.server 에 status·메시지")
     func serverError() async throws {
-        let stub = stubStatus(503, jsonBody: #"{"errorMessage":"overloaded"}"#)
-        let client = STTClient.clovaCSR(session: stub.session, credentials: credentials)
+        let stub = stubStatus(503, jsonBody: #"{"error":{"message":"overloaded"}}"#)
+        let client = STTClient.groqWhisper(session: stub.session, credentials: credentials)
 
         do {
-            _ = try await client.transcribe(Data(), "Kor")
+            _ = try await client.transcribe(Data(), "ko")
             Issue.record("expected server error")
         } catch let STTError.server(status, message) {
             #expect(status == 503)
@@ -90,10 +99,10 @@ struct STTClientTests {
     @Test("200이지만 JSON 파싱 실패 → STTError.decoding")
     func decodingError() async throws {
         let stub = stubStatus(200, jsonBody: #"{"unexpected":"shape"}"#)
-        let client = STTClient.clovaCSR(session: stub.session, credentials: credentials)
+        let client = STTClient.groqWhisper(session: stub.session, credentials: credentials)
 
         do {
-            _ = try await client.transcribe(Data(), "Kor")
+            _ = try await client.transcribe(Data(), "ko")
             Issue.record("expected decoding error")
         } catch let STTError.decoding(detail) {
             #expect(!detail.isEmpty)
@@ -110,10 +119,10 @@ struct STTClientTests {
             let http = HTTPURLResponse(url: request.url!, statusCode: 0, httpVersion: nil, headerFields: nil)!
             return (http, nil, error)
         }
-        let client = STTClient.clovaCSR(session: stub.session, credentials: credentials)
+        let client = STTClient.groqWhisper(session: stub.session, credentials: credentials)
 
         do {
-            _ = try await client.transcribe(Data(), "Kor")
+            _ = try await client.transcribe(Data(), "ko")
             Issue.record("expected network error")
         } catch STTError.network {
             // ok
@@ -130,10 +139,10 @@ struct STTClientTests {
             let http = HTTPURLResponse(url: request.url!, statusCode: 0, httpVersion: nil, headerFields: nil)!
             return (http, nil, error)
         }
-        let client = STTClient.clovaCSR(session: stub.session, credentials: credentials)
+        let client = STTClient.groqWhisper(session: stub.session, credentials: credentials)
 
         await #expect(throws: STTError.cancelled) {
-            _ = try await client.transcribe(Data(), "Kor")
+            _ = try await client.transcribe(Data(), "ko")
         }
     }
 

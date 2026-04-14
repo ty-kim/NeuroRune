@@ -4,9 +4,9 @@
 //
 //  Created by tykim
 //
-//  Phase 21 — Speech-to-Text 변환 프로토콜.
-//  오디오 바이트(현재 WAV 16kHz mono 16-bit 권장)를 받아 텍스트 결과 반환.
-//  구현체(`liveValue`)는 다음 세션에서 Clova CSR 연결.
+//  Phase 21 — Speech-to-Text 변환.
+//  오디오 바이트(WAV 16kHz mono 16-bit 권장)를 받아 텍스트 결과 반환.
+//  liveValue는 Groq Whisper API(whisper-large-v3) 사용.
 //
 
 import Foundation
@@ -14,22 +14,22 @@ import Dependencies
 import os
 
 nonisolated struct STTClient: Sendable {
-    /// 오디오 바이트와 언어 코드(Clova 기준: "Kor", "Eng", "Jpn", "Chn")를 받아 전사 결과 반환.
+    /// 오디오 바이트와 ISO-639-1 언어 코드("ko", "en", "ja", "zh")를 받아 전사 결과 반환.
     /// 실패 시 `STTError` 계열 throw.
     var transcribe: @Sendable (_ audio: Data, _ language: String) async throws -> STTResult
 }
 
-// MARK: - Clova CSR 구현
+// MARK: - Groq Whisper 구현
 
 nonisolated extension STTClient {
 
-    /// Clova CSR(Short Sentence) REST API 기반 구현.
+    /// Groq Whisper API 기반 구현.
     /// - session: 테스트 시 `URLProtocolStub`을 탑재한 세션 주입
-    /// - credentials: NCP API Gateway 키 쌍
-    static func clovaCSR(session: URLSession, credentials: NCPCredentials) -> STTClient {
+    /// - credentials: Groq API 키 (Bearer)
+    static func groqWhisper(session: URLSession, credentials: GroqCredentials) -> STTClient {
         STTClient(
             transcribe: { audio, language in
-                let request = try buildCSRRequest(
+                let request = try buildGroqRequest(
                     audio: audio,
                     language: language,
                     credentials: credentials
@@ -56,69 +56,94 @@ nonisolated extension STTClient {
         )
     }
 
-    /// Clova CSR 엔드포인트.
-    /// 공식: `https://naveropenapi.apigw.ntruss.com/recog/v1/stt?lang={lang}`
-    static func buildCSRRequest(
+    /// Groq Whisper 엔드포인트. OpenAI 호환 API.
+    /// `https://api.groq.com/openai/v1/audio/transcriptions`
+    static func buildGroqRequest(
         audio: Data,
         language: String,
-        credentials: NCPCredentials
+        credentials: GroqCredentials
     ) throws -> URLRequest {
-        guard var components = URLComponents(string: "https://naveropenapi.apigw.ntruss.com/recog/v1/stt") else {
-            throw STTError.network("invalid CSR endpoint URL")
-        }
-        components.queryItems = [URLQueryItem(name: "lang", value: language)]
-        guard let url = components.url else {
-            throw STTError.network("failed to construct CSR URL")
+        guard let url = URL(string: "https://api.groq.com/openai/v1/audio/transcriptions") else {
+            throw STTError.network("invalid Groq endpoint URL")
         }
 
+        let boundary = "Boundary-\(UUID().uuidString)"
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
-        request.setValue(credentials.apiKeyID, forHTTPHeaderField: "X-NCP-APIGW-API-KEY-ID")
-        request.setValue(credentials.apiKey, forHTTPHeaderField: "X-NCP-APIGW-API-KEY")
-        request.setValue("application/octet-stream", forHTTPHeaderField: "Content-Type")
-        request.httpBody = audio
+        request.setValue("Bearer \(credentials.apiKey)", forHTTPHeaderField: "Authorization")
+        request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
+        request.httpBody = buildMultipartBody(
+            boundary: boundary,
+            audio: audio,
+            language: language
+        )
         return request
+    }
+
+    /// multipart/form-data 구성: file(audio/wav) + model + language + response_format.
+    static func buildMultipartBody(boundary: String, audio: Data, language: String) -> Data {
+        var body = Data()
+        let crlf = "\r\n"
+
+        func appendField(name: String, value: String) {
+            body.append("--\(boundary)\(crlf)".data(using: .utf8)!)
+            body.append("Content-Disposition: form-data; name=\"\(name)\"\(crlf)\(crlf)".data(using: .utf8)!)
+            body.append("\(value)\(crlf)".data(using: .utf8)!)
+        }
+
+        // file
+        body.append("--\(boundary)\(crlf)".data(using: .utf8)!)
+        body.append("Content-Disposition: form-data; name=\"file\"; filename=\"audio.wav\"\(crlf)".data(using: .utf8)!)
+        body.append("Content-Type: audio/wav\(crlf)\(crlf)".data(using: .utf8)!)
+        body.append(audio)
+        body.append(crlf.data(using: .utf8)!)
+
+        appendField(name: "model", value: "whisper-large-v3")
+        appendField(name: "language", value: language)
+        appendField(name: "response_format", value: "json")
+
+        body.append("--\(boundary)--\(crlf)".data(using: .utf8)!)
+        return body
     }
 
     /// HTTP 상태 + 응답 본문을 STTResult / STTError로 매핑.
     static func handle(status: Int, body: Data) throws -> STTResult {
         switch status {
         case 200..<300:
-            return try decodeCSRResponse(body)
+            return try decodeGroqResponse(body)
         case 401:
             throw STTError.unauthorized
         case 429:
             throw STTError.rateLimited
         default:
-            let message = extractMessage(from: body) ?? "CSR request failed"
+            let message = extractMessage(from: body) ?? "Groq request failed"
             throw STTError.server(status: status, message: message)
         }
     }
 
-    /// Clova CSR 응답 JSON: `{ "text": "안녕" }` 형태.
-    static func decodeCSRResponse(_ data: Data) throws -> STTResult {
-        struct CSRResponse: Decodable {
+    /// Groq Whisper 응답 JSON: `{ "text": "..." }`.
+    static func decodeGroqResponse(_ data: Data) throws -> STTResult {
+        struct GroqResponse: Decodable {
             let text: String
         }
         do {
-            let decoded = try JSONDecoder().decode(CSRResponse.self, from: data)
+            let decoded = try JSONDecoder().decode(GroqResponse.self, from: data)
             return STTResult(text: decoded.text)
         } catch {
             throw STTError.decoding(error.localizedDescription)
         }
     }
 
-    /// 서버 에러 응답 JSON에서 메시지 추출 시도. 실패 시 nil.
+    /// OpenAI 호환 에러 응답: `{ "error": { "message": "..." } }`.
     static func extractMessage(from data: Data) -> String? {
         struct ErrorEnvelope: Decodable {
             let error: ErrorBody?
-            let errorMessage: String?
             struct ErrorBody: Decodable {
                 let message: String?
             }
         }
         if let env = try? JSONDecoder().decode(ErrorEnvelope.self, from: data) {
-            return env.error?.message ?? env.errorMessage
+            return env.error?.message
         }
         return String(data: data, encoding: .utf8)
     }
@@ -130,11 +155,11 @@ nonisolated extension STTClient: DependencyKey {
     static let liveValue: STTClient = {
         STTClient(
             transcribe: { audio, language in
-                guard let credentials = try NCPCredentialsClient.liveValue.load() else {
-                    Logger.network.error("STT transcribe: NCP credentials missing")
+                guard let credentials = try GroqCredentialsClient.liveValue.load() else {
+                    Logger.network.error("STT transcribe: Groq credentials missing")
                     throw STTError.unauthorized
                 }
-                let client = STTClient.clovaCSR(session: .shared, credentials: credentials)
+                let client = STTClient.groqWhisper(session: .shared, credentials: credentials)
                 return try await client.transcribe(audio, language)
             }
         )
