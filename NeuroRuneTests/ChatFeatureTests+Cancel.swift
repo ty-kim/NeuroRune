@@ -2,6 +2,8 @@
 //  ChatFeatureTests+Cancel.swift
 //  NeuroRuneTests
 //
+//  Created by tykim
+//
 //  Phase 20 — 스트리밍 중 취소 (Stop 버튼) 테스트.
 //  stopTapped 액션이 CancelID.streaming 을 취소하고, effect가
 //  streamFinished 경로로 partial 응답을 보존하는지 검증.

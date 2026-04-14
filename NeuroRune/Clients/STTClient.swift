@@ -2,6 +2,8 @@
 //  STTClient.swift
 //  NeuroRune
 //
+//  Created by tykim
+//
 //  Phase 21 — Speech-to-Text 변환 프로토콜.
 //  오디오 바이트(현재 WAV 16kHz mono 16-bit 권장)를 받아 텍스트 결과 반환.
 //  구현체(`liveValue`)는 다음 세션에서 Clova CSR 연결.

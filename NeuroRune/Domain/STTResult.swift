@@ -2,6 +2,8 @@
 //  STTResult.swift
 //  NeuroRune
 //
+//  Created by tykim
+//
 //  Phase 21 — Clova CSR STT 결과 도메인 객체.
 //
 

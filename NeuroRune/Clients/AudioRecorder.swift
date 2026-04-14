@@ -2,6 +2,8 @@
 //  AudioRecorder.swift
 //  NeuroRune
 //
+//  Created by tykim
+//
 //  Phase 21 Step 3 — 마이크에서 녹음해 Clova CSR에 보낼 WAV 바이트를 반환.
 //  포맷: 16kHz mono 16-bit Linear PCM (.wav) — Clova CSR short-sentence 규격.
 //

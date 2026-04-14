@@ -2,6 +2,8 @@
 //  RateLimitBadge.swift
 //  NeuroRune
 //
+//  Created by tykim
+//
 //  Anthropic rate limit 쿼터가 낮을 때 ChatView 상단에 표시되는 배지.
 //  - 가장 여유 없는 Quota 기준으로 표시.
 //  - remaining >= 20% → 숨김 (body가 EmptyView).

@@ -2,6 +2,8 @@
 //  NCPCredentialsClient.swift
 //  NeuroRune
 //
+//  Created by tykim
+//
 //  NCPCredentials의 Keychain 영속화. GitHubCredentialsClient 패턴을 따름.
 //
 

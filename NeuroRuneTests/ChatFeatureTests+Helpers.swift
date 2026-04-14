@@ -2,6 +2,8 @@
 //  ChatFeatureTests+Helpers.swift
 //  NeuroRuneTests
 //
+//  Created by tykim
+//
 //  ChatFeatureTests 공용 빌더·Mock 의존성 헬퍼.
 //  테스트 반복 코드(Message 생성, 기본 dependencies 세팅)를 1곳으로 수렴.
 //

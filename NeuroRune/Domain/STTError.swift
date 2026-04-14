@@ -2,6 +2,8 @@
 //  STTError.swift
 //  NeuroRune
 //
+//  Created by tykim
+//
 //  Phase 21 — STT 파이프라인 에러.
 //  녹음(마이크 권한·AVAudioEngine)과 전사(Clova CSR 네트워크) 단계를 모두 포함.
 //

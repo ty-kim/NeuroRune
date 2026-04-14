@@ -2,6 +2,8 @@
 //  STTClientTests.swift
 //  NeuroRuneTests
 //
+//  Created by tykim
+//
 //  STTClient.clovaCSR 통합 테스트. URLProtocolStub로 HTTP 응답 주입.
 //
 

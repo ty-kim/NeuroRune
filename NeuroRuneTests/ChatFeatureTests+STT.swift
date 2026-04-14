@@ -2,6 +2,8 @@
 //  ChatFeatureTests+STT.swift
 //  NeuroRuneTests
 //
+//  Created by tykim
+//
 //  Phase 21 Step C — 마이크 버튼 / 녹음 / 전사 파이프라인 테스트.
 //
 

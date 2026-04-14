@@ -2,6 +2,8 @@
 //  URLProtocolStub.swift
 //  NeuroRuneTests
 //
+//  Created by tykim
+//
 //  URLSession 기반 HTTP 요청을 테스트에서 가로채기 위한 stub.
 //  테스트마다 `Stub()` 인스턴스를 만들면 각자의 session + handler를 갖는다.
 //  X-URLProtocolStub-ID 헤더로 라우팅해 Swift Testing 병렬 실행에서도 격리.

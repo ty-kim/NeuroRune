@@ -2,6 +2,8 @@
 //  STTDomainTests.swift
 //  NeuroRuneTests
 //
+//  Created by tykim
+//
 //  STTResult, STTError, NCPCredentials 도메인 테스트.
 //
 

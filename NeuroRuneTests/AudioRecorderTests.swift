@@ -2,6 +2,8 @@
 //  AudioRecorderTests.swift
 //  NeuroRuneTests
 //
+//  Created by tykim
+//
 //  Phase 21 Step 3 — previewValue 경로만 유닛으로 검증.
 //  liveValue는 AVAudioSession/마이크 권한/하드웨어 의존이라 실기기 dogfooding으로 커버한다.
 //

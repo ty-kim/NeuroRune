@@ -2,6 +2,8 @@
 //  LLMModel.swift
 //  NeuroRune
 //
+//  Created by tykim
+//
 
 nonisolated struct LLMModel: Equatable, Sendable, Identifiable {
     let id: String

@@ -2,6 +2,8 @@
 //  NCPCredentialsClientTests.swift
 //  NeuroRuneTests
 //
+//  Created by tykim
+//
 //  NCPCredentialsClient.keychainBacked 통합 테스트.
 //  GitHubCredentialsClientTests 패턴 재사용 — unique service 이름으로 Keychain 격리.
 //

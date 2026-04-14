@@ -2,6 +2,8 @@
 //  ChatFeatureTests+Errors.swift
 //  NeuroRuneTests
 //
+//  Created by tykim
+//
 //  Phase 19에서 도입된 에러 복구 UX 관련 ChatFeature 테스트.
 //  errorDismissed, errorOccurred(rateLimit 추출), retryTapped 변형 3개.
 //

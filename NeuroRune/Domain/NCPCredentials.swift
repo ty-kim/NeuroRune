@@ -2,6 +2,8 @@
 //  NCPCredentials.swift
 //  NeuroRune
 //
+//  Created by tykim
+//
 //  Naver Cloud Platform API Gateway 인증 키 쌍.
 //  하나의 키 쌍으로 Clova CSR·Voice·OCR 등 여러 NCP AI 서비스에 공통 사용.
 //  서비스별 구독(Subscription)은 NCP 콘솔에서 별도 활성화 필요.

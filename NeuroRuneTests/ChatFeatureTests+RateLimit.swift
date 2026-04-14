@@ -2,6 +2,8 @@
 //  ChatFeatureTests+RateLimit.swift
 //  NeuroRuneTests
 //
+//  Created by tykim
+//
 //  Phase 18 — rate limit 상태 도입/갱신 관련 ChatFeature 테스트.
 //  (errorOccurred에서 rateLimit 추출은 +Errors.swift)
 //
