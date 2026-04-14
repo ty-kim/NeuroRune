@@ -91,33 +91,6 @@
         }
       }
     },
-    "a11y.chat.startRecording" : {
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Start voice recording" } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "音声録音を開始" } },
-        "ko" : { "stringUnit" : { "state" : "translated", "value" : "음성 녹음 시작" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "开始录音" } },
-        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "開始錄音" } }
-      }
-    },
-    "a11y.chat.stopRecording" : {
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Stop voice recording" } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "音声録音を停止" } },
-        "ko" : { "stringUnit" : { "state" : "translated", "value" : "음성 녹음 종료" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "停止录音" } },
-        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "停止錄音" } }
-      }
-    },
-    "a11y.chat.stopButton" : {
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Stop streaming" } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "ストリーミングを停止" } },
-        "ko" : { "stringUnit" : { "state" : "translated", "value" : "스트리밍 중단" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "停止流式传输" } },
-        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "停止串流" } }
-      }
-    },
     "a11y.chat.sendButton" : {
       "localizations" : {
         "en" : {
@@ -148,6 +121,110 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "傳送訊息"
+          }
+        }
+      }
+    },
+    "a11y.chat.startRecording" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Start voice recording"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "音声録音を開始"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "음성 녹음 시작"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "开始录音"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "開始錄音"
+          }
+        }
+      }
+    },
+    "a11y.chat.stopButton" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stop streaming"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ストリーミングを停止"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "스트리밍 중단"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "停止流式传输"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "停止串流"
+          }
+        }
+      }
+    },
+    "a11y.chat.stopRecording" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stop voice recording"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "音声録音を停止"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "음성 녹음 종료"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "停止录音"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "停止錄音"
           }
         }
       }
@@ -908,6 +985,40 @@
         }
       }
     },
+    "error.cancelled" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cancelled"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "キャンセル済み"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "취소됨"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已取消"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已取消"
+          }
+        }
+      }
+    },
     "error.decoding" : {
       "localizations" : {
         "en" : {
@@ -938,6 +1049,40 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "回應解析錯誤"
+          }
+        }
+      }
+    },
+    "error.dismiss" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dismiss"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "閉じる"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "닫기"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "关闭"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "關閉"
           }
         }
       }
@@ -1010,42 +1155,6 @@
         }
       }
     },
-    "error.cancelled" : {
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Cancelled" } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "キャンセル済み" } },
-        "ko" : { "stringUnit" : { "state" : "translated", "value" : "취소됨" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "已取消" } },
-        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "已取消" } }
-      }
-    },
-    "error.retry" : {
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Retry" } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "再試行" } },
-        "ko" : { "stringUnit" : { "state" : "translated", "value" : "재시도" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "重试" } },
-        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "重試" } }
-      }
-    },
-    "error.dismiss" : {
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Dismiss" } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "閉じる" } },
-        "ko" : { "stringUnit" : { "state" : "translated", "value" : "닫기" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "关闭" } },
-        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "關閉" } }
-      }
-    },
-    "error.retry.countdown.format" : {
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Retry available in %@" } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "%@ 後に再試行可能" } },
-        "ko" : { "stringUnit" : { "state" : "translated", "value" : "%@ 후 재시도 가능" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "%@ 后可重试" } },
-        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "%@ 後可重試" } }
-      }
-    },
     "error.prefix" : {
       "localizations" : {
         "en" : {
@@ -1110,6 +1219,74 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "請求過多，請稍後再試。"
+          }
+        }
+      }
+    },
+    "error.retry" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Retry"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "再試行"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "재시도"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "重试"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "重試"
+          }
+        }
+      }
+    },
+    "error.retry.countdown.format" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Retry available in %@"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ 後に再試行可能"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ 후 재시도 가능"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ 后可重试"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ 後可重試"
           }
         }
       }
@@ -1288,15 +1465,6 @@
         }
       }
     },
-    "list.title" : {
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Chats" } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "チャット" } },
-        "ko" : { "stringUnit" : { "state" : "translated", "value" : "채팅 목록" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "聊天列表" } },
-        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "聊天列表" } }
-      }
-    },
     "list.newChat" : {
       "localizations" : {
         "en" : {
@@ -1327,6 +1495,40 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "開始新聊天"
+          }
+        }
+      }
+    },
+    "list.title" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chats"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "チャット"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "채팅 목록"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "聊天列表"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "聊天列表"
           }
         }
       }
@@ -2331,6 +2533,278 @@
         }
       }
     },
+    "rate_limit.critical.a11y" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ quota exhausted, resetting soon"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ の上限に達しました。まもなくリセットされます"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ 한도 초과, 곧 재설정"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ 配额已耗尽,即将重置"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ 配額已耗盡,即將重置"
+          }
+        }
+      }
+    },
+    "rate_limit.critical.format" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ quota exhausted"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ の上限に達しました"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ 한도 초과"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ 配额已耗尽"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ 配額已耗盡"
+          }
+        }
+      }
+    },
+    "rate_limit.kind.input_tokens" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Input tokens"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "入力トークン"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "입력 토큰"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "输入令牌"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "輸入權杖"
+          }
+        }
+      }
+    },
+    "rate_limit.kind.output_tokens" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Output tokens"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "出力トークン"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "출력 토큰"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "输出令牌"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "輸出權杖"
+          }
+        }
+      }
+    },
+    "rate_limit.kind.requests" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Requests"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "リクエスト"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "요청"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "请求"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "請求"
+          }
+        }
+      }
+    },
+    "rate_limit.kind.tokens" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tokens"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "トークン"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "토큰"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "令牌"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "權杖"
+          }
+        }
+      }
+    },
+    "rate_limit.warning.a11y" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ %d%% used, caution"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ %d%% 使用中、注意"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ %d%% 사용 중, 주의"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ 已使用 %d%%,请注意"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ 已使用 %d%%,請注意"
+          }
+        }
+      }
+    },
+    "rate_limit.warning.format" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ %d%% used"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ %d%% 使用中"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ %d%% 사용 중"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ 已使用 %d%%"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ 已使用 %d%%"
+          }
+        }
+      }
+    },
     "sk-ant-..." : {
       "comment" : "A placeholder text for an Anthropic API key.",
       "isCommentAutoGenerated" : true
@@ -2845,78 +3319,6 @@
             "value" : "要寫入記憶嗎?"
           }
         }
-      }
-    },
-    "rate_limit.critical.a11y" : {
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "%@ quota exhausted, resetting soon" } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "%@ の上限に達しました。まもなくリセットされます" } },
-        "ko" : { "stringUnit" : { "state" : "translated", "value" : "%@ 한도 초과, 곧 재설정" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "%@ 配额已耗尽,即将重置" } },
-        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "%@ 配額已耗盡,即將重置" } }
-      }
-    },
-    "rate_limit.critical.format" : {
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "%@ quota exhausted" } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "%@ の上限に達しました" } },
-        "ko" : { "stringUnit" : { "state" : "translated", "value" : "%@ 한도 초과" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "%@ 配额已耗尽" } },
-        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "%@ 配額已耗盡" } }
-      }
-    },
-    "rate_limit.kind.input_tokens" : {
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Input tokens" } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "入力トークン" } },
-        "ko" : { "stringUnit" : { "state" : "translated", "value" : "입력 토큰" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "输入令牌" } },
-        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "輸入權杖" } }
-      }
-    },
-    "rate_limit.kind.output_tokens" : {
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Output tokens" } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "出力トークン" } },
-        "ko" : { "stringUnit" : { "state" : "translated", "value" : "출력 토큰" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "输出令牌" } },
-        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "輸出權杖" } }
-      }
-    },
-    "rate_limit.kind.requests" : {
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Requests" } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "リクエスト" } },
-        "ko" : { "stringUnit" : { "state" : "translated", "value" : "요청" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "请求" } },
-        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "請求" } }
-      }
-    },
-    "rate_limit.kind.tokens" : {
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Tokens" } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "トークン" } },
-        "ko" : { "stringUnit" : { "state" : "translated", "value" : "토큰" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "令牌" } },
-        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "權杖" } }
-      }
-    },
-    "rate_limit.warning.a11y" : {
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "%@ %d%% used, caution" } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "%@ %d%% 使用中、注意" } },
-        "ko" : { "stringUnit" : { "state" : "translated", "value" : "%@ %d%% 사용 중, 주의" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "%@ 已使用 %d%%,请注意" } },
-        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "%@ 已使用 %d%%,請注意" } }
-      }
-    },
-    "rate_limit.warning.format" : {
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "%@ %d%% used" } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "%@ %d%% 使用中" } },
-        "ko" : { "stringUnit" : { "state" : "translated", "value" : "%@ %d%% 사용 중" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "%@ 已使用 %d%%" } },
-        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "%@ 已使用 %d%%" } }
       }
     }
   },
