@@ -60,6 +60,7 @@ struct ChatView: View {
                 VStack(spacing: 0) {
                     ChatMessageList(
                         messages: viewStore.conversation.messages,
+                        isStreaming: viewStore.isStreaming,
                         onTap: { isInputFocused = false }
                     )
                     if let rateLimit = viewStore.rateLimit {
@@ -97,6 +98,7 @@ struct ChatView: View {
                         ),
                         isStreaming: viewStore.isStreaming,
                         onSend: { viewStore.send(.sendTapped) },
+                        onStop: { viewStore.send(.stopTapped) },
                         focus: $isInputFocused
                     )
                 }

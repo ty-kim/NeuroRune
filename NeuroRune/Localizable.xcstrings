@@ -91,6 +91,15 @@
         }
       }
     },
+    "a11y.chat.stopButton" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Stop streaming" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "ストリーミングを停止" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "스트리밍 중단" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "停止流式传输" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "停止串流" } }
+      }
+    },
     "a11y.chat.sendButton" : {
       "localizations" : {
         "en" : {
