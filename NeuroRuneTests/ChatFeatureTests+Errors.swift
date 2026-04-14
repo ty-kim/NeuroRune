@@ -63,21 +63,14 @@ extension ChatFeatureTests {
     @Test("retryTapped는 마지막 user 메시지를 꺼내 inputText로 복원하고 error를 클리어한다")
     func retryTappedRedispatchesLastUserMessage() async {
         var state = makeState()
-        state.conversation = state.conversation
-            .appending(Message(role: .user, content: "hi again", createdAt: Self.fixedDate))
+        state.conversation = state.conversation.appending(Self.userMsg("hi again"))
         state.error = .network("timeout")
 
         let store = TestStore(initialState: state) {
             ChatFeature()
         } withDependencies: {
-            // retryTapped는 sendTapped effect를 즉시 발사. sendTapped가 llmClient를
-            // 건드리므로, 빈 stream을 반환하는 mock으로 대체.
-            $0.date = .constant(Self.fixedDate)
-            $0.llmClient.streamMessage = { @Sendable _, _, _, _, _ in
-                AsyncThrowingStream { $0.finish() }
-            }
-            $0.conversationStore.save = { @Sendable _ in }
-            $0.githubCredentialsClient.load = { @Sendable _ in nil }
+            // retryTapped는 sendTapped effect를 즉시 발사 → llmClient 등 필요.
+            applyDefaultDependencies(&$0)
         }
         store.exhaustivity = .off
 
@@ -92,8 +85,7 @@ extension ChatFeatureTests {
     @Test("retryTapped는 마지막이 user가 아니면 아무 동작 안 함")
     func retryTappedNoOpWhenLastIsNotUser() async {
         var state = makeState()
-        state.conversation = state.conversation
-            .appending(Message(role: .assistant, content: "hello", createdAt: Self.fixedDate))
+        state.conversation = state.conversation.appending(Self.assistantMsg("hello"))
         state.error = .network("timeout")
 
         let store = TestStore(initialState: state) { ChatFeature() }

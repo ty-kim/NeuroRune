@@ -30,37 +30,29 @@ extension ChatFeatureTests {
         ) {
             ChatFeature()
         } withDependencies: {
-            $0.date = .constant(Self.fixedDate)
+            applyDefaultDependencies(&$0)
             $0.uuid = .incrementing
+            // 기본 llmClient를 "끝나지 않는 stream"으로 덮어씀 — 취소 대상 만들기.
             $0.llmClient.streamMessage = { @Sendable _, _, _, _, _ in
                 AsyncThrowingStream { continuation in
                     continuation.yield(.textDelta("partial"))
-                    // 명시적으로 finish하지 않음 → 취소될 때까지 열어둠.
-                    continuation.onTermination = { _ in
-                        // onTermination은 cancel 전파로 호출됨
-                    }
+                    continuation.onTermination = { _ in }
                 }
             }
-            $0.conversationStore.save = { @Sendable _ in }
-            $0.githubCredentialsClient.load = { @Sendable _ in nil }
         }
 
         await store.send(.sendTapped) {
             $0.inputText = ""
             $0.isStreaming = true
             $0.conversation = $0.conversation
-                .appending(Message(role: .user, content: "hello", createdAt: Self.fixedDate))
-                .appending(Message(role: .assistant, content: "", createdAt: Self.fixedDate))
+                .appending(Self.userMsg("hello"))
+                .appending(Self.assistantMsg())
         }
 
         // stream 첫 chunk가 reducer state에 반영될 때까지 기다림.
         await store.receive(.streamChunkReceived("partial")) {
             var messages = $0.conversation.messages
-            messages[messages.count - 1] = Message(
-                role: .assistant,
-                content: "partial",
-                createdAt: Self.fixedDate
-            )
+            messages[messages.count - 1] = Self.assistantMsg("partial")
             $0.conversation.messages = messages
         }
 

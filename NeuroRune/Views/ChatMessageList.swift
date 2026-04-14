@@ -9,6 +9,9 @@ struct ChatMessageList: View {
     let messages: [Message]
     /// 현재 스트리밍 중 여부. true이면 **마지막 assistant 메시지**에 인디케이터 표시.
     var isStreaming: Bool = false
+    /// 입력창이 포커스된 상태. true로 전환될 때 마지막 메시지로 자동 스크롤해
+    /// 키보드에 가려지지 않도록 한다.
+    var isInputFocused: Bool = false
     var onTap: () -> Void = {}
 
     var body: some View {
@@ -28,6 +31,9 @@ struct ChatMessageList: View {
                 }
                 .padding()
             }
+            // 바닥을 기준으로 레이아웃 → 키보드로 뷰포트 축소 시에도 마지막 메시지가 자동 유지.
+            // onChange scrollTo가 "이미 바닥"이라 무시되는 문제 해결.
+            .defaultScrollAnchor(.bottom)
             .scrollDismissesKeyboard(.immediately)
             .simultaneousGesture(
                 TapGesture().onEnded { onTap() }
@@ -48,9 +54,28 @@ struct ChatMessageList: View {
             }
             .onAppear {
                 // 기존 대화 재진입 시 최하단(최신 메시지)으로 자동 스크롤.
+                // LazyVStack이 첫 프레임에 아직 content 높이를 확정 못 해서
+                // 즉시 scrollTo는 no-op이 된다. 짧은 지연 후 시도.
                 let lastIndex = messages.count - 1
-                if lastIndex >= 0 {
+                guard lastIndex >= 0 else { return }
+                Task { @MainActor in
+                    try? await Task.sleep(for: .milliseconds(50))
                     proxy.scrollTo(lastIndex, anchor: .bottom)
+                }
+            }
+            .onChange(of: isInputFocused) { _, focused in
+                // 키보드가 올라올 때 마지막 메시지가 입력바 뒤로 가려지지 않도록
+                // 바닥으로 스크롤. 포커스 해제 시에는 유지(사용자 의도 존중).
+                // 첫 포커스 시 SwiftUI가 키보드 높이 반영 전이라 즉시 scrollTo는
+                // 무효화되는 경우가 있다. 짧은 지연 후 다시 시도.
+                guard focused else { return }
+                let lastIndex = messages.count - 1
+                guard lastIndex >= 0 else { return }
+                Task { @MainActor in
+                    try? await Task.sleep(for: .milliseconds(250))
+                    withAnimation(.easeOut(duration: 0.25)) {
+                        proxy.scrollTo(lastIndex, anchor: .bottom)
+                    }
                 }
             }
         }
