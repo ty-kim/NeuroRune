@@ -132,45 +132,14 @@ nonisolated struct ChatFeature: Reducer {
                         if roundToolUses.isEmpty { break }
 
                         // 다음 라운드: 이번 round의 assistant content + tool_result blocks
-                        var assistantBlocks: [APIContentBlock] = []
-                        if !roundText.isEmpty {
-                            assistantBlocks.append(.text(roundText))
-                        }
-                        for tool in roundToolUses {
-                            let input = Self.parseToolInput(tool.inputJSON) ?? [:]
-                            assistantBlocks.append(.toolUse(id: tool.id, name: tool.name, input: input))
-                        }
-                        roundMessages.append(APIMessage(role: "assistant", content: .blocks(assistantBlocks)))
-
-                        var resultBlocks: [APIContentBlock] = []
-                        for tool in roundToolUses {
-                            let input = Self.parseToolInput(tool.inputJSON) ?? [:]
-                            await send(.toolUseRequested(id: tool.id, name: tool.name, input: input))
-                            let result: String
-                            if tool.name == "write_memory", let req = Self.parseWriteRequest(id: tool.id, input: input) {
-                                await send(.writeApprovalRequested(req))
-                                let decision = await writeApprovalGate.requestApproval(tool.id)
-                                switch decision {
-                                case .approve:
-                                    result = await Self.executeWriteMemory(
-                                        request: req,
-                                        github: githubClient,
-                                        creds: githubCredentialsClient
-                                    )
-                                case let .reject(reason):
-                                    result = "User rejected" + (reason.map { ": \($0)" } ?? "")
-                                }
-                            } else {
-                                result = await Self.executeTool(
-                                    name: tool.name,
-                                    input: input,
-                                    github: githubClient,
-                                    creds: githubCredentialsClient
-                                )
-                            }
-                            await send(.toolUseCompleted(id: tool.id))
-                            resultBlocks.append(.toolResult(toolUseID: tool.id, content: result))
-                        }
+                        roundMessages.append(Self.buildAssistantTurn(roundText: roundText, toolUses: roundToolUses))
+                        let resultBlocks = await Self.executeTools(
+                            roundToolUses,
+                            send: send,
+                            github: githubClient,
+                            creds: githubCredentialsClient,
+                            gate: writeApprovalGate
+                        )
                         roundMessages.append(APIMessage(role: "user", content: .blocks(resultBlocks)))
                     }
                     await send(.streamFinished)
@@ -251,6 +220,54 @@ nonisolated struct ChatFeature: Reducer {
                 writeApprovalGate.setApproval(id, .reject(reason: reason))
             }
         }
+    }
+
+    /// 이번 라운드 assistant 메시지 구성: text + tool_use 블록들.
+    private static func buildAssistantTurn(
+        roundText: String,
+        toolUses: [(id: String, name: String, inputJSON: String)]
+    ) -> APIMessage {
+        var blocks: [APIContentBlock] = []
+        if !roundText.isEmpty {
+            blocks.append(.text(roundText))
+        }
+        for tool in toolUses {
+            let input = parseToolInput(tool.inputJSON) ?? [:]
+            blocks.append(.toolUse(id: tool.id, name: tool.name, input: input))
+        }
+        return APIMessage(role: "assistant", content: .blocks(blocks))
+    }
+
+    /// 라운드 내 tool_use 블록들을 순차 실행해서 tool_result 블록 리스트 반환.
+    /// write_memory는 gate.requestApproval로 사용자 응답 대기.
+    private static func executeTools(
+        _ toolUses: [(id: String, name: String, inputJSON: String)],
+        send: Send<Action>,
+        github: GitHubClient,
+        creds: GitHubCredentialsClient,
+        gate: WriteApprovalGate
+    ) async -> [APIContentBlock] {
+        var resultBlocks: [APIContentBlock] = []
+        for tool in toolUses {
+            let input = parseToolInput(tool.inputJSON) ?? [:]
+            await send(.toolUseRequested(id: tool.id, name: tool.name, input: input))
+            let result: String
+            if tool.name == "write_memory", let req = parseWriteRequest(id: tool.id, input: input) {
+                await send(.writeApprovalRequested(req))
+                let decision = await gate.requestApproval(tool.id)
+                switch decision {
+                case .approve:
+                    result = await executeWriteMemory(request: req, github: github, creds: creds)
+                case let .reject(reason):
+                    result = "User rejected" + (reason.map { ": \($0)" } ?? "")
+                }
+            } else {
+                result = await executeTool(name: tool.name, input: input, github: github, creds: creds)
+            }
+            await send(.toolUseCompleted(id: tool.id))
+            resultBlocks.append(.toolResult(toolUseID: tool.id, content: result))
+        }
+        return resultBlocks
     }
 
     /// Claude의 tool_use input JSON을 [String:String]로 파싱.
