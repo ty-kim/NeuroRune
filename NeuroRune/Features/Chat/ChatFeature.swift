@@ -16,6 +16,8 @@ nonisolated struct ChatFeature: Reducer {
         var persistenceError: String? = nil
         /// 진행 중인 tool 호출. 칩으로 표시되고 완료 시 제거.
         var activeToolCalls: [ToolCallStatus] = []
+        /// Claude가 write_memory 요청. nil이 아니면 confirm modal 열림.
+        var pendingWrite: WriteRequest? = nil
     }
 
     /// 사용자에게 보여줄 tool 호출 정보 (id로 lifecycle 추적).
@@ -23,6 +25,15 @@ nonisolated struct ChatFeature: Reducer {
         let id: String
         let name: String
         let input: [String: String]
+    }
+
+    /// write_memory tool 호출 요청. confirm modal이 바인딩.
+    nonisolated struct WriteRequest: Equatable, Sendable, Identifiable {
+        let id: String
+        let role: CredentialsRole
+        let path: String
+        let content: String
+        let commitMessage: String
     }
 
     enum Action: Equatable {
@@ -36,6 +47,9 @@ nonisolated struct ChatFeature: Reducer {
         case newConversationStarted(modelId: String)
         case toolUseRequested(id: String, name: String, input: [String: String])
         case toolUseCompleted(id: String)
+        case writeApprovalRequested(WriteRequest)
+        case writeApproved(id: String)
+        case writeRejected(id: String, reason: String?)
     }
 
     func reduce(into state: inout State, action: Action) -> Effect<Action> {
@@ -45,6 +59,7 @@ nonisolated struct ChatFeature: Reducer {
         @Dependency(\.conversationStore) var conversationStore
         @Dependency(\.githubClient) var githubClient
         @Dependency(\.githubCredentialsClient) var githubCredentialsClient
+        @Dependency(\.writeApprovalGate) var writeApprovalGate
 
         switch action {
         case let .inputChanged(text):
@@ -97,7 +112,7 @@ nonisolated struct ChatFeature: Reducer {
                     var roundMessages: [APIMessage] = messagesForAPI.map {
                         APIMessage.text(role: $0.role.rawValue, content: $0.content)
                     }
-                    let tools: [LLMTool] = [.readMemory]
+                    let tools: [LLMTool] = [.readMemory, .writeMemory]
                     let maxRounds = 5
                     for _ in 0..<maxRounds {
                         var roundText = ""
@@ -131,12 +146,28 @@ nonisolated struct ChatFeature: Reducer {
                         for tool in roundToolUses {
                             let input = Self.parseToolInput(tool.inputJSON) ?? [:]
                             await send(.toolUseRequested(id: tool.id, name: tool.name, input: input))
-                            let result = await Self.executeTool(
-                                name: tool.name,
-                                input: input,
-                                github: githubClient,
-                                creds: githubCredentialsClient
-                            )
+                            let result: String
+                            if tool.name == "write_memory", let req = Self.parseWriteRequest(id: tool.id, input: input) {
+                                await send(.writeApprovalRequested(req))
+                                let decision = await writeApprovalGate.requestApproval(tool.id)
+                                switch decision {
+                                case .approve:
+                                    result = await Self.executeWriteMemory(
+                                        request: req,
+                                        github: githubClient,
+                                        creds: githubCredentialsClient
+                                    )
+                                case let .reject(reason):
+                                    result = "User rejected" + (reason.map { ": \($0)" } ?? "")
+                                }
+                            } else {
+                                result = await Self.executeTool(
+                                    name: tool.name,
+                                    input: input,
+                                    github: githubClient,
+                                    creds: githubCredentialsClient
+                                )
+                            }
                             await send(.toolUseCompleted(id: tool.id))
                             resultBlocks.append(.toolResult(toolUseID: tool.id, content: result))
                         }
@@ -199,6 +230,22 @@ nonisolated struct ChatFeature: Reducer {
         case let .toolUseCompleted(id):
             state.activeToolCalls.removeAll { $0.id == id }
             return .none
+
+        case let .writeApprovalRequested(req):
+            state.pendingWrite = req
+            return .none
+
+        case let .writeApproved(id):
+            state.pendingWrite = nil
+            return .run { _ in
+                writeApprovalGate.setApproval(id, .approve)
+            }
+
+        case let .writeRejected(id, reason):
+            state.pendingWrite = nil
+            return .run { _ in
+                writeApprovalGate.setApproval(id, .reject(reason: reason))
+            }
         }
     }
 
@@ -221,6 +268,42 @@ nonisolated struct ChatFeature: Reducer {
             return await executeReadMemory(input: input, github: github, creds: creds)
         default:
             return "Error: unknown tool '\(name)'"
+        }
+    }
+
+    /// write_memory tool input → WriteRequest 파싱. role/path/content/commit_message 중 하나라도
+    /// 누락/잘못되면 nil.
+    private static func parseWriteRequest(id: String, input: [String: String]) -> WriteRequest? {
+        guard let roleStr = input["role"],
+              let role = CredentialsRole(rawValue: roleStr),
+              let path = input["path"],
+              let content = input["content"],
+              let commitMessage = input["commit_message"]
+        else { return nil }
+        return WriteRequest(id: id, role: role, path: path, content: content, commitMessage: commitMessage)
+    }
+
+    /// 사용자 approve 후 GitHub saveFile 호출. 기존 파일이면 sha 조회해서 upsert.
+    private static func executeWriteMemory(
+        request: WriteRequest,
+        github: GitHubClient,
+        creds: GitHubCredentialsClient
+    ) async -> String {
+        guard let credentials = try? creds.load(request.role) else {
+            return "Error: \(request.role.rawValue) credentials not configured"
+        }
+        let existingSha = try? await github.loadFile(credentials.repoConfig, request.path).sha
+        do {
+            let saved = try await github.saveFile(
+                credentials.repoConfig,
+                request.path,
+                request.content,
+                existingSha,
+                request.commitMessage
+            )
+            return "Saved: \(saved.path)"
+        } catch {
+            return "Error: \(error.localizedDescription)"
         }
     }
 

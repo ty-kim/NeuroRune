@@ -222,6 +222,70 @@ struct ChatFeatureTests {
         #expect(!system.contains("## Local Memory"))
     }
 
+    @Test("writeApprovalRequested는 pendingWrite 세팅")
+    func writeApprovalRequestedSetsPending() async {
+        let req = ChatFeature.WriteRequest(
+            id: "w1", role: .global, path: "runes/new.md",
+            content: "body", commitMessage: "init"
+        )
+        let store = TestStore(initialState: makeState()) { ChatFeature() }
+
+        await store.send(.writeApprovalRequested(req)) {
+            $0.pendingWrite = req
+        }
+    }
+
+    @Test("writeApproved는 pendingWrite를 nil로 + gate.setApproval 호출")
+    func writeApprovedClearsAndCallsGate() async {
+        let setId = LockIsolated<String?>(nil)
+        let setDecision = LockIsolated<WriteDecision?>(nil)
+        var state = makeState()
+        state.pendingWrite = ChatFeature.WriteRequest(
+            id: "w1", role: .global, path: "p",
+            content: "c", commitMessage: "m"
+        )
+
+        let store = TestStore(initialState: state) {
+            ChatFeature()
+        } withDependencies: {
+            $0.writeApprovalGate.setApproval = { @Sendable id, decision in
+                setId.setValue(id)
+                setDecision.setValue(decision)
+            }
+        }
+
+        await store.send(.writeApproved(id: "w1")) {
+            $0.pendingWrite = nil
+        }
+        await store.finish()
+        #expect(setId.value == "w1")
+        #expect(setDecision.value == .approve)
+    }
+
+    @Test("writeRejected는 pendingWrite를 nil로 + gate.setApproval(reject)")
+    func writeRejectedClearsAndCallsGate() async {
+        let setDecision = LockIsolated<WriteDecision?>(nil)
+        var state = makeState()
+        state.pendingWrite = ChatFeature.WriteRequest(
+            id: "w1", role: .global, path: "p",
+            content: "c", commitMessage: "m"
+        )
+
+        let store = TestStore(initialState: state) {
+            ChatFeature()
+        } withDependencies: {
+            $0.writeApprovalGate.setApproval = { @Sendable _, decision in
+                setDecision.setValue(decision)
+            }
+        }
+
+        await store.send(.writeRejected(id: "w1", reason: "nope")) {
+            $0.pendingWrite = nil
+        }
+        await store.finish()
+        #expect(setDecision.value == .reject(reason: "nope"))
+    }
+
     @Test("toolUseRequested 액션은 activeToolCalls에 추가된다")
     func toolUseRequestedAddsToActive() async {
         let store = TestStore(initialState: makeState()) {
