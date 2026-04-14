@@ -172,18 +172,79 @@ struct AnthropicClientTests {
         #expect(collected == ["partial"])
     }
 
+    // MARK: - Rate limit
+
+    @Test("200 응답 헤더에 rate limit가 있으면 첫 event로 rateLimitUpdate emit")
+    func yieldsRateLimitUpdateBeforeTextDelta() async throws {
+        let sse = """
+        event: content_block_delta
+        data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"x"}}
+
+        event: message_stop
+        data: {"type":"message_stop"}
+
+        """
+        let stub = stubStatus(
+            200,
+            body: sse,
+            extraHeaders: [
+                "anthropic-ratelimit-tokens-limit": "80000",
+                "anthropic-ratelimit-tokens-remaining": "62400",
+                "anthropic-ratelimit-tokens-reset": "2026-04-14T14:00:00Z"
+            ]
+        )
+        let client = LLMClient.anthropic(session: stub.session, apiKey: "sk-test")
+
+        var events: [LLMStreamEvent] = []
+        let stream = try await client.streamMessage([Self.userMessage], .opus46, nil, nil, nil)
+        for try await event in stream {
+            events.append(event)
+        }
+
+        guard case let .rateLimitUpdate(state) = events.first else {
+            Issue.record("first event is not rateLimitUpdate: \(events)")
+            return
+        }
+        #expect(state.tokens?.limit == 80000)
+        #expect(state.tokens?.remaining == 62400)
+    }
+
+    @Test("rate limit 헤더가 없으면 rateLimitUpdate emit 안 함")
+    func skipsRateLimitUpdateWhenHeadersAbsent() async throws {
+        let sse = """
+        event: content_block_delta
+        data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"x"}}
+
+        event: message_stop
+        data: {"type":"message_stop"}
+
+        """
+        let stub = stubStatus(200, body: sse)
+        let client = LLMClient.anthropic(session: stub.session, apiKey: "sk-test")
+
+        var hasRateLimitEvent = false
+        let stream = try await client.streamMessage([Self.userMessage], .opus46, nil, nil, nil)
+        for try await event in stream {
+            if case .rateLimitUpdate = event { hasRateLimitEvent = true }
+        }
+
+        #expect(hasRateLimitEvent == false)
+    }
+
     // MARK: - Helpers
 
     static let userMessage = APIMessage.text(role: "user", content: "hi")
 
-    private func stubStatus(_ status: Int, body: String) -> URLProtocolStub.Stub {
+    private func stubStatus(_ status: Int, body: String, extraHeaders: [String: String] = [:]) -> URLProtocolStub.Stub {
         let stub = URLProtocolStub.Stub()
         stub.setHandler { request in
+            var headers = ["Content-Type": "text/event-stream"]
+            for (k, v) in extraHeaders { headers[k] = v }
             let http = HTTPURLResponse(
                 url: request.url!,
                 statusCode: status,
                 httpVersion: "HTTP/1.1",
-                headerFields: ["Content-Type": "text/event-stream"]
+                headerFields: headers
             )!
             return (http, Data(body.utf8), nil)
         }

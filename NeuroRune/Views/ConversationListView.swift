@@ -22,7 +22,7 @@ struct ConversationListView: View {
                         conversationList(viewStore)
                     }
                 }
-                .navigationTitle("NeuroRune")
+                .navigationTitle(String(localized: "list.title"))
                 .toolbar {
                     ToolbarItem(placement: .topBarLeading) {
                         Button {
@@ -246,7 +246,7 @@ private struct ConversationRow: View {
                     .font(.subheadline)
                     .foregroundStyle(.primary.opacity(0.6))
                 Spacer()
-                Text(conversation.createdAt.formatted(.relative(presentation: .named)))
+                Text(lastActivityAt.formatted(.relative(presentation: .named)))
                     .font(.subheadline)
                     .foregroundStyle(.primary.opacity(0.6))
             }
@@ -255,10 +255,16 @@ private struct ConversationRow: View {
         .accessibilityElement(children: .combine)
     }
 
+    /// 마지막 메시지 내용(최대 50자). 메시지가 없으면 untitled.
     private var conversationTitle: String {
-        if let firstMessage = conversation.messages.first {
-            return String(firstMessage.content.prefix(50))
+        if let lastMessage = conversation.messages.last {
+            return String(lastMessage.content.prefix(50))
         }
         return String(localized: "list.untitled")
+    }
+
+    /// 마지막 메시지 시각. 메시지 없으면 대화 생성 시각.
+    private var lastActivityAt: Date {
+        conversation.messages.last?.createdAt ?? conversation.createdAt
     }
 }

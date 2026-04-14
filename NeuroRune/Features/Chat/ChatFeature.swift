@@ -18,6 +18,8 @@ nonisolated struct ChatFeature: Reducer {
         var activeToolCalls: [ToolCallStatus] = []
         /// Claude가 write_memory 요청. nil이 아니면 confirm modal 열림.
         var pendingWrite: WriteRequest? = nil
+        /// 가장 최근 응답에서 파싱된 Anthropic rate limit 쿼터. nil이면 아직 정보 없음.
+        var rateLimit: RateLimitState? = nil
     }
 
     /// 사용자에게 보여줄 tool 호출 정보 (id로 lifecycle 추적).
@@ -50,6 +52,7 @@ nonisolated struct ChatFeature: Reducer {
         case writeApprovalRequested(WriteRequest)
         case writeApproved(id: String)
         case writeRejected(id: String, reason: String?)
+        case rateLimitUpdated(RateLimitState)
     }
 
     func reduce(into state: inout State, action: Action) -> Effect<Action> {
@@ -127,6 +130,8 @@ nonisolated struct ChatFeature: Reducer {
                                 await send(.streamChunkReceived(text))
                             case let .toolUseRequest(id, name, inputJSON):
                                 roundToolUses.append((id, name, inputJSON))
+                            case let .rateLimitUpdate(state):
+                                await send(.rateLimitUpdated(state))
                             }
                         }
                         if roundToolUses.isEmpty { break }
@@ -219,6 +224,10 @@ nonisolated struct ChatFeature: Reducer {
             return .run { _ in
                 writeApprovalGate.setApproval(id, .reject(reason: reason))
             }
+
+        case let .rateLimitUpdated(rateLimit):
+            state.rateLimit = rateLimit
+            return .none
         }
     }
 
