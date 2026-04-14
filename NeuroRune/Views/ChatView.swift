@@ -130,6 +130,25 @@ struct ChatView: View {
                         UINotificationFeedbackGenerator().notificationOccurred(.success)
                     }
                 }
+                .sheet(
+                    isPresented: Binding(
+                        get: { viewStore.pendingWrite != nil },
+                        set: { isShown in
+                            if !isShown, let id = viewStore.pendingWrite?.id {
+                                viewStore.send(.writeRejected(id: id, reason: "dismissed"))
+                            }
+                        }
+                    )
+                ) {
+                    if let req = viewStore.pendingWrite {
+                        WriteApprovalModal(
+                            request: req,
+                            onApprove: { viewStore.send(.writeApproved(id: req.id)) },
+                            onReject: { viewStore.send(.writeRejected(id: req.id, reason: nil)) }
+                        )
+                        .interactiveDismissDisabled(true)
+                    }
+                }
                 .alert(
                     String(localized: "error.unauthorized"),
                     isPresented: $showUnauthorizedAlert
