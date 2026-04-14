@@ -2,6 +2,8 @@
 //  EntityMapping.swift
 //  NeuroRune
 //
+//  Created by tykim
+//
 //  Domain struct ↔ SwiftData @Model entity 변환.
 //
 

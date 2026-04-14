@@ -2,6 +2,8 @@
 //  ChatFeatureTests+Tools.swift
 //  NeuroRuneTests
 //
+//  Created by tykim
+//
 //  Tool 호출 (read_memory / write_memory) 관련 ChatFeature 테스트.
 //  - write_memory 승인 gate
 //  - tool use lifecycle (activeToolCalls)

@@ -2,6 +2,8 @@
 //  AnthropicClientTests.swift
 //  NeuroRuneTests
 //
+//  Created by tykim
+//
 //  LLMClient.anthropic(session:apiKey:) 통합 테스트.
 //  URLProtocolStub로 HTTP layer 가짜 응답을 주입, streamMessage의
 //  status 매핑, SSE chunk 수집, 에러 전파를 검증한다.

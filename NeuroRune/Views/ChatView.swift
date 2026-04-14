@@ -2,6 +2,8 @@
 //  ChatView.swift
 //  NeuroRune
 //
+//  Created by tykim
+//
 
 import SwiftUI
 import ComposableArchitecture
@@ -73,6 +75,8 @@ struct ChatView: View {
                         isStreaming: viewStore.isStreaming,
                         onSend: { viewStore.send(.sendTapped) },
                         onStop: { viewStore.send(.stopTapped) },
+                        isRecording: viewStore.isRecording,
+                        onMicTapped: { viewStore.send(.micTapped) },
                         focus: $isInputFocused
                     )
                 }
@@ -173,6 +177,14 @@ struct ChatView: View {
             ToolCallChips(calls: viewStore.activeToolCalls)
                 .transition(.opacity)
                 .animation(reduceMotion ? nil : .easeInOut(duration: 0.2), value: viewStore.activeToolCalls)
+        }
+        if let sttError = viewStore.sttError {
+            STTErrorBanner(
+                error: sttError,
+                onDismiss: { viewStore.send(.sttErrorDismissed) }
+            )
+            .transition(reduceMotion ? .opacity : .move(edge: .bottom).combined(with: .opacity))
+            .animation(reduceMotion ? nil : .easeInOut(duration: 0.3), value: viewStore.sttError)
         }
         if let persistenceError = viewStore.persistenceError {
             ChatPersistenceBanner(

@@ -2,6 +2,8 @@
 //  ConversationListFeature.swift
 //  NeuroRune
 //
+//  Created by tykim
+//
 
 import Foundation
 import ComposableArchitecture
@@ -17,6 +19,7 @@ nonisolated struct ConversationListFeature: Reducer {
         var selectedEffort: EffortLevel? = nil
         var listError: String?
         var showMemoryList: Bool = false
+        var showGroqCredentials: Bool = false
     }
 
     enum Action: Equatable {
@@ -34,6 +37,8 @@ nonisolated struct ConversationListFeature: Reducer {
         case memoryListTapped
         case memoryListDismissed
         case resetApiKeyTapped
+        case groqCredentialsTapped
+        case groqCredentialsDismissed
         case resetConfirmationDismissed
         case resetApiKeyConfirmed
         case errorDismissed
@@ -130,6 +135,14 @@ nonisolated struct ConversationListFeature: Reducer {
 
         case .resetApiKeyTapped:
             state.showResetConfirmation = true
+            return .none
+
+        case .groqCredentialsTapped:
+            state.showGroqCredentials = true
+            return .none
+
+        case .groqCredentialsDismissed:
+            state.showGroqCredentials = false
             return .none
 
         case .resetConfirmationDismissed:

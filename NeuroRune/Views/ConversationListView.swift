@@ -2,6 +2,8 @@
 //  ConversationListView.swift
 //  NeuroRune
 //
+//  Created by tykim
+//
 
 import SwiftUI
 import ComposableArchitecture
@@ -25,8 +27,23 @@ struct ConversationListView: View {
                 .navigationTitle(String(localized: "list.title"))
                 .toolbar {
                     ToolbarItem(placement: .topBarLeading) {
-                        Button {
-                            viewStore.send(.resetApiKeyTapped)
+                        Menu {
+                            Button {
+                                viewStore.send(.groqCredentialsTapped)
+                            } label: {
+                                Label(
+                                    String(localized: "settings.groqKey"),
+                                    systemImage: "waveform"
+                                )
+                            }
+                            Button(role: .destructive) {
+                                viewStore.send(.resetApiKeyTapped)
+                            } label: {
+                                Label(
+                                    String(localized: "settings.anthropicKey"),
+                                    systemImage: "key"
+                                )
+                            }
                         } label: {
                             Image(systemName: "gearshape")
                                 .font(.title3)
@@ -67,6 +84,21 @@ struct ConversationListView: View {
                     )
                 ) {
                     MemoryHubView()
+                }
+                .sheet(
+                    isPresented: viewStore.binding(
+                        get: \.showGroqCredentials,
+                        send: ConversationListFeature.Action.groqCredentialsDismissed
+                    )
+                ) {
+                    GroqCredentialsView(
+                        store: Store(initialState: GroqCredentialsFeature.State()) {
+                            GroqCredentialsFeature()
+                        },
+                        onSaved: {
+                            viewStore.send(.groqCredentialsDismissed)
+                        }
+                    )
                 }
                 .navigationDestination(
                     item: viewStore.binding(

@@ -2,6 +2,8 @@
 //  ErrorBubbleView.swift
 //  NeuroRune
 //
+//  Created by tykim
+//
 //  실패한 메시지 아래 표시되는 에러 버블. 재시도·닫기 버튼 제공.
 //  `LLMError.isRetryable == false`(예: `.cancelled`)이면 재시도 버튼 숨김.
 //

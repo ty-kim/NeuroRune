@@ -2,6 +2,8 @@
 //  ErrorBubbleViewTests.swift
 //  NeuroRuneTests
 //
+//  Created by tykim
+//
 //  ErrorBubbleView의 순수 유틸(formatCountdown) 검증.
 //  View 렌더링은 Preview로 수동 확인.
 //

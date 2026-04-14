@@ -2,6 +2,8 @@
 //  RateLimitBadgeTests.swift
 //  NeuroRuneTests
 //
+//  Created by tykim
+//
 //  RateLimitBadge의 순수 의사결정 함수(display, countdownText)를 검증.
 //  View 렌더링은 Preview로 수동 검증.
 //

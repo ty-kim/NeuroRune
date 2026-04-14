@@ -2,6 +2,8 @@
 //  ChatFeature.swift
 //  NeuroRune
 //
+//  Created by tykim
+//
 
 import Foundation
 import ComposableArchitecture
@@ -25,6 +27,10 @@ nonisolated struct ChatFeature: Reducer {
         var pendingWrite: WriteRequest? = nil
         /// 가장 최근 응답에서 파싱된 Anthropic rate limit 쿼터. nil이면 아직 정보 없음.
         var rateLimit: RateLimitState? = nil
+        /// Phase 21 — 마이크 녹음 중 여부.
+        var isRecording: Bool = false
+        /// STT 에러. LLMError와 별개 타입이라 별도 슬롯에 보관.
+        var sttError: STTError? = nil
     }
 
     /// 사용자에게 보여줄 tool 호출 정보 (id로 lifecycle 추적).
@@ -79,6 +85,15 @@ nonisolated struct ChatFeature: Reducer {
         case writeApprovalRequested(WriteRequest)
         case writeApproved(id: String)
         case writeRejected(id: String, reason: String?)
+
+        // MARK: - STT (Phase 21)
+        /// 마이크 버튼 토글. 녹음 중이면 stop, 아니면 권한→start.
+        case micTapped
+        case recordingStarted
+        case recordingStopped(Data)
+        case transcribed(STTResult)
+        case sttErrorOccurred(STTError)
+        case sttErrorDismissed
     }
 
     func reduce(into state: inout State, action: Action) -> Effect<Action> {
@@ -284,6 +299,81 @@ nonisolated struct ChatFeature: Reducer {
 
         case .errorDismissed:
             state.error = nil
+            return .none
+
+        // MARK: - STT
+
+        case .micTapped:
+            @Dependency(\.audioRecorder) var recorder
+            if state.isRecording {
+                // 중단 → stop → transcribe 파이프라인
+                return .run { send in
+                    do {
+                        let data = try await recorder.stop()
+                        await send(.recordingStopped(data))
+                    } catch let e as STTError {
+                        await send(.sttErrorOccurred(e))
+                    } catch {
+                        await send(.sttErrorOccurred(.recordingFailed(error.localizedDescription)))
+                    }
+                }
+            } else {
+                // 권한 → 시작
+                return .run { send in
+                    let granted = await recorder.requestPermission()
+                    guard granted else {
+                        await send(.sttErrorOccurred(.microphonePermissionDenied))
+                        return
+                    }
+                    do {
+                        try await recorder.start()
+                        await send(.recordingStarted)
+                    } catch let e as STTError {
+                        await send(.sttErrorOccurred(e))
+                    } catch {
+                        await send(.sttErrorOccurred(.recordingFailed(error.localizedDescription)))
+                    }
+                }
+            }
+
+        case .recordingStarted:
+            state.isRecording = true
+            state.sttError = nil
+            return .none
+
+        case let .recordingStopped(audio):
+            state.isRecording = false
+            @Dependency(\.locale) var locale
+            // BCP-47 언어 부분만. zh-Hans/zh-Hant는 "zh"로 축약 → Whisper 간체/번체 구분 안 함.
+            let language = locale.language.languageCode?.identifier ?? "ko"
+            return .run { send in
+                @Dependency(\.sttClient) var stt
+                do {
+                    let result = try await stt.transcribe(audio, language)
+                    await send(.transcribed(result))
+                } catch let e as STTError {
+                    await send(.sttErrorOccurred(e))
+                } catch {
+                    await send(.sttErrorOccurred(.network(error.localizedDescription)))
+                }
+            }
+
+        case let .transcribed(result):
+            // 전사 텍스트를 inputText에 삽입. 기존 내용이 있으면 공백 구분자로 이어붙임.
+            if state.inputText.isEmpty {
+                state.inputText = result.text
+            } else {
+                state.inputText += " " + result.text
+            }
+            return .none
+
+        case let .sttErrorOccurred(error):
+            state.isRecording = false
+            state.sttError = error
+            return .none
+
+        case .sttErrorDismissed:
+            state.sttError = nil
             return .none
         }
     }
