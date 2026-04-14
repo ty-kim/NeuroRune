@@ -8,6 +8,11 @@ import ComposableArchitecture
 
 nonisolated struct ChatFeature: Reducer {
 
+    /// Effect 취소 ID. Phase 20: 스트리밍 중 [Stop] 버튼으로 현재 LLM 요청 취소.
+    enum CancelID: Hashable {
+        case streaming
+    }
+
     struct State: Equatable {
         var conversation: Conversation
         var inputText: String
@@ -46,6 +51,8 @@ nonisolated struct ChatFeature: Reducer {
         // MARK: - Streaming
         case streamChunkReceived(String)
         case streamFinished
+        /// 스트리밍 중 [Stop] 버튼. 현재 effect를 취소하고 partial 응답을 보존한 채 종료.
+        case stopTapped
 
         // MARK: - Errors & Retry
         case errorOccurred(LLMError)
@@ -167,12 +174,24 @@ nonisolated struct ChatFeature: Reducer {
                         roundMessages.append(APIMessage(role: "user", content: .blocks(resultBlocks)))
                     }
                     await send(.streamFinished)
+                } catch is CancellationError {
+                    // stopTapped가 streamFinished를 명시적으로 보낸다.
+                    // 취소된 effect는 후속 액션을 중복 발행하지 않는다.
                 } catch let error as LLMError {
                     await send(.errorOccurred(error))
                 } catch {
                     await send(.errorOccurred(.network(error.localizedDescription)))
                 }
             }
+            .cancellable(id: CancelID.streaming, cancelInFlight: true)
+
+        case .stopTapped:
+            // 현재 진행 중인 스트리밍 effect를 취소하고 기존 완료 경로로 정리한다.
+            guard state.isStreaming else { return .none }
+            return .concatenate(
+                .cancel(id: CancelID.streaming),
+                .send(.streamFinished)
+            )
 
         case let .streamChunkReceived(chunk):
             guard let last = state.conversation.messages.last, last.role == .assistant else {
