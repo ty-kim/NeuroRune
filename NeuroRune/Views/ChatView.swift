@@ -178,6 +178,14 @@ struct ChatView: View {
                 .transition(.opacity)
                 .animation(reduceMotion ? nil : .easeInOut(duration: 0.2), value: viewStore.activeToolCalls)
         }
+        if let sttError = viewStore.sttError {
+            STTErrorBanner(
+                error: sttError,
+                onDismiss: { viewStore.send(.sttErrorDismissed) }
+            )
+            .transition(reduceMotion ? .opacity : .move(edge: .bottom).combined(with: .opacity))
+            .animation(reduceMotion ? nil : .easeInOut(duration: 0.3), value: viewStore.sttError)
+        }
         if let persistenceError = viewStore.persistenceError {
             ChatPersistenceBanner(
                 message: persistenceError,
