@@ -6,6 +6,45 @@
 import SwiftUI
 import ComposableArchitecture
 
+private struct ToolCallChips: View {
+    let calls: [ChatFeature.ToolCallStatus]
+
+    var body: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 8) {
+                ForEach(calls) { call in
+                    HStack(spacing: 6) {
+                        ProgressView()
+                            .scaleEffect(0.7)
+                        Text(label(for: call))
+                            .font(.footnote)
+                            .foregroundStyle(.primary)
+                    }
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 6)
+                    .background(Color(.tertiarySystemBackground))
+                    .clipShape(Capsule())
+                    .accessibilityElement(children: .combine)
+                    .accessibilityLabel(label(for: call))
+                }
+            }
+            .padding(.horizontal)
+            .padding(.vertical, 6)
+        }
+    }
+
+    private func label(for call: ChatFeature.ToolCallStatus) -> String {
+        switch call.name {
+        case "read_memory":
+            let path = call.input["path"] ?? "?"
+            let role = call.input["role"] ?? "?"
+            return "📖 \(role)/\(path)"
+        default:
+            return "⚙️ \(call.name)"
+        }
+    }
+}
+
 struct ChatView: View {
     let store: StoreOf<ChatFeature>
     var onApiKeyReset: () -> Void = {}
@@ -29,6 +68,11 @@ struct ChatView: View {
                             .animation(reduceMotion ? nil : .default.repeatCount(3, autoreverses: true).speed(6), value: errorShakeTrigger)
                             .transition(reduceMotion ? .opacity : .move(edge: .bottom).combined(with: .opacity))
                             .animation(reduceMotion ? nil : .easeInOut(duration: 0.3), value: viewStore.error)
+                    }
+                    if !viewStore.activeToolCalls.isEmpty {
+                        ToolCallChips(calls: viewStore.activeToolCalls)
+                            .transition(.opacity)
+                            .animation(reduceMotion ? nil : .easeInOut(duration: 0.2), value: viewStore.activeToolCalls)
                     }
                     if let persistenceError = viewStore.persistenceError {
                         ChatPersistenceBanner(
@@ -84,6 +128,25 @@ struct ChatView: View {
                     // streaming 끝났고 error 없으면 응답 수신 완료 → success haptic.
                     if wasStreaming && !isStreaming && viewStore.error == nil {
                         UINotificationFeedbackGenerator().notificationOccurred(.success)
+                    }
+                }
+                .sheet(
+                    isPresented: Binding(
+                        get: { viewStore.pendingWrite != nil },
+                        set: { isShown in
+                            if !isShown, let id = viewStore.pendingWrite?.id {
+                                viewStore.send(.writeRejected(id: id, reason: "dismissed"))
+                            }
+                        }
+                    )
+                ) {
+                    if let req = viewStore.pendingWrite {
+                        WriteApprovalModal(
+                            request: req,
+                            onApprove: { viewStore.send(.writeApproved(id: req.id)) },
+                            onReject: { viewStore.send(.writeRejected(id: req.id, reason: nil)) }
+                        )
+                        .interactiveDismissDisabled(true)
                     }
                 }
                 .alert(

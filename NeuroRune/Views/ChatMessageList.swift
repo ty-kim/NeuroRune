@@ -41,6 +41,13 @@ struct ChatMessageList: View {
                     proxy.scrollTo(lastIndex, anchor: .bottom)
                 }
             }
+            .onAppear {
+                // 기존 대화 재진입 시 최하단(최신 메시지)으로 자동 스크롤.
+                let lastIndex = messages.count - 1
+                if lastIndex >= 0 {
+                    proxy.scrollTo(lastIndex, anchor: .bottom)
+                }
+            }
         }
     }
 }
