@@ -3,7 +3,7 @@
 //  NeuroRune
 //
 //  실패한 메시지 아래 표시되는 에러 버블. 재시도·닫기 버튼 제공.
-//  기존 `ChatErrorBanner`는 스타일 참고용으로 유지하되, 신규 ChatView 에러 UI는 이쪽으로 수렴.
+//  `LLMError.isRetryable == false`(예: `.cancelled`)이면 재시도 버튼 숨김.
 //
 
 import SwiftUI
