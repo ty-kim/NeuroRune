@@ -7,6 +7,8 @@ import SwiftUI
 
 struct ChatMessageList: View {
     let messages: [Message]
+    /// 현재 스트리밍 중 여부. true이면 **마지막 assistant 메시지**에 인디케이터 표시.
+    var isStreaming: Bool = false
     var onTap: () -> Void = {}
 
     var body: some View {
@@ -17,8 +19,11 @@ struct ChatMessageList: View {
                         Array(messages.enumerated()),
                         id: \.offset
                     ) { index, message in
-                        MessageView(message: message)
-                            .id(index)
+                        MessageView(
+                            message: message,
+                            isStreaming: shouldShowIndicator(at: index, message: message)
+                        )
+                        .id(index)
                     }
                 }
                 .padding()
@@ -50,6 +55,14 @@ struct ChatMessageList: View {
             }
         }
     }
+
+    /// 현재 인덱스의 메시지가 스트리밍 인디케이터를 표시해야 하는지.
+    /// 마지막 assistant 메시지 + `isStreaming == true`일 때만 true.
+    private func shouldShowIndicator(at index: Int, message: Message) -> Bool {
+        guard isStreaming else { return false }
+        guard index == messages.count - 1 else { return false }
+        return message.role == .assistant
+    }
 }
 
 #Preview("Empty") {
@@ -67,12 +80,23 @@ struct ChatMessageList: View {
     )
 }
 
-#Preview("Streaming placeholder") {
+#Preview("Streaming — with content (cursor)") {
     ChatMessageList(
         messages: [
             Message(role: .user, content: "긴 답변 부탁", createdAt: .now),
             Message(role: .assistant, content: "Answer in progre", createdAt: .now),
-        ]
+        ],
+        isStreaming: true
+    )
+}
+
+#Preview("Streaming — empty (typing dots)") {
+    ChatMessageList(
+        messages: [
+            Message(role: .user, content: "안녕", createdAt: .now),
+            Message(role: .assistant, content: "", createdAt: .now),
+        ],
+        isStreaming: true
     )
 }
 

@@ -8,6 +8,9 @@ import MarkdownUI
 
 struct MessageView: View {
     let message: Message
+    /// 이 메시지가 **현재 스트리밍 중인 마지막 assistant 메시지**일 때 true.
+    /// ChatMessageList가 마지막 assistant에만 전달한다.
+    var isStreaming: Bool = false
 
     var body: some View {
         HStack {
@@ -39,13 +42,68 @@ struct MessageView: View {
     }
 
     private var assistantBubble: some View {
-        Markdown(message.content)
-            .markdownTheme(.neuroRune)
-            .markdownImageProvider(DisabledImageProvider())
-            .textSelection(.enabled)
-            .padding(12)
-            .background(Color(.secondarySystemBackground))
-            .clipShape(RoundedRectangle(cornerRadius: 16))
+        VStack(alignment: .leading, spacing: 6) {
+            if !message.content.isEmpty {
+                Markdown(message.content)
+                    .markdownTheme(.neuroRune)
+                    .markdownImageProvider(DisabledImageProvider())
+                    .textSelection(.enabled)
+            }
+            if isStreaming {
+                StreamingIndicator(hasContent: !message.content.isEmpty)
+            }
+        }
+        .padding(12)
+        .background(Color(.secondarySystemBackground))
+        .clipShape(RoundedRectangle(cornerRadius: 16))
+    }
+}
+
+// MARK: - StreamingIndicator
+
+/// 스트리밍 중인 assistant 버블의 인디케이터.
+/// - `hasContent == false`: 3-dot 타이핑 (빈 버블)
+/// - `hasContent == true`: 작은 펄싱 커서 (텍스트 뒤에 이어지는 느낌)
+/// ReduceMotion이 켜져 있으면 정적으로 표시.
+private struct StreamingIndicator: View {
+    let hasContent: Bool
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var phase: Double = 0
+
+    var body: some View {
+        Group {
+            if hasContent {
+                // 펄싱 커서 — 텍스트 끝을 이어가는 블록
+                Rectangle()
+                    .frame(width: 7, height: 14)
+                    .cornerRadius(1)
+                    .opacity(reduceMotion ? 0.6 : (0.3 + 0.7 * phase))
+            } else {
+                // 3-dot 타이핑 인디케이터
+                HStack(spacing: 4) {
+                    ForEach(0..<3, id: \.self) { index in
+                        Circle()
+                            .frame(width: 6, height: 6)
+                            .opacity(reduceMotion ? 0.5 : dotOpacity(index: index))
+                    }
+                }
+            }
+        }
+        .foregroundStyle(.secondary)
+        .onAppear {
+            guard !reduceMotion else { return }
+            withAnimation(.easeInOut(duration: 0.8).repeatForever(autoreverses: true)) {
+                phase = 1
+            }
+        }
+        .accessibilityHidden(true)
+    }
+
+    private func dotOpacity(index: Int) -> Double {
+        // 각 점의 위상을 살짝 어긋나게 → "파형"처럼 순차 깜빡임
+        let offset = Double(index) * 0.33
+        let wave = sin((phase + offset) * .pi * 2)
+        return 0.35 + 0.5 * abs(wave)
     }
 }
 
