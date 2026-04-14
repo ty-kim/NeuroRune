@@ -1225,6 +1225,15 @@
         }
       }
     },
+    "list.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Chats" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "チャット" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "채팅 목록" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "聊天列表" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "聊天列表" } }
+      }
+    },
     "list.newChat" : {
       "localizations" : {
         "en" : {
