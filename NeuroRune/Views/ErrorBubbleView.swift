@@ -30,15 +30,7 @@ struct ErrorBubbleView: View {
             }
 
             if case let .rateLimited(retryAfter?, _) = error, retryAfter > 0 {
-                TimelineView(.periodic(from: .now, by: 1.0)) { context in
-                    let remaining = max(0, Int((retryAfter - context.date.timeIntervalSince(retryStartedAt)).rounded()))
-                    if remaining > 0 {
-                        Text(String(format: String(localized: "error.retry.countdown.format"),
-                                    Self.formatCountdown(remaining)))
-                            .font(.footnote.monospacedDigit())
-                            .foregroundStyle(.secondary)
-                    }
-                }
+                RetryCountdownLabel(startedAt: retryStartedAt, duration: retryAfter)
             }
 
             HStack(spacing: 12) {
@@ -85,6 +77,27 @@ struct ErrorBubbleView: View {
             return String(format: "%d:%02d", minutes, s)
         }
         return "\(s)s"
+    }
+}
+
+// MARK: - RetryCountdownLabel
+
+/// retryAfter 초를 실시간 카운트다운으로 표시. 0초 이하가 되면 자동으로 사라진다.
+/// `startedAt` 기준으로 남은 시간 계산 → ErrorBubbleView의 `@State retryStartedAt` 유지.
+struct RetryCountdownLabel: View {
+    let startedAt: Date
+    let duration: TimeInterval
+
+    var body: some View {
+        TimelineView(.periodic(from: .now, by: 1.0)) { context in
+            let remaining = max(0, Int((duration - context.date.timeIntervalSince(startedAt)).rounded()))
+            if remaining > 0 {
+                Text(String(format: String(localized: "error.retry.countdown.format"),
+                            ErrorBubbleView.formatCountdown(remaining)))
+                    .font(.footnote.monospacedDigit())
+                    .foregroundStyle(.secondary)
+            }
+        }
     }
 }
 

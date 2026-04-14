@@ -45,9 +45,7 @@ nonisolated extension LLMClient {
 
                 // 상태 코드 분기 전에 rate limit·retry-after 먼저 파싱.
                 // 429일 때도 헤더는 같이 오므로 에러에 담아 UI에 쿼터 상태를 전달.
-                let rateLimit = RateLimitState.parse(from: http)
-                let retryAfter: TimeInterval? = http.value(forHTTPHeaderField: "retry-after")
-                    .flatMap { TimeInterval($0) }
+                let (rateLimit, retryAfter) = parseRateLimitHeaders(from: http)
 
                 switch http.statusCode {
                 case 200..<300:
@@ -118,5 +116,16 @@ nonisolated extension LLMClient {
                 }
             }
         )
+    }
+
+    /// Anthropic 응답 헤더에서 rate limit 쿼터와 retry-after(초)를 파싱한다.
+    /// 200 성공·429 실패 모두에서 호출 가능. 헤더가 없으면 각각 비어있는 state / nil을 돌려준다.
+    private static func parseRateLimitHeaders(
+        from http: HTTPURLResponse
+    ) -> (state: RateLimitState, retryAfter: TimeInterval?) {
+        let state = RateLimitState.parse(from: http)
+        let retryAfter = http.value(forHTTPHeaderField: "retry-after")
+            .flatMap { TimeInterval($0) }
+        return (state, retryAfter)
     }
 }

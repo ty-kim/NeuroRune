@@ -39,24 +39,39 @@ nonisolated struct ChatFeature: Reducer {
     }
 
     enum Action: Equatable {
+        // MARK: - Input & Send
         case inputChanged(String)
         case sendTapped
+
+        // MARK: - Streaming
         case streamChunkReceived(String)
         case streamFinished
+
+        // MARK: - Errors & Retry
         case errorOccurred(LLMError)
-        case persistenceFailed(String)
-        case persistenceErrorDismissed
-        case newConversationStarted(modelId: String)
-        case toolUseRequested(id: String, name: String, input: [String: String])
-        case toolUseCompleted(id: String)
-        case writeApprovalRequested(WriteRequest)
-        case writeApproved(id: String)
-        case writeRejected(id: String, reason: String?)
-        case rateLimitUpdated(RateLimitState)
         /// 에러 버블의 [재시도] 버튼. 마지막 user 메시지를 다시 보낸다.
         case retryTapped
         /// 에러 버블의 [닫기] 버튼 또는 사용자 수동 해제.
         case errorDismissed
+
+        // MARK: - Persistence
+        case persistenceFailed(String)
+        case persistenceErrorDismissed
+
+        // MARK: - Conversation lifecycle
+        case newConversationStarted(modelId: String)
+
+        // MARK: - Rate limit
+        case rateLimitUpdated(RateLimitState)
+
+        // MARK: - Tools
+        case toolUseRequested(id: String, name: String, input: [String: String])
+        case toolUseCompleted(id: String)
+
+        // MARK: - Write approval
+        case writeApprovalRequested(WriteRequest)
+        case writeApproved(id: String)
+        case writeRejected(id: String, reason: String?)
     }
 
     func reduce(into state: inout State, action: Action) -> Effect<Action> {
