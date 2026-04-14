@@ -653,6 +653,26 @@ struct ChatFeatureTests {
         }
     }
 
+    @Test("errorOccurred는 activeToolCalls + pendingWrite도 초기화한다")
+    func errorOccurredClearsToolStateAndPendingWrite() async {
+        var state = makeState(isStreaming: true)
+        state.activeToolCalls = [
+            ChatFeature.ToolCallStatus(id: "t1", name: "read_memory", input: ["path": "x.md"])
+        ]
+        state.pendingWrite = ChatFeature.WriteRequest(
+            id: "w1", role: .global, path: "p", content: "c", commitMessage: "m"
+        )
+
+        let store = TestStore(initialState: state) { ChatFeature() }
+
+        await store.send(.errorOccurred(.rateLimited)) {
+            $0.error = .rateLimited
+            $0.isStreaming = false
+            $0.activeToolCalls = []
+            $0.pendingWrite = nil
+        }
+    }
+
     @Test("새 Conversation 시작 시 selectedModel.id가 conversation.modelId에 고정된다")
     func newConversationUsesSelectedModel() async {
         let fixedUUID = UUID(uuidString: "00000000-0000-0000-0000-000000000001")!

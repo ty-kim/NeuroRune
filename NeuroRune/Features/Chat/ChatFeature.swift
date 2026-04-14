@@ -203,6 +203,10 @@ nonisolated struct ChatFeature: Reducer {
         case let .errorOccurred(llmError):
             state.error = llmError
             state.isStreaming = false
+            // 에러 시 진행 중이던 tool 칩/modal도 정리. stream 도중 실패면
+            // 미해결 continuation은 effect cancel로 함께 사라짐.
+            state.activeToolCalls = []
+            state.pendingWrite = nil
             // 스트리밍 중 실패면 trailing assistant(placeholder/부분응답) 제거 + 재저장.
             // 부분 응답 보존 X — "이게 진짜 답인가" 혼란 방지, 사용자는 재시도.
             let hadTrailingAssistant = state.conversation.messages.last?.role == .assistant
