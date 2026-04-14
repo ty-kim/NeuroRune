@@ -127,6 +127,10 @@ nonisolated struct ChatFeature: Reducer {
                                 await send(.streamChunkReceived(text))
                             case let .toolUseRequest(id, name, inputJSON):
                                 roundToolUses.append((id, name, inputJSON))
+                            case .rateLimitUpdate:
+                                // Phase 19에서 ChatFeature State로 라우팅 예정.
+                                // 현재는 AnthropicClient가 emit하되 UI 연결 없음.
+                                break
                             }
                         }
                         if roundToolUses.isEmpty { break }

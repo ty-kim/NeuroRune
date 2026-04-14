@@ -54,7 +54,15 @@ nonisolated extension LLMClient {
                     throw LLMError.server(status: http.statusCode, message: "stream request failed")
                 }
 
+                let rateLimit = RateLimitState.parse(from: http)
+
                 return AsyncThrowingStream<LLMStreamEvent, Error> { continuation in
+                    // 스트림 시작 직후 응답 헤더에서 파싱한 쿼터를 1회 emit.
+                    // Quota 하나라도 있으면 UI가 업데이트할 가치가 있음.
+                    if !rateLimit.isEmpty {
+                        continuation.yield(.rateLimitUpdate(rateLimit))
+                    }
+
                     let task = Task {
                         do {
                             // tool_use 블록 조립 상태: index → (id, name, partialJSON)
