@@ -1557,6 +1557,15 @@
         }
       }
     },
+    "memory.edit.doneEditing" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Done" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "完了" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "완료" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "完成" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "完成" } }
+      }
+    },
     "memory.edit.discardTitle" : {
       "localizations" : {
         "en" : {
@@ -2386,6 +2395,69 @@
             "value" : "要重設儲存嗎?"
           }
         }
+      }
+    },
+    "writeApproval.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Write memory?" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "メモリを書き込みますか?" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "메모리에 쓰시겠어요?" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "写入记忆吗?" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "要寫入記憶嗎?" } }
+      }
+    },
+    "writeApproval.role" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Role" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "ロール" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "역할" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "角色" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "角色" } }
+      }
+    },
+    "writeApproval.path" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Path" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "パス" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "경로" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "路径" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "路徑" } }
+      }
+    },
+    "writeApproval.commitMessage" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Commit" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "コミット" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "커밋" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "提交" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "提交" } }
+      }
+    },
+    "writeApproval.content" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Content" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "内容" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "내용" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "内容" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "內容" } }
+      }
+    },
+    "writeApproval.cancel" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Cancel" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "キャンセル" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "취소" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "取消" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "取消" } }
+      }
+    },
+    "writeApproval.save" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Save" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "保存" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "저장" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "保存" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "儲存" } }
       }
     },
     "storage.error.resetFailedTitle" : {

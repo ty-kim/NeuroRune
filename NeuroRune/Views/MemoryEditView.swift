@@ -11,6 +11,7 @@ struct MemoryEditView: View {
 
     @Environment(\.dismiss) private var dismiss
     @State private var showDiscardConfirm = false
+    @FocusState private var isEditorFocused: Bool
 
     var body: some View {
         WithViewStore(store, observe: { $0 }) { viewStore in
@@ -26,6 +27,8 @@ struct MemoryEditView: View {
                     .padding(.horizontal, 4)
                     .autocorrectionDisabled()
                     .textInputAutocapitalization(.never)
+                    .focused($isEditorFocused)
+                    .scrollDismissesKeyboard(.interactively)
                 }
             }
             .navigationTitle(viewStore.hasUnsavedChanges ? "• \(viewStore.file.name)" : viewStore.file.name)
@@ -50,6 +53,12 @@ struct MemoryEditView: View {
                         viewStore.send(.saveTapped)
                     }
                     .disabled(!viewStore.hasUnsavedChanges || viewStore.isSaving)
+                }
+                ToolbarItemGroup(placement: .keyboard) {
+                    Spacer()
+                    Button(String(localized: "memory.edit.doneEditing")) {
+                        isEditorFocused = false
+                    }
                 }
             }
             .confirmationDialog(

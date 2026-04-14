@@ -50,4 +50,32 @@ nonisolated extension LLMTool {
             required: ["role", "path"]
         )
     )
+
+    /// Claude가 메모리 파일을 생성/수정하는 tool.
+    /// 사용자 confirm modal을 거친 후에만 commit. reject 시 tool_result에 거절 사유.
+    static let writeMemory = LLMTool(
+        name: "write_memory",
+        description: "Create or update a memory file in the user's GitHub repository. The user must approve via a confirmation modal before the change is committed.",
+        inputSchema: LLMTool.InputSchema(
+            properties: [
+                "role": LLMTool.Property(
+                    type: "string",
+                    description: "Memory repository role: 'global' or 'local'."
+                ),
+                "path": LLMTool.Property(
+                    type: "string",
+                    description: "File path within the repository, e.g. 'runes/insight.md'."
+                ),
+                "content": LLMTool.Property(
+                    type: "string",
+                    description: "Full file content (UTF-8). Existing file is fully replaced."
+                ),
+                "commit_message": LLMTool.Property(
+                    type: "string",
+                    description: "Short commit message describing the change."
+                ),
+            ],
+            required: ["role", "path", "content", "commit_message"]
+        )
+    )
 }
