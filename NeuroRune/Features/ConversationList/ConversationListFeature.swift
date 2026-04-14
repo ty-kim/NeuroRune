@@ -19,6 +19,7 @@ nonisolated struct ConversationListFeature: Reducer {
         var selectedEffort: EffortLevel? = nil
         var listError: String?
         var showMemoryList: Bool = false
+        var showNCPCredentials: Bool = false
     }
 
     enum Action: Equatable {
@@ -36,6 +37,8 @@ nonisolated struct ConversationListFeature: Reducer {
         case memoryListTapped
         case memoryListDismissed
         case resetApiKeyTapped
+        case ncpCredentialsTapped
+        case ncpCredentialsDismissed
         case resetConfirmationDismissed
         case resetApiKeyConfirmed
         case errorDismissed
@@ -132,6 +135,14 @@ nonisolated struct ConversationListFeature: Reducer {
 
         case .resetApiKeyTapped:
             state.showResetConfirmation = true
+            return .none
+
+        case .ncpCredentialsTapped:
+            state.showNCPCredentials = true
+            return .none
+
+        case .ncpCredentialsDismissed:
+            state.showNCPCredentials = false
             return .none
 
         case .resetConfirmationDismissed:

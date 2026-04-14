@@ -27,8 +27,23 @@ struct ConversationListView: View {
                 .navigationTitle(String(localized: "list.title"))
                 .toolbar {
                     ToolbarItem(placement: .topBarLeading) {
-                        Button {
-                            viewStore.send(.resetApiKeyTapped)
+                        Menu {
+                            Button {
+                                viewStore.send(.ncpCredentialsTapped)
+                            } label: {
+                                Label(
+                                    String(localized: "settings.ncpKey"),
+                                    systemImage: "waveform"
+                                )
+                            }
+                            Button(role: .destructive) {
+                                viewStore.send(.resetApiKeyTapped)
+                            } label: {
+                                Label(
+                                    String(localized: "settings.anthropicKey"),
+                                    systemImage: "key"
+                                )
+                            }
                         } label: {
                             Image(systemName: "gearshape")
                                 .font(.title3)
@@ -69,6 +84,21 @@ struct ConversationListView: View {
                     )
                 ) {
                     MemoryHubView()
+                }
+                .sheet(
+                    isPresented: viewStore.binding(
+                        get: \.showNCPCredentials,
+                        send: ConversationListFeature.Action.ncpCredentialsDismissed
+                    )
+                ) {
+                    NCPCredentialsView(
+                        store: Store(initialState: NCPCredentialsFeature.State()) {
+                            NCPCredentialsFeature()
+                        },
+                        onSaved: {
+                            viewStore.send(.ncpCredentialsDismissed)
+                        }
+                    )
                 }
                 .navigationDestination(
                     item: viewStore.binding(
