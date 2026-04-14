@@ -62,6 +62,11 @@ struct ChatView: View {
                         messages: viewStore.conversation.messages,
                         onTap: { isInputFocused = false }
                     )
+                    if let rateLimit = viewStore.rateLimit {
+                        RateLimitBadge(state: rateLimit)
+                            .transition(reduceMotion ? .opacity : .move(edge: .top).combined(with: .opacity))
+                            .animation(reduceMotion ? nil : .easeInOut(duration: 0.3), value: viewStore.rateLimit)
+                    }
                     if let error = viewStore.error {
                         ChatErrorBanner(error: error)
                             .offset(y: reduceMotion ? 0 : (errorShakeTrigger % 2 == 0 ? 0 : -4))
