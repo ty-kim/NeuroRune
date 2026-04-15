@@ -1,5 +1,5 @@
 //
-//  OnboardingView.swift
+//  AnthropicCredentialsView.swift
 //  NeuroRune
 //
 //  Created by tykim
@@ -8,8 +8,8 @@
 import SwiftUI
 import ComposableArchitecture
 
-struct OnboardingView: View {
-    let store: StoreOf<OnboardingFeature>
+struct AnthropicCredentialsView: View {
+    let store: StoreOf<AnthropicCredentialsFeature>
     var onComplete: () -> Void = {}
 
     @State private var isKeyRevealed = false
@@ -41,12 +41,12 @@ struct OnboardingView: View {
                                 if isKeyRevealed {
                                     TextField("sk-ant-...", text: viewStore.binding(
                                         get: \.apiKeyInput,
-                                        send: OnboardingFeature.Action.apiKeyChanged
+                                        send: AnthropicCredentialsFeature.Action.apiKeyChanged
                                     ))
                                 } else {
                                     SecureField("sk-ant-...", text: viewStore.binding(
                                         get: \.apiKeyInput,
-                                        send: OnboardingFeature.Action.apiKeyChanged
+                                        send: AnthropicCredentialsFeature.Action.apiKeyChanged
                                     ))
                                 }
                             }
@@ -110,9 +110,9 @@ struct OnboardingView: View {
 }
 
 #Preview {
-    OnboardingView(
-        store: Store(initialState: OnboardingFeature.State()) {
-            OnboardingFeature()
+    AnthropicCredentialsView(
+        store: Store(initialState: AnthropicCredentialsFeature.State()) {
+            AnthropicCredentialsFeature()
         }
     )
 }

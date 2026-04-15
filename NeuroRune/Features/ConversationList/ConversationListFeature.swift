@@ -105,7 +105,7 @@ nonisolated struct ConversationListFeature: Reducer {
 
         case .newConversationTapped:
             // Anthropic 키 없으면 Onboarding sheet, 있으면 모델 피커.
-            let hasKey = (try? keychain.load(OnboardingFeature.anthropicKeyName)) != nil
+            let hasKey = (try? keychain.load(AnthropicCredentialsFeature.anthropicKeyName)) != nil
             if hasKey {
                 state.showModelPicker = true
             } else {

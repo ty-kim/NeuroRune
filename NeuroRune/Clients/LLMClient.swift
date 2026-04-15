@@ -26,7 +26,7 @@ nonisolated extension LLMClient: DependencyKey {
     }()
 
     private static func loadAnthropicAPIKey() throws -> String {
-        guard let apiKey = try KeychainClient.liveValue.load(OnboardingFeature.anthropicKeyName) else {
+        guard let apiKey = try KeychainClient.liveValue.load(AnthropicCredentialsFeature.anthropicKeyName) else {
             Logger.llm.error("api key not found")
             throw LLMError.unauthorized
         }

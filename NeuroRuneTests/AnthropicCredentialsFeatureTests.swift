@@ -1,5 +1,5 @@
 //
-//  OnboardingFeatureTests.swift
+//  AnthropicCredentialsFeatureTests.swift
 //  NeuroRuneTests
 //
 //  Created by tykim
@@ -12,11 +12,11 @@ import ComposableArchitecture
 
 @Suite(.serialized)
 @MainActor
-struct OnboardingFeatureTests {
+struct AnthropicCredentialsFeatureTests {
 
     @Test("초기 State: apiKeyInput 빈 문자열, isValid false, error nil")
     func initialStateDefaults() {
-        let state = OnboardingFeature.State()
+        let state = AnthropicCredentialsFeature.State()
         #expect(state.apiKeyInput == "")
         #expect(state.isValid == false)
         #expect(state.error == nil)
@@ -25,8 +25,8 @@ struct OnboardingFeatureTests {
 
     @Test("apiKeyChanged는 apiKeyInput을 업데이트한다")
     func apiKeyChangedUpdatesInput() async {
-        let store = TestStore(initialState: OnboardingFeature.State()) {
-            OnboardingFeature()
+        let store = TestStore(initialState: AnthropicCredentialsFeature.State()) {
+            AnthropicCredentialsFeature()
         }
 
         await store.send(.apiKeyChanged("sk-ant-test")) {
@@ -36,13 +36,13 @@ struct OnboardingFeatureTests {
 
     @Test("빈 문자열 input은 isValid false")
     func emptyInputIsInvalid() {
-        let state = OnboardingFeature.State(apiKeyInput: "")
+        let state = AnthropicCredentialsFeature.State(apiKeyInput: "")
         #expect(state.isValid == false)
     }
 
     @Test("sk-ant-로 시작하는 input은 isValid true")
     func validPrefixMakesStateValid() {
-        let state = OnboardingFeature.State(apiKeyInput: "sk-ant-abc123")
+        let state = AnthropicCredentialsFeature.State(apiKeyInput: "sk-ant-abc123")
         #expect(state.isValid == true)
     }
 
@@ -52,9 +52,9 @@ struct OnboardingFeatureTests {
         let savedValue = LockIsolated<String?>(nil)
 
         let store = TestStore(
-            initialState: OnboardingFeature.State(apiKeyInput: "sk-ant-valid")
+            initialState: AnthropicCredentialsFeature.State(apiKeyInput: "sk-ant-valid")
         ) {
-            OnboardingFeature()
+            AnthropicCredentialsFeature()
         } withDependencies: {
             $0.keychainClient.save = { @Sendable key, value in
                 savedKey.setValue(key)
@@ -77,9 +77,9 @@ struct OnboardingFeatureTests {
     @Test("Keychain save 실패 시 state.error에 메시지가 세팅된다")
     func saveFailureSetsError() async {
         let store = TestStore(
-            initialState: OnboardingFeature.State(apiKeyInput: "sk-ant-valid")
+            initialState: AnthropicCredentialsFeature.State(apiKeyInput: "sk-ant-valid")
         ) {
-            OnboardingFeature()
+            AnthropicCredentialsFeature()
         } withDependencies: {
             $0.keychainClient.save = { @Sendable _, _ in
                 throw KeychainError.unhandled(status: -25300)
@@ -100,9 +100,9 @@ struct OnboardingFeatureTests {
         let savedValue = LockIsolated<String?>(nil)
 
         let store = TestStore(
-            initialState: OnboardingFeature.State(apiKeyInput: "  sk-ant-valid\n")
+            initialState: AnthropicCredentialsFeature.State(apiKeyInput: "  sk-ant-valid\n")
         ) {
-            OnboardingFeature()
+            AnthropicCredentialsFeature()
         } withDependencies: {
             $0.keychainClient.save = { @Sendable _, value in
                 savedValue.setValue(value)
@@ -123,9 +123,9 @@ struct OnboardingFeatureTests {
     @Test("saveSucceeded는 apiKeyInput을 clear한다")
     func saveSucceededClearsInput() async {
         let store = TestStore(
-            initialState: OnboardingFeature.State(apiKeyInput: "sk-ant-abc")
+            initialState: AnthropicCredentialsFeature.State(apiKeyInput: "sk-ant-abc")
         ) {
-            OnboardingFeature()
+            AnthropicCredentialsFeature()
         }
 
         await store.send(.saveSucceeded) {
@@ -136,12 +136,11 @@ struct OnboardingFeatureTests {
     @Test("isValid false일 때 saveTapped는 아무 효과 없음")
     func saveTappedNoOpWhenInvalid() async {
         let store = TestStore(
-            initialState: OnboardingFeature.State(apiKeyInput: "")
+            initialState: AnthropicCredentialsFeature.State(apiKeyInput: "")
         ) {
-            OnboardingFeature()
+            AnthropicCredentialsFeature()
         }
 
         await store.send(.saveTapped)
-        // State 변화 없음, Effect 없음
     }
 }

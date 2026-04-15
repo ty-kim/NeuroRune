@@ -143,7 +143,7 @@ struct ChatView: View {
                 ) {
                     Button(String(localized: "chat.resetApiKey"), role: .destructive) {
                         let client = KeychainClient.liveValue
-                        try? client.delete(OnboardingFeature.anthropicKeyName)
+                        try? client.delete(AnthropicCredentialsFeature.anthropicKeyName)
                         onApiKeyReset()
                     }
                     Button(String(localized: "error.cancel"), role: .cancel) {}

@@ -1,5 +1,5 @@
 //
-//  OnboardingFeature.swift
+//  AnthropicCredentialsFeature.swift
 //  NeuroRune
 //
 //  Created by tykim
@@ -8,7 +8,7 @@
 import Foundation
 import ComposableArchitecture
 
-nonisolated struct OnboardingFeature: Reducer {
+nonisolated struct AnthropicCredentialsFeature: Reducer {
 
     struct State: Equatable {
         var apiKeyInput: String = ""

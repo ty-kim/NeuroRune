@@ -105,9 +105,9 @@ struct ConversationListView: View {
                         send: ConversationListFeature.Action.onboardingDismissed
                     )
                 ) {
-                    OnboardingView(
-                        store: Store(initialState: OnboardingFeature.State()) {
-                            OnboardingFeature()
+                    AnthropicCredentialsView(
+                        store: Store(initialState: AnthropicCredentialsFeature.State()) {
+                            AnthropicCredentialsFeature()
                         },
                         onComplete: {
                             viewStore.send(.onboardingDismissed)
