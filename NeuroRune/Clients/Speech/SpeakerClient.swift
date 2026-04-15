@@ -65,6 +65,16 @@ nonisolated extension SpeakerClient {
         )
     }
 
+    /// Azure region 검증: 소문자/숫자/하이픈만. URL 조작 문자(점, 슬래시, @ 등) 차단.
+    static func isValidRegion(_ region: String) -> Bool {
+        guard !region.isEmpty else { return false }
+        return region.allSatisfy { c in
+            c.isLowercase && c.isLetter
+                || c.isNumber
+                || c == "-"
+        }
+    }
+
     static func buildAzureRequest(
         text: String,
         voice: String,
@@ -73,8 +83,16 @@ nonisolated extension SpeakerClient {
         pitch: Double,
         credentials: AzureCredentials
     ) throws -> URLRequest {
-        let endpoint = "https://\(credentials.region).tts.speech.microsoft.com/cognitiveservices/v1"
-        guard let url = URL(string: endpoint) else {
+        let region = credentials.region.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard isValidRegion(region) else {
+            throw SpeechError.network("invalid Azure region format")
+        }
+
+        var components = URLComponents()
+        components.scheme = "https"
+        components.host = "\(region).tts.speech.microsoft.com"
+        components.path = "/cognitiveservices/v1"
+        guard let url = components.url else {
             throw SpeechError.network("invalid Azure endpoint URL")
         }
 

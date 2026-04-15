@@ -52,6 +52,16 @@ struct SpeakerClientTests {
 
     // MARK: - Request 구성
 
+    @Test("잘못된 region 문자(점·슬래시·@)는 network 에러")
+    func rejectsInvalidRegion() {
+        let bad = AzureCredentials(apiKey: "k", region: "evil.example.com/x")
+        #expect(throws: SpeechError.self) {
+            _ = try SpeakerClient.buildAzureRequest(
+                text: "t", voice: "v", language: "ko-KR", rate: 1.0, pitch: 1.0, credentials: bad
+            )
+        }
+    }
+
     @Test("buildAzureRequest는 region 기반 endpoint·헤더·SSML body를 세팅한다")
     func buildRequestFields() throws {
         let req = try SpeakerClient.buildAzureRequest(
