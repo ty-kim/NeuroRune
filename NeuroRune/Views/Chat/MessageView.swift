@@ -54,6 +54,8 @@ struct MessageView: View {
                     .markdownTheme(.neuroRune)
                     .markdownImageProvider(DisabledImageProvider())
                     .textSelection(.enabled)
+                    // 리스트 항목 등이 말줄임(…)으로 잘리지 않도록 intrinsic 높이 확보.
+                    .fixedSize(horizontal: false, vertical: true)
             }
             if isStreaming {
                 StreamingIndicator(hasContent: !message.content.isEmpty)
