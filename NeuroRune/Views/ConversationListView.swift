@@ -45,6 +45,14 @@ struct ConversationListView: View {
                                 )
                             }
                             Button {
+                                viewStore.send(.azureCredentialsTapped)
+                            } label: {
+                                Label(
+                                    String(localized: "settings.azureKey"),
+                                    systemImage: "speaker.wave.2"
+                                )
+                            }
+                            Button {
                                 viewStore.send(.onboardingTapped)
                             } label: {
                                 Label(
@@ -96,6 +104,21 @@ struct ConversationListView: View {
                         },
                         onSaved: {
                             viewStore.send(.groqCredentialsDismissed)
+                        }
+                    )
+                }
+                .sheet(
+                    isPresented: viewStore.binding(
+                        get: \.showAzureCredentials,
+                        send: ConversationListFeature.Action.azureCredentialsDismissed
+                    )
+                ) {
+                    AzureCredentialsView(
+                        store: Store(initialState: AzureCredentialsFeature.State()) {
+                            AzureCredentialsFeature()
+                        },
+                        onSaved: {
+                            viewStore.send(.azureCredentialsDismissed)
                         }
                     )
                 }

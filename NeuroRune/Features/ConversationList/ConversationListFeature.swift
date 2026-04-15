@@ -19,6 +19,7 @@ nonisolated struct ConversationListFeature: Reducer {
         var listError: String?
         var showMemoryList: Bool = false
         var showGroqCredentials: Bool = false
+        var showAzureCredentials: Bool = false
         var showOnboarding: Bool = false
     }
 
@@ -40,6 +41,8 @@ nonisolated struct ConversationListFeature: Reducer {
         case onboardingDismissed
         case groqCredentialsTapped
         case groqCredentialsDismissed
+        case azureCredentialsTapped
+        case azureCredentialsDismissed
         case errorDismissed
     }
 
@@ -152,6 +155,14 @@ nonisolated struct ConversationListFeature: Reducer {
 
         case .groqCredentialsDismissed:
             state.showGroqCredentials = false
+            return .none
+
+        case .azureCredentialsTapped:
+            state.showAzureCredentials = true
+            return .none
+
+        case .azureCredentialsDismissed:
+            state.showAzureCredentials = false
             return .none
 
         case .errorDismissed:
