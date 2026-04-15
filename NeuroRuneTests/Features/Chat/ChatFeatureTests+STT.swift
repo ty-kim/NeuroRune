@@ -32,7 +32,8 @@ extension ChatFeatureTests {
                 requestPermission: { false },
                 start: { Issue.record("start should not be called"); return },
                 stop: { Data() },
-                isRecording: { false }
+                isRecording: { false },
+                cleanupOrphanedFiles: { }
             )
         }
         store.exhaustivity = .off
@@ -52,7 +53,8 @@ extension ChatFeatureTests {
                 requestPermission: { true },
                 start: { },
                 stop: { Data() },
-                isRecording: { false }
+                isRecording: { false },
+                cleanupOrphanedFiles: { }
             )
         }
         store.exhaustivity = .off
@@ -71,7 +73,8 @@ extension ChatFeatureTests {
                 requestPermission: { true },
                 start: { throw STTError.recordingFailed("engine down") },
                 stop: { Data() },
-                isRecording: { false }
+                isRecording: { false },
+                cleanupOrphanedFiles: { }
             )
         }
         store.exhaustivity = .off
@@ -95,7 +98,8 @@ extension ChatFeatureTests {
                 requestPermission: { true },
                 start: { },
                 stop: { Data([0xAB, 0xCD]) },
-                isRecording: { true }
+                isRecording: { true },
+                cleanupOrphanedFiles: { }
             )
             $0.sttClient = STTClient(
                 transcribe: { audio, lang in
@@ -146,7 +150,8 @@ extension ChatFeatureTests {
                 requestPermission: { true },
                 start: { },
                 stop: { Data() },
-                isRecording: { true }
+                isRecording: { true },
+                cleanupOrphanedFiles: { }
             )
             $0.sttClient = STTClient(
                 transcribe: { _, _ in

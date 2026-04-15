@@ -21,6 +21,29 @@ nonisolated struct AudioRecorder: Sendable {
     var stop: @Sendable () async throws -> Data
     /// 현재 녹음 중인지.
     var isRecording: @Sendable () async -> Bool
+    /// 앱 시작 시 호출. 이전 crash/kill로 tmp에 남은 `neurorune-stt-*.wav` 일괄 삭제.
+    var cleanupOrphanedFiles: @Sendable () -> Void
+}
+
+nonisolated extension AudioRecorder {
+    /// 순수 함수. 지정된 디렉토리에서 `neurorune-stt-*.wav` prefix/suffix 패턴 파일만 삭제.
+    /// 반환: 삭제된 파일 수. 읽기 실패나 삭제 실패는 조용히 건너뜀.
+    @discardableResult
+    static func cleanupOrphans(in directory: URL, fileManager: FileManager) -> Int {
+        guard let items = try? fileManager.contentsOfDirectory(
+            at: directory, includingPropertiesForKeys: nil
+        ) else { return 0 }
+
+        var removed = 0
+        for url in items {
+            let name = url.lastPathComponent
+            guard name.hasPrefix("neurorune-stt-"), name.hasSuffix(".wav") else { continue }
+            if (try? fileManager.removeItem(at: url)) != nil {
+                removed += 1
+            }
+        }
+        return removed
+    }
 }
 
 // MARK: - Live actor
@@ -122,14 +145,21 @@ nonisolated extension AudioRecorder: DependencyKey {
         requestPermission: { await LiveAudioRecorder.shared.requestPermission() },
         start: { try await LiveAudioRecorder.shared.start() },
         stop: { try await LiveAudioRecorder.shared.stop() },
-        isRecording: { await LiveAudioRecorder.shared.isRecording() }
+        isRecording: { await LiveAudioRecorder.shared.isRecording() },
+        cleanupOrphanedFiles: {
+            AudioRecorder.cleanupOrphans(
+                in: FileManager.default.temporaryDirectory,
+                fileManager: .default
+            )
+        }
     )
 
     static let testValue = AudioRecorder(
         requestPermission: unimplemented("AudioRecorder.requestPermission", placeholder: false),
         start: unimplemented("AudioRecorder.start"),
         stop: unimplemented("AudioRecorder.stop", placeholder: Data()),
-        isRecording: unimplemented("AudioRecorder.isRecording", placeholder: false)
+        isRecording: unimplemented("AudioRecorder.isRecording", placeholder: false),
+        cleanupOrphanedFiles: unimplemented("AudioRecorder.cleanupOrphanedFiles")
     )
 
     /// Preview/테스트용 — 짧은 fake WAV 헤더만 반환.
@@ -141,7 +171,8 @@ nonisolated extension AudioRecorder: DependencyKey {
             // UI 경로 테스트용으로만 쓰인다.
             Data(count: 44)
         },
-        isRecording: { false }
+        isRecording: { false },
+        cleanupOrphanedFiles: { }
     )
 }
 

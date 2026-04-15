@@ -23,4 +23,27 @@ struct AudioRecorderTests {
         #expect(data.count == 44)  // WAV header 크기
         #expect(await recorder.isRecording() == false)
     }
+
+    @Test("cleanupOrphans: neurorune-stt-*.wav만 삭제, 다른 파일 보존")
+    func cleanupRemovesOnlyMatching() throws {
+        let fm = FileManager.default
+        let dir = fm.temporaryDirectory.appendingPathComponent("nr-cleanup-test-\(UUID().uuidString)")
+        try fm.createDirectory(at: dir, withIntermediateDirectories: true)
+        defer { try? fm.removeItem(at: dir) }
+
+        let keep = dir.appendingPathComponent("other.wav")
+        let keep2 = dir.appendingPathComponent("neurorune-stt.txt")
+        let drop1 = dir.appendingPathComponent("neurorune-stt-\(UUID().uuidString).wav")
+        let drop2 = dir.appendingPathComponent("neurorune-stt-abc.wav")
+        for url in [keep, keep2, drop1, drop2] {
+            try Data([0]).write(to: url)
+        }
+
+        let removed = AudioRecorder.cleanupOrphans(in: dir, fileManager: fm)
+        #expect(removed == 2)
+        #expect(fm.fileExists(atPath: keep.path))
+        #expect(fm.fileExists(atPath: keep2.path))
+        #expect(!fm.fileExists(atPath: drop1.path))
+        #expect(!fm.fileExists(atPath: drop2.path))
+    }
 }
