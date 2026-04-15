@@ -63,6 +63,7 @@ nonisolated extension AzureVoice {
         AzureVoice(name: "ko-KR-JiMinNeural",    displayName: "지민 (여·감정)", language: "ko-KR"),
         AzureVoice(name: "ko-KR-SeoHyeonNeural", displayName: "서현 (여)",      language: "ko-KR"),
         AzureVoice(name: "ko-KR-SoonBokNeural",  displayName: "순복 (여·시니어)", language: "ko-KR"),
+        AzureVoice(name: "ko-KR-YuJinNeural",    displayName: "유진 (여)",      language: "ko-KR"),
         AzureVoice(name: "en-US-JennyNeural",    displayName: "Jenny (F)",      language: "en-US"),
         AzureVoice(name: "en-US-GuyNeural",      displayName: "Guy (M)",        language: "en-US"),
     ]
