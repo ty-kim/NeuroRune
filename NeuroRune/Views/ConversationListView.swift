@@ -29,6 +29,14 @@ struct ConversationListView: View {
                     ToolbarItem(placement: .topBarLeading) {
                         Menu {
                             Button {
+                                viewStore.send(.memoryListTapped)
+                            } label: {
+                                Label(
+                                    String(localized: "a11y.list.memory"),
+                                    systemImage: "book.closed"
+                                )
+                            }
+                            Button {
                                 viewStore.send(.groqCredentialsTapped)
                             } label: {
                                 Label(
@@ -51,22 +59,13 @@ struct ConversationListView: View {
                         .accessibilityLabel(String(localized: "a11y.chat.menuButton"))
                     }
                     ToolbarItem(placement: .topBarTrailing) {
-                        HStack(spacing: 16) {
-                            Button {
-                                viewStore.send(.memoryListTapped)
-                            } label: {
-                                Image(systemName: "book.closed")
-                                    .font(.title3)
-                            }
-                            .accessibilityLabel(String(localized: "a11y.list.memory"))
-                            Button {
-                                viewStore.send(.newConversationTapped)
-                            } label: {
-                                Image(systemName: "plus.circle")
-                                    .font(.title3)
-                            }
-                            .accessibilityLabel(String(localized: "a11y.list.newChat"))
+                        Button {
+                            viewStore.send(.newConversationTapped)
+                        } label: {
+                            Image(systemName: "plus.circle")
+                                .font(.title3)
                         }
+                        .accessibilityLabel(String(localized: "a11y.list.newChat"))
                     }
                 }
                 .sheet(
