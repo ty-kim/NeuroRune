@@ -297,10 +297,18 @@ private struct ConversationRow: View {
                 .font(.body)
                 .foregroundStyle(Color("BrandTitle"))
                 .lineLimit(1)
-            HStack {
+            HStack(spacing: 4) {
                 Text(LLMModel.resolve(id: conversation.modelId).displayName)
                     .font(.subheadline)
                     .foregroundStyle(.primary.opacity(0.6))
+                if let effort = conversation.effort {
+                    Text("·")
+                        .font(.subheadline)
+                        .foregroundStyle(.primary.opacity(0.6))
+                    Text(effort.displayName)
+                        .font(.subheadline)
+                        .foregroundStyle(.purple)
+                }
                 Spacer()
                 Text(lastActivityAt.formatted(.relative(presentation: .named)))
                     .font(.subheadline)
