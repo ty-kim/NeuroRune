@@ -13,8 +13,11 @@ import ComposableArchitecture
 nonisolated extension ChatFeature {
 
     /// TTS 관련 action 전담 reducer. main `reduce`에서 위임받음.
+    /// 크게 세 영역: Manual playback / Sentence queue / Speech settings.
     func reduceSpeak(into state: inout State, action: Action) -> Effect<Action> {
         switch action {
+        // MARK: - Manual playback (사용자가 버블 🔊 탭)
+
         case let .speakTapped(id):
             // 스트리밍 중엔 재생 X (응답 완료 후만)
             guard !state.isStreaming else { return .none }
@@ -96,7 +99,7 @@ nonisolated extension ChatFeature {
             state.speakError = nil
             return .none
 
-        // MARK: - Sentence queue (Phase 22.5)
+        // MARK: - Sentence queue (autoSpeak 스트리밍 모드, Phase 22.5)
 
         case let .speakSentenceEnqueued(sentence):
             let cleaned = speechPlainText(from: sentence)
@@ -146,7 +149,7 @@ nonisolated extension ChatFeature {
             }
             return .none
 
-        // MARK: - Speech settings
+        // MARK: - Speech settings (voice / rate / pitch / autoSpeak)
 
         case .loadSpeechSettings:
             return .run { send in
