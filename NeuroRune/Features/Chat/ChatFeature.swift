@@ -37,6 +37,10 @@ nonisolated struct ChatFeature: Reducer {
         var speakingMessageID: UUID? = nil
         /// TTS 에러.
         var speakError: SpeechError? = nil
+        /// 사용자 TTS 설정 (voice·rate·pitch·autoSpeak). 첫 진입 시 client.load()로 동기화.
+        var speechSettings: SpeechSettings = SpeechSettings()
+        /// 상세 설정 sheet 노출 여부.
+        var showSpeechSettings: Bool = false
     }
 
     /// 사용자에게 보여줄 tool 호출 정보 (id로 lifecycle 추적).
@@ -109,6 +113,16 @@ nonisolated struct ChatFeature: Reducer {
         case stopSpeakTapped
         case speakErrorOccurred(SpeechError)
         case speakErrorDismissed
+
+        // MARK: - Speech settings (Phase 22 Slice 7)
+        case loadSpeechSettings
+        case speechSettingsLoaded(SpeechSettings)
+        case speechVoiceSelected(String)
+        case autoSpeakToggled(Bool)
+        case speechRateChanged(Double)
+        case speechPitchChanged(Double)
+        case speechSettingsTapped
+        case speechSettingsDismissed
     }
 
     func reduce(into state: inout State, action: Action) -> Effect<Action> {
@@ -325,7 +339,11 @@ nonisolated struct ChatFeature: Reducer {
         // MARK: - TTS (ChatFeature+Speak.swift로 위임)
 
         case .speakTapped, .speakingStarted, .speakingFinished,
-             .stopSpeakTapped, .speakErrorOccurred, .speakErrorDismissed:
+             .stopSpeakTapped, .speakErrorOccurred, .speakErrorDismissed,
+             .loadSpeechSettings, .speechSettingsLoaded,
+             .speechVoiceSelected, .autoSpeakToggled,
+             .speechRateChanged, .speechPitchChanged,
+             .speechSettingsTapped, .speechSettingsDismissed:
             return reduceSpeak(into: &state, action: action)
         }
     }

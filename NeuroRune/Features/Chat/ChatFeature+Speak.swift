@@ -35,19 +35,20 @@ nonisolated extension ChatFeature {
             guard !text.isEmpty else { return .none }
             state.speakError = nil
 
+            let settings = state.speechSettings
+
             return .run { send in
                 @Dependency(\.speakerClient) var speaker
                 @Dependency(\.audioPlayer) var player
-                @Dependency(\.locale) var locale
 
-                let languageCode = locale.language.languageCode?.identifier ?? "ko"
-                let (voice, bcp47) = defaultVoice(for: languageCode)
+                let voice = settings.voiceName
+                let bcp47 = settings.bcp47Language
 
                 // 기존 재생 중단 (cancelled throw, stopSpeakTapped가 이미 처리)
                 await player.stop()
 
                 do {
-                    let audio = try await speaker.synthesize(text, voice, bcp47, 1.0, 1.0)
+                    let audio = try await speaker.synthesize(text, voice, bcp47, settings.rate, settings.pitch)
                     await send(.speakingStarted(id))
                     try await player.play(audio)
                     await send(.speakingFinished)
@@ -89,18 +90,52 @@ nonisolated extension ChatFeature {
             state.speakError = nil
             return .none
 
+        // MARK: - Speech settings
+
+        case .loadSpeechSettings:
+            return .run { send in
+                @Dependency(\.speechSettingsClient) var client
+                let settings = client.load()
+                await send(.speechSettingsLoaded(settings))
+            }
+
+        case let .speechSettingsLoaded(settings):
+            state.speechSettings = settings
+            return .none
+
+        case let .speechVoiceSelected(name):
+            state.speechSettings.voiceName = name
+            return persistSettings(state.speechSettings)
+
+        case let .autoSpeakToggled(on):
+            state.speechSettings.autoSpeak = on
+            return persistSettings(state.speechSettings)
+
+        case let .speechRateChanged(rate):
+            state.speechSettings.rate = rate
+            return persistSettings(state.speechSettings)
+
+        case let .speechPitchChanged(pitch):
+            state.speechSettings.pitch = pitch
+            return persistSettings(state.speechSettings)
+
+        case .speechSettingsTapped:
+            state.showSpeechSettings = true
+            return .none
+
+        case .speechSettingsDismissed:
+            state.showSpeechSettings = false
+            return .none
+
         default:
             return .none
         }
     }
-}
 
-/// 언어 코드 기반 기본 Azure voice 매핑. Slice 7에서 사용자 선택으로 대체.
-nonisolated private func defaultVoice(for languageCode: String) -> (voice: String, bcp47: String) {
-    switch languageCode {
-    case "en": return ("en-US-JennyNeural", "en-US")
-    case "ja": return ("ja-JP-NanamiNeural", "ja-JP")
-    case "zh": return ("zh-CN-XiaoxiaoNeural", "zh-CN")
-    default:   return ("ko-KR-SunHiNeural", "ko-KR")
+    private func persistSettings(_ settings: SpeechSettings) -> Effect<Action> {
+        .run { _ in
+            @Dependency(\.speechSettingsClient) var client
+            client.save(settings)
+        }
     }
 }
