@@ -63,6 +63,17 @@ nonisolated struct ChatFeature: Reducer {
         let path: String
         let content: String
         let commitMessage: String
+        /// 기존 파일 내용. nil이면 신규 생성. 승인 modal에서 before/after 비교에 사용.
+        let existingContent: String?
+
+        init(id: String, role: CredentialsRole, path: String, content: String, commitMessage: String, existingContent: String? = nil) {
+            self.id = id
+            self.role = role
+            self.path = path
+            self.content = content
+            self.commitMessage = commitMessage
+            self.existingContent = existingContent
+        }
     }
 
     enum Action: Equatable {
@@ -269,7 +280,17 @@ nonisolated struct ChatFeature: Reducer {
             let input = parseToolInput(tool.inputJSON) ?? [:]
             await send(.toolUseRequested(id: tool.id, name: tool.name, input: input))
             let result: String
-            if tool.name == "write_memory", let req = parseWriteRequest(id: tool.id, input: input) {
+            if tool.name == "write_memory", let parsed = parseWriteRequest(id: tool.id, input: input) {
+                // 기존 파일 load — 실패(notFound 등)면 nil = 신규 생성
+                let existingContent = try? await github.loadFile(parsed.role, parsed.path).content
+                let req = WriteRequest(
+                    id: parsed.id,
+                    role: parsed.role,
+                    path: parsed.path,
+                    content: parsed.content,
+                    commitMessage: parsed.commitMessage,
+                    existingContent: existingContent
+                )
                 await send(.writeApprovalRequested(req))
                 let decision = await gate.requestApproval(tool.id)
                 switch decision {

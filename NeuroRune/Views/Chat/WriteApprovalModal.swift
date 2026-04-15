@@ -8,7 +8,7 @@
 import SwiftUI
 
 /// Claude가 write_memory 호출 시 사용자 승인 받는 모달.
-/// role/path/commit_message + content preview 표시. Accept/Reject 버튼.
+/// role/path/commit_message + (before)/after + diff 카운트 표시. Accept/Reject 버튼.
 struct WriteApprovalModal: View {
     let request: ChatFeature.WriteRequest
     var onApprove: () -> Void
@@ -24,16 +24,25 @@ struct WriteApprovalModal: View {
 
                     Divider()
 
-                    Text(String(localized: "writeApproval.content"))
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                    Text(request.content)
-                        .font(.system(.footnote, design: .monospaced))
-                        .textSelection(.enabled)
-                        .padding(10)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .background(Color(.secondarySystemBackground))
-                        .clipShape(RoundedRectangle(cornerRadius: 8))
+                    changeSummary
+
+                    if let existing = request.existingContent {
+                        contentBlock(
+                            label: String(localized: "writeApproval.before"),
+                            content: existing,
+                            tint: Color.secondary.opacity(0.1)
+                        )
+                    }
+
+                    contentBlock(
+                        label: request.existingContent == nil
+                            ? String(localized: "writeApproval.new")
+                            : String(localized: "writeApproval.after"),
+                        content: request.content,
+                        tint: request.existingContent == nil
+                            ? Color.green.opacity(0.1)
+                            : Color.accentColor.opacity(0.1)
+                    )
                 }
                 .padding()
             }
@@ -49,9 +58,60 @@ struct WriteApprovalModal: View {
                     Button(String(localized: "writeApproval.save")) {
                         onApprove()
                     }
-                    .bold()
                 }
             }
+        }
+    }
+
+    /// 변경 요약: 신규/+추가/-삭제/변경 없음
+    @ViewBuilder
+    private var changeSummary: some View {
+        if let existing = request.existingContent {
+            let oldLines = existing.components(separatedBy: "\n")
+            let newLines = request.content.components(separatedBy: "\n")
+            let diff = newLines.difference(from: oldLines)
+            let added = diff.insertions.count
+            let removed = diff.removals.count
+
+            HStack(spacing: 8) {
+                if added == 0 && removed == 0 {
+                    badge(String(localized: "writeApproval.noChange"), tint: .secondary)
+                } else {
+                    if added > 0 {
+                        badge("+\(added)", tint: .green)
+                    }
+                    if removed > 0 {
+                        badge("-\(removed)", tint: .red)
+                    }
+                }
+            }
+        } else {
+            badge(String(localized: "writeApproval.new"), tint: .green)
+        }
+    }
+
+    private func badge(_ text: String, tint: Color) -> some View {
+        Text(text)
+            .font(.caption.bold())
+            .foregroundStyle(tint)
+            .padding(.horizontal, 8)
+            .padding(.vertical, 3)
+            .background(tint.opacity(0.15))
+            .clipShape(Capsule())
+    }
+
+    private func contentBlock(label: String, content: String, tint: Color) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(label)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            Text(content)
+                .font(.system(.footnote, design: .monospaced))
+                .textSelection(.enabled)
+                .padding(10)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(tint)
+                .clipShape(RoundedRectangle(cornerRadius: 8))
         }
     }
 
@@ -60,42 +120,13 @@ struct WriteApprovalModal: View {
             Text(label)
                 .font(.caption)
                 .foregroundStyle(.secondary)
-                .frame(width: 72, alignment: .leading)
+            Spacer()
             Text(value)
                 .font(.footnote)
-                .textSelection(.enabled)
-                .frame(maxWidth: .infinity, alignment: .leading)
+                .foregroundStyle(.primary)
+                .multilineTextAlignment(.trailing)
         }
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("\(label), \(value)")
+        .accessibilityLabel(String(format: String(localized: "%@, %@"), label, value))
     }
-}
-
-#Preview("New file") {
-    WriteApprovalModal(
-        request: ChatFeature.WriteRequest(
-            id: "t1",
-            role: .global,
-            path: "runes/insight.md",
-            content: "# 통찰\n\n오늘의 발견.\n- 항목 1\n- 항목 2",
-            commitMessage: "Add runes/insight.md"
-        ),
-        onApprove: {},
-        onReject: {}
-    )
-}
-
-#Preview("Dark") {
-    WriteApprovalModal(
-        request: ChatFeature.WriteRequest(
-            id: "t1",
-            role: .local,
-            path: "project_neurorune.md",
-            content: "## 진행\n- 단계 1",
-            commitMessage: "Update project_neurorune.md"
-        ),
-        onApprove: {},
-        onReject: {}
-    )
-    .preferredColorScheme(.dark)
 }
