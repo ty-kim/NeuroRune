@@ -310,11 +310,12 @@ nonisolated struct ChatFeature: Reducer {
     }
 
     /// write_memory tool input → WriteRequest 파싱. role/path/content/commit_message 중 하나라도
-    /// 누락/잘못되면 nil.
+    /// 누락/잘못되면 nil. path는 `MemoryPathPolicy`로 검증·정규화.
     private static func parseWriteRequest(id: String, input: [String: String]) -> WriteRequest? {
         guard let roleStr = input["role"],
               let role = CredentialsRole(rawValue: roleStr),
-              let path = input["path"],
+              let rawPath = input["path"],
+              let path = try? MemoryPathPolicy.validate(rawPath),
               let content = input["content"],
               let commitMessage = input["commit_message"]
         else { return nil }
@@ -353,8 +354,16 @@ nonisolated struct ChatFeature: Reducer {
         guard let roleStr = input["role"], let role = CredentialsRole(rawValue: roleStr) else {
             return "Error: missing or invalid 'role' (expected 'global' or 'local')"
         }
-        guard let path = input["path"] else {
+        guard let rawPath = input["path"] else {
             return "Error: missing 'path'"
+        }
+        let path: String
+        do {
+            path = try MemoryPathPolicy.validate(rawPath)
+        } catch let error as MemoryPathError {
+            return "Error: invalid path — \(error.localizedMessage)"
+        } catch {
+            return "Error: invalid path"
         }
         guard (try? creds.load(role)) != nil else {
             return "Error: \(role.rawValue) credentials not configured"
@@ -377,9 +386,10 @@ nonisolated struct ChatFeature: Reducer {
         var sections: [String] = []
         for role in CredentialsRole.allCases {
             guard let credentials = try? creds.load(role) else { continue }
-            let path = credentials.path.isEmpty
+            let rawPath = credentials.path.isEmpty
                 ? "MEMORY.md"
                 : "\(credentials.path)/MEMORY.md"
+            guard let path = try? MemoryPathPolicy.validate(rawPath) else { continue }
             guard let file = try? await github.loadFile(role, path) else { continue }
             let header = role == .global ? "## Global Memory" : "## Local Memory"
             sections.append("\(header)\n\n\(file.content)")
