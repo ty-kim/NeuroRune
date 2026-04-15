@@ -252,8 +252,19 @@ nonisolated struct ChatFeature: Reducer {
         case .streamFinished:
             state.isStreaming = false
             let conversation = state.conversation
+            // Phase 22 Slice 8 — autoSpeak on + 마지막이 assistant면 자동 재생.
+            let autoSpeakID: UUID? = {
+                guard state.speechSettings.autoSpeak,
+                      let last = state.conversation.messages.last,
+                      last.role == .assistant,
+                      !last.content.isEmpty else { return nil }
+                return last.id
+            }()
             return .run { send in
                 await Self.save(conversation, using: conversationStore, send: send)
+                if let id = autoSpeakID {
+                    await send(.speakTapped(id))
+                }
             }
 
         case let .errorOccurred(llmError):
