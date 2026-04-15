@@ -13,6 +13,7 @@ struct OnboardingView: View {
     var onComplete: () -> Void = {}
 
     @State private var isKeyRevealed = false
+    @Environment(\.dismiss) private var dismiss
 
     var body: some View {
         WithViewStore(store, observe: { $0 }) { viewStore in
@@ -91,6 +92,13 @@ struct OnboardingView: View {
                     Spacer()
                 }
                 .navigationTitle("NeuroRune")
+                .toolbar {
+                    ToolbarItem(placement: .cancellationAction) {
+                        Button(String(localized: "error.cancel")) {
+                            dismiss()
+                        }
+                    }
+                }
                 .onChange(of: viewStore.isSaving) { wasSaving, isSaving in
                     if wasSaving && !isSaving && viewStore.error == nil {
                         onComplete()

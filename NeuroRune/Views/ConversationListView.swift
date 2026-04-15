@@ -44,8 +44,8 @@ struct ConversationListView: View {
                                     systemImage: "waveform"
                                 )
                             }
-                            Button(role: .destructive) {
-                                viewStore.send(.resetApiKeyTapped)
+                            Button {
+                                viewStore.send(.onboardingTapped)
                             } label: {
                                 Label(
                                     String(localized: "settings.anthropicKey"),
@@ -99,6 +99,21 @@ struct ConversationListView: View {
                         }
                     )
                 }
+                .sheet(
+                    isPresented: viewStore.binding(
+                        get: \.showOnboarding,
+                        send: ConversationListFeature.Action.onboardingDismissed
+                    )
+                ) {
+                    OnboardingView(
+                        store: Store(initialState: OnboardingFeature.State()) {
+                            OnboardingFeature()
+                        },
+                        onComplete: {
+                            viewStore.send(.onboardingDismissed)
+                        }
+                    )
+                }
                 .navigationDestination(
                     item: viewStore.binding(
                         get: \.selectedConversation,
@@ -136,19 +151,6 @@ struct ConversationListView: View {
                 }
             } message: { message in
                 Text(message)
-            }
-            .confirmationDialog(
-                String(localized: "chat.menu.title"),
-                isPresented: viewStore.binding(
-                    get: \.showResetConfirmation,
-                    send: ConversationListFeature.Action.resetConfirmationDismissed
-                ),
-                titleVisibility: .hidden
-            ) {
-                Button(String(localized: "chat.resetApiKey"), role: .destructive) {
-                    viewStore.send(.resetApiKeyConfirmed)
-                    onApiKeyReset()
-                }
             }
         }
     }

@@ -174,37 +174,41 @@ struct ConversationListFeatureTests {
         }
     }
 
-    @Test("resetApiKeyTapped는 showResetConfirmation을 true로 바꾼다")
-    func resetApiKeyTappedShowsConfirmation() async {
+    @Test("newConversationTapped: Anthropic 키 있으면 showModelPicker")
+    func newConversationWithKeyShowsModelPicker() async {
+        let store = TestStore(initialState: ConversationListFeature.State()) {
+            ConversationListFeature()
+        } withDependencies: {
+            $0.keychainClient.load = { @Sendable _ in "sk-ant-xxx" }
+        }
+
+        await store.send(.newConversationTapped) {
+            $0.showModelPicker = true
+        }
+    }
+
+    @Test("newConversationTapped: 키 없으면 showOnboarding")
+    func newConversationWithoutKeyShowsOnboarding() async {
+        let store = TestStore(initialState: ConversationListFeature.State()) {
+            ConversationListFeature()
+        } withDependencies: {
+            $0.keychainClient.load = { @Sendable _ in nil }
+        }
+
+        await store.send(.newConversationTapped) {
+            $0.showOnboarding = true
+        }
+    }
+
+    @Test("onboardingTapped는 showOnboarding true")
+    func onboardingTappedOpensSheet() async {
         let store = TestStore(initialState: ConversationListFeature.State()) {
             ConversationListFeature()
         }
 
-        await store.send(.resetApiKeyTapped) {
-            $0.showResetConfirmation = true
+        await store.send(.onboardingTapped) {
+            $0.showOnboarding = true
         }
-    }
-
-    @Test("resetApiKeyConfirmed는 Keychain delete를 호출한다")
-    func resetApiKeyConfirmedDeletesKey() async {
-        let deletedKey = LockIsolated<String?>(nil)
-        var state = ConversationListFeature.State()
-        state.showResetConfirmation = true
-
-        let store = TestStore(initialState: state) {
-            ConversationListFeature()
-        } withDependencies: {
-            $0.keychainClient.delete = { @Sendable key in
-                deletedKey.setValue(key)
-            }
-        }
-
-        await store.send(.resetApiKeyConfirmed) {
-            $0.showResetConfirmation = false
-        }
-        await store.finish()
-
-        #expect(deletedKey.value == OnboardingFeature.anthropicKeyName)
     }
 
     @Test("errorDismissed는 listError를 nil로 만든다")

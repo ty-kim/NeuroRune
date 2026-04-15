@@ -9,7 +9,6 @@ import SwiftUI
 import ComposableArchitecture
 
 struct RootView: View {
-    @State private var hasApiKey = false
     @State private var isChecking = true
     @State private var storageHealthy = true
 
@@ -20,28 +19,16 @@ struct RootView: View {
                     .ignoresSafeArea()
             } else if !storageHealthy {
                 StorageErrorView()
-            } else if hasApiKey {
+            } else {
                 ConversationListView(
                     store: Store(initialState: ConversationListFeature.State()) {
                         ConversationListFeature()
-                    },
-                    onApiKeyReset: { hasApiKey = false }
-                )
-            } else {
-                OnboardingView(
-                    store: Store(initialState: OnboardingFeature.State()) {
-                        OnboardingFeature()
-                    },
-                    onComplete: { hasApiKey = true }
+                    }
                 )
             }
         }
         .task {
             storageHealthy = await probeStorageHealth()
-
-            let client = KeychainClient.liveValue
-            let key = try? client.load(OnboardingFeature.anthropicKeyName)
-            hasApiKey = key != nil
             isChecking = false
         }
     }
