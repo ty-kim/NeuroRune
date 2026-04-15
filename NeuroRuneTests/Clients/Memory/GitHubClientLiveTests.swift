@@ -28,9 +28,9 @@ struct GitHubClientLiveTests {
         ]
         """
         let stub = stubStatus(200, body: body)
-        let client = GitHubClient.live(session: stub.session, pat: "ghp_test")
+        let client = GitHubClient.live(session: stub.session, pat: "ghp_test", config: Self.config)
 
-        let result = try await client.listContents(Self.config, "memory")
+        let result = try await client.listContents(.global, "memory")
 
         #expect(result.count == 3)
         #expect(result[0].path == "memory/a.md")
@@ -42,9 +42,9 @@ struct GitHubClientLiveTests {
     @Test("파일명의 공백/한글은 URL 경로에서 percent-encoding된다")
     func pathWithSpecialCharsIsPercentEncoded() async throws {
         let stub = stubStatus(200, body: "[]")
-        let client = GitHubClient.live(session: stub.session, pat: "ghp_test")
+        let client = GitHubClient.live(session: stub.session, pat: "ghp_test", config: Self.config)
 
-        _ = try await client.listContents(Self.config, "memory/my note 한글.md")
+        _ = try await client.listContents(.global, "memory/my note 한글.md")
 
         let url = stub.lastRequest?.url?.absoluteString
         #expect(url?.contains("%20") == true) // space → %20
@@ -55,9 +55,9 @@ struct GitHubClientLiveTests {
     @Test("listContents: Authorization 헤더에 Bearer <pat>이 설정된다")
     func listContentsSetsBearerAuth() async throws {
         let stub = stubStatus(200, body: "[]")
-        let client = GitHubClient.live(session: stub.session, pat: "ghp_xyz")
+        let client = GitHubClient.live(session: stub.session, pat: "ghp_xyz", config: Self.config)
 
-        _ = try await client.listContents(Self.config, "memory")
+        _ = try await client.listContents(.global, "memory")
 
         let auth = stub.lastRequest?.value(forHTTPHeaderField: "Authorization")
         #expect(auth == "Bearer ghp_xyz")
@@ -73,9 +73,9 @@ struct GitHubClientLiveTests {
         {"name":"a.md","path":"memory/a.md","sha":"sha-a","type":"file","encoding":"base64","content":"\(encoded)"}
         """
         let stub = stubStatus(200, body: body)
-        let client = GitHubClient.live(session: stub.session, pat: "ghp_test")
+        let client = GitHubClient.live(session: stub.session, pat: "ghp_test", config: Self.config)
 
-        let file = try await client.loadFile(Self.config, "memory/a.md")
+        let file = try await client.loadFile(.global, "memory/a.md")
 
         #expect(file.path == "memory/a.md")
         #expect(file.sha == "sha-a")
@@ -87,10 +87,10 @@ struct GitHubClientLiveTests {
         // GitHub API: 파일이 1MB 초과면 content="" + encoding="none"
         let body = #"{"name":"big.md","path":"big.md","sha":"sha","type":"file","encoding":"none","content":""}"#
         let stub = stubStatus(200, body: body)
-        let client = GitHubClient.live(session: stub.session, pat: "ghp_test")
+        let client = GitHubClient.live(session: stub.session, pat: "ghp_test", config: Self.config)
 
         await #expect {
-            _ = try await client.loadFile(Self.config, "big.md")
+            _ = try await client.loadFile(.global, "big.md")
         } throws: { error in
             guard case GitHubError.unsupportedEncoding(let enc) = error else { return false }
             return enc == "none"
@@ -101,10 +101,10 @@ struct GitHubClientLiveTests {
     func loadFileCorruptBase64Throws() async throws {
         let body = #"{"name":"a.md","path":"a.md","sha":"sha","type":"file","encoding":"base64","content":"@@@invalid@@@"}"#
         let stub = stubStatus(200, body: body)
-        let client = GitHubClient.live(session: stub.session, pat: "ghp_test")
+        let client = GitHubClient.live(session: stub.session, pat: "ghp_test", config: Self.config)
 
         await #expect(throws: GitHubError.invalidBase64) {
-            _ = try await client.loadFile(Self.config, "a.md")
+            _ = try await client.loadFile(.global, "a.md")
         }
     }
 
@@ -116,9 +116,9 @@ struct GitHubClientLiveTests {
         {"content":{"name":"a.md","path":"memory/a.md","sha":"new-sha","type":"file","encoding":null,"content":null}}
         """
         let stub = stubStatus(201, body: responseBody)
-        let client = GitHubClient.live(session: stub.session, pat: "ghp_test")
+        let client = GitHubClient.live(session: stub.session, pat: "ghp_test", config: Self.config)
 
-        let file = try await client.saveFile(Self.config, "memory/a.md", "hello world", nil, "add a")
+        let file = try await client.saveFile(.global, "memory/a.md", "hello world", nil, "add a")
 
         #expect(file.sha == "new-sha")
         #expect(file.content == "hello world") // 로컬 payload 결합
@@ -136,9 +136,9 @@ struct GitHubClientLiveTests {
         {"content":{"name":"a.md","path":"memory/a.md","sha":"updated-sha","type":"file","encoding":null,"content":null}}
         """
         let stub = stubStatus(200, body: responseBody)
-        let client = GitHubClient.live(session: stub.session, pat: "ghp_test")
+        let client = GitHubClient.live(session: stub.session, pat: "ghp_test", config: Self.config)
 
-        _ = try await client.saveFile(Self.config, "memory/a.md", "new content", "old-sha", "update a")
+        _ = try await client.saveFile(.global, "memory/a.md", "new content", "old-sha", "update a")
 
         let bodyJSON = try decodeRequestBody(stub)
         #expect(bodyJSON["sha"] as? String == "old-sha")
@@ -149,9 +149,9 @@ struct GitHubClientLiveTests {
     @Test("deleteFile: body에 sha + message 포함")
     func deleteFileIncludesShaAndMessage() async throws {
         let stub = stubStatus(200, body: #"{"commit":{}}"#)
-        let client = GitHubClient.live(session: stub.session, pat: "ghp_test")
+        let client = GitHubClient.live(session: stub.session, pat: "ghp_test", config: Self.config)
 
-        try await client.deleteFile(Self.config, "memory/a.md", "some-sha", "remove a")
+        try await client.deleteFile(.global, "memory/a.md", "some-sha", "remove a")
 
         let bodyJSON = try decodeRequestBody(stub)
         #expect(bodyJSON["sha"] as? String == "some-sha")
@@ -166,20 +166,20 @@ struct GitHubClientLiveTests {
     @Test("401 → GitHubError.unauthorized")
     func mapsUnauthorized() async throws {
         let stub = stubStatus(401, body: #"{"message":"Bad credentials"}"#)
-        let client = GitHubClient.live(session: stub.session, pat: "ghp_bad")
+        let client = GitHubClient.live(session: stub.session, pat: "ghp_bad", config: Self.config)
 
         await #expect(throws: GitHubError.unauthorized) {
-            _ = try await client.listContents(Self.config, "memory")
+            _ = try await client.listContents(.global, "memory")
         }
     }
 
     @Test("404 → GitHubError.notFound")
     func mapsNotFound() async throws {
         let stub = stubStatus(404, body: #"{"message":"Not Found"}"#)
-        let client = GitHubClient.live(session: stub.session, pat: "ghp_test")
+        let client = GitHubClient.live(session: stub.session, pat: "ghp_test", config: Self.config)
 
         await #expect(throws: GitHubError.notFound) {
-            _ = try await client.loadFile(Self.config, "memory/missing.md")
+            _ = try await client.loadFile(.global, "memory/missing.md")
         }
     }
 
@@ -198,30 +198,30 @@ struct GitHubClientLiveTests {
             )!
             return (http, Data(#"{"message":"rate limit"}"#.utf8), nil)
         }
-        let client = GitHubClient.live(session: stub.session, pat: "ghp_test")
+        let client = GitHubClient.live(session: stub.session, pat: "ghp_test", config: Self.config)
 
         await #expect(throws: GitHubError.rateLimited) {
-            _ = try await client.listContents(Self.config, "memory")
+            _ = try await client.listContents(.global, "memory")
         }
     }
 
     @Test("422 → GitHubError.conflict (sha mismatch)")
     func mapsConflict() async throws {
         let stub = stubStatus(422, body: #"{"message":"sha mismatch"}"#)
-        let client = GitHubClient.live(session: stub.session, pat: "ghp_test")
+        let client = GitHubClient.live(session: stub.session, pat: "ghp_test", config: Self.config)
 
         await #expect(throws: GitHubError.conflict) {
-            _ = try await client.saveFile(Self.config, "memory/a.md", "x", "stale-sha", "update")
+            _ = try await client.saveFile(.global, "memory/a.md", "x", "stale-sha", "update")
         }
     }
 
     @Test("5xx → GitHubError.server(status:)")
     func mapsServerError() async throws {
         let stub = stubStatus(503, body: #"{"message":"unavailable"}"#)
-        let client = GitHubClient.live(session: stub.session, pat: "ghp_test")
+        let client = GitHubClient.live(session: stub.session, pat: "ghp_test", config: Self.config)
 
         await #expect {
-            _ = try await client.listContents(Self.config, "memory")
+            _ = try await client.listContents(.global, "memory")
         } throws: { error in
             guard case GitHubError.server(let status, _) = error else { return false }
             return status == 503
@@ -235,10 +235,10 @@ struct GitHubClientLiveTests {
             let dummy = HTTPURLResponse(url: request.url!, statusCode: 0, httpVersion: nil, headerFields: nil)!
             return (dummy, nil, URLError(.timedOut))
         }
-        let client = GitHubClient.live(session: stub.session, pat: "ghp_test")
+        let client = GitHubClient.live(session: stub.session, pat: "ghp_test", config: Self.config)
 
         await #expect {
-            _ = try await client.listContents(Self.config, "memory")
+            _ = try await client.listContents(.global, "memory")
         } throws: { error in
             guard case GitHubError.network = error else { return false }
             return true

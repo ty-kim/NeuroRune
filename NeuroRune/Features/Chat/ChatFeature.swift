@@ -327,13 +327,13 @@ nonisolated struct ChatFeature: Reducer {
         github: GitHubClient,
         creds: GitHubCredentialsClient
     ) async -> String {
-        guard let credentials = try? creds.load(request.role) else {
+        guard (try? creds.load(request.role)) != nil else {
             return "Error: \(request.role.rawValue) credentials not configured"
         }
-        let existingSha = try? await github.loadFile(credentials.repoConfig, request.path).sha
+        let existingSha = try? await github.loadFile(request.role, request.path).sha
         do {
             let saved = try await github.saveFile(
-                credentials.repoConfig,
+                request.role,
                 request.path,
                 request.content,
                 existingSha,
@@ -356,11 +356,11 @@ nonisolated struct ChatFeature: Reducer {
         guard let path = input["path"] else {
             return "Error: missing 'path'"
         }
-        guard let credentials = try? creds.load(role) else {
+        guard (try? creds.load(role)) != nil else {
             return "Error: \(role.rawValue) credentials not configured"
         }
         do {
-            let file = try await github.loadFile(credentials.repoConfig, path)
+            let file = try await github.loadFile(role, path)
             return file.content
         } catch {
             return "Error: \(error.localizedDescription)"
@@ -380,7 +380,7 @@ nonisolated struct ChatFeature: Reducer {
             let path = credentials.path.isEmpty
                 ? "MEMORY.md"
                 : "\(credentials.path)/MEMORY.md"
-            guard let file = try? await github.loadFile(credentials.repoConfig, path) else { continue }
+            guard let file = try? await github.loadFile(role, path) else { continue }
             let header = role == .global ? "## Global Memory" : "## Local Memory"
             sections.append("\(header)\n\n\(file.content)")
         }

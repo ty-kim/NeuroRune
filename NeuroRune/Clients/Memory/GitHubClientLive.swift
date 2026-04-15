@@ -10,10 +10,11 @@ import os
 
 nonisolated extension GitHubClient {
 
-    /// URLSession + PAT 기반 실제 GitHub REST 구현.
-    static func live(session: URLSession, pat: String) -> GitHubClient {
+    /// URLSession + PAT + repoConfig 기반 실제 GitHub REST 구현.
+    /// role 파라미터는 사용하지 않음 (config가 이미 role별로 해결된 상태).
+    static func live(session: URLSession, pat: String, config: GitHubRepoConfig) -> GitHubClient {
         GitHubClient(
-            listContents: { config, path in
+            listContents: { _, path in
                 let request = makeRequest(config: config, path: path, method: "GET", pat: pat, body: nil)
                 let (data, response) = try await performData(request: request, session: session)
                 try validateStatus(response, data: data)
@@ -27,7 +28,7 @@ nonisolated extension GitHubClient {
                 }
                 throw GitHubError.decoding("unexpected contents response shape")
             },
-            loadFile: { config, path in
+            loadFile: { _, path in
                 let request = makeRequest(config: config, path: path, method: "GET", pat: pat, body: nil)
                 let (data, response) = try await performData(request: request, session: session)
                 try validateStatus(response, data: data)
@@ -40,7 +41,7 @@ nonisolated extension GitHubClient {
                 }
                 return try item.toFileWithContent()
             },
-            saveFile: { config, path, content, sha, message in
+            saveFile: { _, path, content, sha, message in
                 var body: [String: Any] = [
                     "message": message,
                     "content": Data(content.utf8).base64EncodedString(),
@@ -73,7 +74,7 @@ nonisolated extension GitHubClient {
                 )
                 return file
             },
-            deleteFile: { config, path, sha, message in
+            deleteFile: { _, path, sha, message in
                 let body: [String: Any] = [
                     "message": message,
                     "sha": sha,

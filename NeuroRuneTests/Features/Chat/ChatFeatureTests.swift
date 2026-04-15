@@ -193,8 +193,8 @@ struct ChatFeatureTests {
                 receivedSystem.setValue(system)
                 return AsyncThrowingStream { $0.finish() }
             }
-            $0.githubClient.loadFile = { @Sendable config, path in
-                if config.repo == "r-local" {
+            $0.githubClient.loadFile = { @Sendable role, path in
+                if role == .local {
                     throw GitHubError.notFound
                 }
                 return GitHubFile(path: path, sha: "s", content: "global body", isDirectory: false)

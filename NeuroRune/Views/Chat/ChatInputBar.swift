@@ -28,7 +28,6 @@ struct ChatInputBar: View {
                     onSend()
                 }
                 .focused(focus)
-                .disabled(isRecording)
 
             if let onMicTapped, !isStreaming {
                 Button(action: {

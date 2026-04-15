@@ -25,20 +25,18 @@ struct GitHubClientTests {
             deleteFile: { _, _, _, _ in }
         )
 
-        let config = GitHubRepoConfig(owner: "u", repo: "r")
-
-        let list = try await stub.listContents(config, "memory")
+        let list = try await stub.listContents(.global, "memory")
         #expect(list.isEmpty)
 
-        let file = try await stub.loadFile(config, "memory/a.md")
+        let file = try await stub.loadFile(.global, "memory/a.md")
         #expect(file.path == "memory/a.md")
         #expect(file.content == "c")
 
-        let saved = try await stub.saveFile(config, "memory/b.md", "hello", nil, "add b")
+        let saved = try await stub.saveFile(.global, "memory/b.md", "hello", nil, "add b")
         #expect(saved.sha == "new-sha")
         #expect(saved.content == "hello")
 
-        try await stub.deleteFile(config, "memory/b.md", "new-sha", "remove b")
+        try await stub.deleteFile(.global, "memory/b.md", "new-sha", "remove b")
     }
 
     @Test("GitHubClient는 TCA DependencyKey로 등록되어 있다")
@@ -56,10 +54,7 @@ struct GitHubClientTests {
             $0.githubClient = injected
         } operation: {
             @Dependency(\.githubClient) var client
-            return try await client.listContents(
-                GitHubRepoConfig(owner: "u", repo: "r"),
-                "memory"
-            )
+            return try await client.listContents(.global, "memory")
         }
 
         #expect(result.count == 1)
