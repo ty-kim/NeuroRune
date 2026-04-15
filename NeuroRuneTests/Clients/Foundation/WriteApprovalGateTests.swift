@@ -14,25 +14,36 @@ struct WriteApprovalGateTests {
     @Test("requestApproval은 setApproval로 set된 결정을 반환한다")
     func requestReturnsSetDecision() async {
         let gate = WriteApprovalGate.liveValue
+        let id = "t1-\(UUID().uuidString)"
 
-        async let decision = gate.requestApproval("t1")
-        // request가 continuation 등록할 시간 확보
-        try? await Task.sleep(nanoseconds: 50_000_000)
-        gate.setApproval("t1", .approve)
+        async let decision = gate.requestApproval(id)
+        gate.setApproval(id, .approve)
 
         let result = await decision
+        #expect(result == .approve)
+    }
+
+    @Test("setApproval이 requestApproval보다 먼저 와도 결정을 반환한다")
+    func setBeforeRequestIsDelivered() async {
+        let gate = WriteApprovalGate.liveValue
+        let id = "early-\(UUID().uuidString)"
+
+        gate.setApproval(id, .approve)
+
+        let result = await gate.requestApproval(id)
         #expect(result == .approve)
     }
 
     @Test("서로 다른 id는 독립적으로 결정된다")
     func multipleIdsTrackedIndependently() async {
         let gate = WriteApprovalGate.liveValue
+        let a = "a-\(UUID().uuidString)"
+        let b = "b-\(UUID().uuidString)"
 
-        async let d1 = gate.requestApproval("a")
-        async let d2 = gate.requestApproval("b")
-        try? await Task.sleep(nanoseconds: 50_000_000)
-        gate.setApproval("b", .reject(reason: "user said no"))
-        gate.setApproval("a", .approve)
+        async let d1 = gate.requestApproval(a)
+        async let d2 = gate.requestApproval(b)
+        gate.setApproval(b, .reject(reason: "user said no"))
+        gate.setApproval(a, .approve)
 
         let r1 = await d1
         let r2 = await d2

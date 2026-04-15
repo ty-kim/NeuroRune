@@ -26,11 +26,17 @@ nonisolated struct WriteApprovalGate: Sendable {
 private final nonisolated class WriteApprovalStore: @unchecked Sendable {
     private let lock = NSLock()
     private var continuations: [String: CheckedContinuation<WriteDecision, Never>] = [:]
+    private var pendingDecisions: [String: WriteDecision] = [:]
 
     func request(_ id: String) async -> WriteDecision {
         await withTaskCancellationHandler {
             await withCheckedContinuation { cont in
                 lock.lock()
+                if let decision = pendingDecisions.removeValue(forKey: id) {
+                    lock.unlock()
+                    cont.resume(returning: decision)
+                    return
+                }
                 // 방어: 같은 id가 이미 등록돼 있으면 기존 continuation은 superseded로 resume
                 let existing = continuations[id]
                 continuations[id] = cont
@@ -49,6 +55,9 @@ private final nonisolated class WriteApprovalStore: @unchecked Sendable {
     func set(_ id: String, _ decision: WriteDecision) {
         lock.lock()
         let cont = continuations.removeValue(forKey: id)
+        if cont == nil {
+            pendingDecisions[id] = decision
+        }
         lock.unlock()
         cont?.resume(returning: decision)
     }
