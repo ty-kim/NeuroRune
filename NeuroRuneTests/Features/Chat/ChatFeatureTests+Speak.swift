@@ -33,17 +33,36 @@ extension ChatFeatureTests {
         // save는 불리지만 .speakTapped는 발행되지 않아야 함 → 수신 안 함
     }
 
-    @Test("streamFinished: autoSpeak=true + assistant 메시지면 speakTapped 자동 발행")
-    func streamFinishedAutoSpeakTriggers() async {
+    @Test("autoSpeak + streamChunkReceived: 완성된 문장이 큐에 enqueue")
+    func autoSpeakEnqueuesSentenceFromChunk() async {
         var state = makeState()
         state.isStreaming = true
         state.speechSettings.autoSpeak = true
-        let assistant = Self.assistantMsg("응답 내용")
-        state.conversation = state.conversation.appending(assistant)
+        state.conversation = state.conversation.appending(Self.assistantMsg(""))
 
         let store = TestStore(initialState: state) { ChatFeature() } withDependencies: {
             applyDefaultDependencies(&$0)
-            // speakTapped effect가 speakerClient/audioPlayer 호출 → test-unimplemented 회피 stub
+            $0.speakerClient.synthesize = { @Sendable _, _, _, _, _ in Data() }
+            $0.audioPlayer.stop = { @Sendable in }
+            $0.audioPlayer.play = { @Sendable _ in }
+            $0.audioPlayer.isPlaying = { @Sendable in false }
+        }
+        store.exhaustivity = .off
+
+        await store.send(.streamChunkReceived("안녕하세요. "))
+        await store.receive(.speakSentenceEnqueued("안녕하세요."))
+    }
+
+    @Test("streamFinished: autoSpeak + 버퍼 잔여 → 마지막 문장 flush")
+    func streamFinishedFlushesBuffer() async {
+        var state = makeState()
+        state.isStreaming = true
+        state.speechSettings.autoSpeak = true
+        state.speakBuffer = "마지막 문장"
+        state.conversation = state.conversation.appending(Self.assistantMsg("마지막 문장"))
+
+        let store = TestStore(initialState: state) { ChatFeature() } withDependencies: {
+            applyDefaultDependencies(&$0)
             $0.speakerClient.synthesize = { @Sendable _, _, _, _, _ in Data() }
             $0.audioPlayer.stop = { @Sendable in }
             $0.audioPlayer.play = { @Sendable _ in }
@@ -53,8 +72,9 @@ extension ChatFeatureTests {
 
         await store.send(.streamFinished) {
             $0.isStreaming = false
+            $0.speakBuffer = ""
         }
-        await store.receive(.speakTapped(assistant.id))
+        await store.receive(.speakSentenceEnqueued("마지막 문장"))
     }
 
     @Test("streamFinished: autoSpeak=true이지만 마지막이 user면 speakTapped X")

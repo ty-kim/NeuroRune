@@ -41,6 +41,12 @@ nonisolated struct ChatFeature: Reducer {
         var speechSettings: SpeechSettings = SpeechSettings()
         /// 상세 설정 sheet 노출 여부.
         var showSpeechSettings: Bool = false
+        /// Phase 22.5 — autoSpeak 스트리밍 시 문장 추출 버퍼.
+        var speakBuffer: String = ""
+        /// 합성·재생 대기 큐 (FIFO).
+        var speakQueue: [String] = []
+        /// 현재 큐 처리 중 여부.
+        var isSpeakingQueue: Bool = false
     }
 
     /// 사용자에게 보여줄 tool 호출 정보 (id로 lifecycle 추적).
@@ -113,6 +119,11 @@ nonisolated struct ChatFeature: Reducer {
         case stopSpeakTapped
         case speakErrorOccurred(SpeechError)
         case speakErrorDismissed
+
+        // MARK: - TTS sentence queue (Phase 22.5)
+        case speakSentenceEnqueued(String)
+        case processSpeakQueue
+        case sentencePlaybackCompleted
 
         // MARK: - Speech settings (Phase 22 Slice 7)
         case loadSpeechSettings
@@ -242,28 +253,38 @@ nonisolated struct ChatFeature: Reducer {
                 return .none
             }
             let updated = Message(
+                id: last.id,
                 role: last.role,
                 content: last.content + chunk,
                 createdAt: last.createdAt
             )
             state.conversation = state.conversation.replacingLastMessage(with: updated)
-            return .none
+
+            // Phase 22.5: autoSpeak + 스트리밍이면 문장 단위로 큐에 enqueue
+            guard state.speechSettings.autoSpeak else { return .none }
+            let sentences = SentenceStreamer.extract(chunk, buffer: &state.speakBuffer)
+            guard !sentences.isEmpty else { return .none }
+            return .run { send in
+                for s in sentences {
+                    await send(.speakSentenceEnqueued(s))
+                }
+            }
 
         case .streamFinished:
             state.isStreaming = false
             let conversation = state.conversation
-            // Phase 22 Slice 8 — autoSpeak on + 마지막이 assistant면 자동 재생.
-            let autoSpeakID: UUID? = {
-                guard state.speechSettings.autoSpeak,
-                      let last = state.conversation.messages.last,
-                      last.role == .assistant,
-                      !last.content.isEmpty else { return nil }
-                return last.id
+            // Phase 22.5 — autoSpeak 스트리밍 모드: 남은 버퍼를 마지막 문장으로 flush.
+            //   기존 Slice 8의 "전체 메시지 speakTapped 자동 발행"은 이 경로로 대체됨.
+            let finalSentence: String? = {
+                guard state.speechSettings.autoSpeak else { return nil }
+                let remainder = state.speakBuffer.trimmingCharacters(in: .whitespacesAndNewlines)
+                state.speakBuffer = ""
+                return remainder.isEmpty ? nil : remainder
             }()
             return .run { send in
                 await Self.save(conversation, using: conversationStore, send: send)
-                if let id = autoSpeakID {
-                    await send(.speakTapped(id))
+                if let s = finalSentence {
+                    await send(.speakSentenceEnqueued(s))
                 }
             }
 
@@ -340,6 +361,7 @@ nonisolated struct ChatFeature: Reducer {
 
         case .speakTapped, .speakingStarted, .speakingFinished,
              .stopSpeakTapped, .speakErrorOccurred, .speakErrorDismissed,
+             .speakSentenceEnqueued, .processSpeakQueue, .sentencePlaybackCompleted,
              .loadSpeechSettings, .speechSettingsLoaded,
              .speechVoiceSelected, .autoSpeakToggled,
              .speechRateChanged, .speechPitchChanged,

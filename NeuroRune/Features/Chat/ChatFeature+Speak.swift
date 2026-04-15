@@ -34,6 +34,9 @@ nonisolated extension ChatFeature {
             let text = speechPlainText(from: message.content)
             guard !text.isEmpty else { return .none }
             state.speakError = nil
+            // 수동 재생은 문장 큐를 덮어씀
+            state.speakQueue = []
+            state.isSpeakingQueue = false
 
             let settings = state.speechSettings
 
@@ -73,6 +76,9 @@ nonisolated extension ChatFeature {
 
         case .stopSpeakTapped:
             state.speakingMessageID = nil
+            state.speakQueue = []
+            state.isSpeakingQueue = false
+            state.speakBuffer = ""
             return .merge(
                 .cancel(id: CancelID.speaking),
                 .run { _ in
@@ -88,6 +94,56 @@ nonisolated extension ChatFeature {
 
         case .speakErrorDismissed:
             state.speakError = nil
+            return .none
+
+        // MARK: - Sentence queue (Phase 22.5)
+
+        case let .speakSentenceEnqueued(sentence):
+            let cleaned = speechPlainText(from: sentence)
+            guard !cleaned.isEmpty else { return .none }
+            state.speakQueue.append(cleaned)
+            if !state.isSpeakingQueue {
+                return .send(.processSpeakQueue)
+            }
+            return .none
+
+        case .processSpeakQueue:
+            guard !state.speakQueue.isEmpty else {
+                state.isSpeakingQueue = false
+                return .none
+            }
+            state.isSpeakingQueue = true
+            let sentence = state.speakQueue.removeFirst()
+            let settings = state.speechSettings
+            return .run { send in
+                @Dependency(\.speakerClient) var speaker
+                @Dependency(\.audioPlayer) var player
+                do {
+                    let audio = try await speaker.synthesize(
+                        sentence,
+                        settings.voiceName,
+                        settings.bcp47Language,
+                        settings.rate,
+                        settings.pitch
+                    )
+                    try await player.play(audio)
+                    await send(.sentencePlaybackCompleted)
+                } catch SpeechError.cancelled {
+                    // stop 또는 새 탭에 의한 취소 — 완료로 처리하고 큐 진행
+                    await send(.sentencePlaybackCompleted)
+                } catch let e as SpeechError {
+                    await send(.speakErrorOccurred(e))
+                } catch {
+                    await send(.speakErrorOccurred(.network(error.localizedDescription)))
+                }
+            }
+            .cancellable(id: CancelID.speaking, cancelInFlight: false)
+
+        case .sentencePlaybackCompleted:
+            state.isSpeakingQueue = false
+            if !state.speakQueue.isEmpty {
+                return .send(.processSpeakQueue)
+            }
             return .none
 
         // MARK: - Speech settings
