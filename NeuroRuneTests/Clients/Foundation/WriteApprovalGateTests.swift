@@ -39,4 +39,32 @@ struct WriteApprovalGateTests {
         #expect(r1 == .approve)
         #expect(r2 == .reject(reason: "user said no"))
     }
+
+    @Test("Task 취소 시 pending continuation은 reject(cancelled)로 resume")
+    func cancellationResumesWithReject() async {
+        let gate = WriteApprovalGate.liveValue
+
+        let task = Task { await gate.requestApproval("cancel-test") }
+        try? await Task.sleep(nanoseconds: 50_000_000)
+        task.cancel()
+
+        let result = await task.value
+        #expect(result == .reject(reason: "cancelled"))
+    }
+
+    @Test("같은 id 중복 request 시 기존 것은 superseded로 reject")
+    func duplicateIdSupersedes() async {
+        let gate = WriteApprovalGate.liveValue
+
+        async let first = gate.requestApproval("dup")
+        try? await Task.sleep(nanoseconds: 50_000_000)
+        async let second = gate.requestApproval("dup")
+        try? await Task.sleep(nanoseconds: 50_000_000)
+        gate.setApproval("dup", .approve)
+
+        let firstResult = await first
+        let secondResult = await second
+        #expect(firstResult == .reject(reason: "superseded"))
+        #expect(secondResult == .approve)
+    }
 }

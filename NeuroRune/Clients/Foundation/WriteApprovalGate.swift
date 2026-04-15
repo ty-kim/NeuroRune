@@ -21,15 +21,28 @@ nonisolated struct WriteApprovalGate: Sendable {
 }
 
 /// 내부 store. lock 기반으로 sync/async 양쪽 호출 안전.
+/// - Task 취소 시 pending continuation을 reject로 resume → leak 방지
+/// - 같은 id 중복 request 시 기존 continuation을 superseded로 resume
 private final nonisolated class WriteApprovalStore: @unchecked Sendable {
     private let lock = NSLock()
     private var continuations: [String: CheckedContinuation<WriteDecision, Never>] = [:]
 
     func request(_ id: String) async -> WriteDecision {
-        await withCheckedContinuation { cont in
-            lock.lock()
-            continuations[id] = cont
-            lock.unlock()
+        await withTaskCancellationHandler {
+            await withCheckedContinuation { cont in
+                lock.lock()
+                // 방어: 같은 id가 이미 등록돼 있으면 기존 continuation은 superseded로 resume
+                let existing = continuations[id]
+                continuations[id] = cont
+                lock.unlock()
+                existing?.resume(returning: .reject(reason: "superseded"))
+            }
+        } onCancel: { [weak self] in
+            guard let self else { return }
+            self.lock.lock()
+            let cont = self.continuations.removeValue(forKey: id)
+            self.lock.unlock()
+            cont?.resume(returning: .reject(reason: "cancelled"))
         }
     }
 
