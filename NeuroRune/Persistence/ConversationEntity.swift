@@ -46,11 +46,14 @@ final class MessageEntity {
     /// Conversation 내에서의 입력 순서. `createdAt`은 동일 시각 / 역순 생성 등으로
     /// 대화 순서를 보장할 수 없어, 별도의 안정적인 순서 필드를 둔다.
     var ordinal: Int
+    /// 메시지 고유 식별자. 기존 row는 마이그레이션으로 nil → load 시점에 UUID() 부여.
+    var id: UUID?
 
-    init(roleRaw: String, content: String, createdAt: Date, ordinal: Int) {
+    init(roleRaw: String, content: String, createdAt: Date, ordinal: Int, id: UUID? = nil) {
         self.roleRaw = roleRaw
         self.content = content
         self.createdAt = createdAt
         self.ordinal = ordinal
+        self.id = id
     }
 }
