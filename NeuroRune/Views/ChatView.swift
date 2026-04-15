@@ -64,7 +64,9 @@ struct ChatView: View {
                         messages: viewStore.conversation.messages,
                         isStreaming: viewStore.isStreaming,
                         isInputFocused: isInputFocused,
-                        onTap: { isInputFocused = false }
+                        onTap: { isInputFocused = false },
+                        speakingMessageID: viewStore.speakingMessageID,
+                        onSpeakTapped: { id in viewStore.send(.speakTapped(id)) }
                     )
                     overlays(viewStore)
                     ChatInputBar(
@@ -177,6 +179,14 @@ struct ChatView: View {
             ToolCallChips(calls: viewStore.activeToolCalls)
                 .transition(.opacity)
                 .animation(reduceMotion ? nil : .easeInOut(duration: 0.2), value: viewStore.activeToolCalls)
+        }
+        if let speakError = viewStore.speakError {
+            SpeechErrorBanner(
+                error: speakError,
+                onDismiss: { viewStore.send(.speakErrorDismissed) }
+            )
+            .transition(reduceMotion ? .opacity : .move(edge: .bottom).combined(with: .opacity))
+            .animation(reduceMotion ? nil : .easeInOut(duration: 0.3), value: viewStore.speakError)
         }
         if let sttError = viewStore.sttError {
             STTErrorBanner(

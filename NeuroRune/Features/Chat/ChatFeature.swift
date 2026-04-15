@@ -11,8 +11,10 @@ import ComposableArchitecture
 nonisolated struct ChatFeature: Reducer {
 
     /// Effect 취소 ID. Phase 20: 스트리밍 중 [Stop] 버튼으로 현재 LLM 요청 취소.
+    /// Phase 22: TTS 재생 중 새 탭으로 기존 재생 취소.
     enum CancelID: Hashable {
         case streaming
+        case speaking
     }
 
     struct State: Equatable {
@@ -31,6 +33,10 @@ nonisolated struct ChatFeature: Reducer {
         var isRecording: Bool = false
         /// STT 에러. LLMError와 별개 타입이라 별도 슬롯에 보관.
         var sttError: STTError? = nil
+        /// Phase 22 — 현재 재생 중인 메시지 id. nil이면 재생 중 아님.
+        var speakingMessageID: UUID? = nil
+        /// TTS 에러.
+        var speakError: SpeechError? = nil
     }
 
     /// 사용자에게 보여줄 tool 호출 정보 (id로 lifecycle 추적).
@@ -94,6 +100,15 @@ nonisolated struct ChatFeature: Reducer {
         case transcribed(STTResult)
         case sttErrorOccurred(STTError)
         case sttErrorDismissed
+
+        // MARK: - TTS (Phase 22)
+        /// assistant 버블 스피커 버튼. 해당 메시지 재생 시작 또는 중단 토글.
+        case speakTapped(UUID)
+        case speakingStarted(UUID)
+        case speakingFinished
+        case stopSpeakTapped
+        case speakErrorOccurred(SpeechError)
+        case speakErrorDismissed
     }
 
     func reduce(into state: inout State, action: Action) -> Effect<Action> {
@@ -306,6 +321,12 @@ nonisolated struct ChatFeature: Reducer {
         case .micTapped, .recordingStarted, .recordingStopped, .transcribed,
              .sttErrorOccurred, .sttErrorDismissed:
             return reduceSTT(into: &state, action: action)
+
+        // MARK: - TTS (ChatFeature+Speak.swift로 위임)
+
+        case .speakTapped, .speakingStarted, .speakingFinished,
+             .stopSpeakTapped, .speakErrorOccurred, .speakErrorDismissed:
+            return reduceSpeak(into: &state, action: action)
         }
     }
 

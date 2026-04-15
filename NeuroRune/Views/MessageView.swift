@@ -13,6 +13,10 @@ struct MessageView: View {
     /// 이 메시지가 **현재 스트리밍 중인 마지막 assistant 메시지**일 때 true.
     /// ChatMessageList가 마지막 assistant에만 전달한다.
     var isStreaming: Bool = false
+    /// Phase 22 — 이 메시지가 현재 TTS 재생 중일 때 true.
+    var isSpeaking: Bool = false
+    /// 스피커 버튼 탭 핸들러. nil이면 버튼 숨김.
+    var onSpeakTapped: (() -> Void)? = nil
 
     var body: some View {
         HStack {
@@ -54,10 +58,29 @@ struct MessageView: View {
             if isStreaming {
                 StreamingIndicator(hasContent: !message.content.isEmpty)
             }
+            if let onSpeakTapped, !isStreaming, !message.content.isEmpty {
+                HStack {
+                    Spacer()
+                    Button(action: onSpeakTapped) {
+                        Image(systemName: isSpeaking ? "pause.fill" : "speaker.wave.2.fill")
+                            .font(.footnote)
+                            .foregroundStyle(isSpeaking ? .red : .secondary)
+                    }
+                    .accessibilityLabel(String(localized: isSpeaking
+                        ? "a11y.message.stopAudio"
+                        : "a11y.message.playAudio"))
+                }
+            }
         }
         .padding(12)
-        .background(Color(.secondarySystemBackground))
+        .background(bubbleBackground)
         .clipShape(RoundedRectangle(cornerRadius: 16))
+    }
+
+    private var bubbleBackground: Color {
+        isSpeaking
+            ? Color.accentColor.opacity(0.15)
+            : Color(.secondarySystemBackground)
     }
 }
 

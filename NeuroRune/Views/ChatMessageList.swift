@@ -15,6 +15,9 @@ struct ChatMessageList: View {
     /// 키보드에 가려지지 않도록 한다.
     var isInputFocused: Bool = false
     var onTap: () -> Void = {}
+    /// Phase 22 — 현재 TTS 재생 중인 메시지 id. assistant 버블에 재생/중지 버튼 노출.
+    var speakingMessageID: UUID? = nil
+    var onSpeakTapped: ((UUID) -> Void)? = nil
 
     var body: some View {
         ScrollViewReader { proxy in
@@ -26,7 +29,11 @@ struct ChatMessageList: View {
                     ) { index, message in
                         MessageView(
                             message: message,
-                            isStreaming: shouldShowIndicator(at: index, message: message)
+                            isStreaming: shouldShowIndicator(at: index, message: message),
+                            isSpeaking: speakingMessageID == message.id,
+                            onSpeakTapped: onSpeakTapped.map { handler in
+                                { handler(message.id) }
+                            }
                         )
                         .id(index)
                     }
