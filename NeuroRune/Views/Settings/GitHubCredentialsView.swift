@@ -12,38 +12,18 @@ struct GitHubCredentialsView: View {
     let store: StoreOf<GitHubCredentialsFeature>
     var onSaved: () -> Void = {}
 
-    @State private var isPATRevealed = false
-
     var body: some View {
         WithViewStore(store, observe: { $0 }) { viewStore in
             NavigationStack {
                 Form {
                     Section {
-                        HStack(spacing: 8) {
-                            Group {
-                                if isPATRevealed {
-                                    TextField("ghp_...", text: viewStore.binding(
-                                        get: \.pat,
-                                        send: GitHubCredentialsFeature.Action.patChanged
-                                    ))
-                                } else {
-                                    SecureField("ghp_...", text: viewStore.binding(
-                                        get: \.pat,
-                                        send: GitHubCredentialsFeature.Action.patChanged
-                                    ))
-                                }
-                            }
-                            .textContentType(.password)
-                            .autocorrectionDisabled()
-                            .textInputAutocapitalization(.never)
-
-                            Button {
-                                isPATRevealed.toggle()
-                            } label: {
-                                Image(systemName: isPATRevealed ? "eye.slash" : "eye")
-                                    .foregroundStyle(.secondary)
-                            }
-                        }
+                        SecureFieldWithReveal(
+                            placeholder: "ghp_...",
+                            text: viewStore.binding(
+                                get: \.pat,
+                                send: GitHubCredentialsFeature.Action.patChanged
+                            )
+                        )
                     } header: {
                         Text(String(localized: "credentials.pat"))
                     } footer: {

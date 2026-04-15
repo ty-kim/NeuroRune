@@ -14,7 +14,6 @@ struct GroqCredentialsView: View {
     let store: StoreOf<GroqCredentialsFeature>
     var onSaved: () -> Void = {}
 
-    @State private var isKeyRevealed = false
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
@@ -22,37 +21,13 @@ struct GroqCredentialsView: View {
             NavigationStack {
                 Form {
                     Section {
-                        HStack(spacing: 8) {
-                            Group {
-                                if isKeyRevealed {
-                                    TextField(
-                                        String(localized: "groq.apiKey.placeholder"),
-                                        text: viewStore.binding(
-                                            get: \.apiKey,
-                                            send: GroqCredentialsFeature.Action.apiKeyChanged
-                                        )
-                                    )
-                                } else {
-                                    SecureField(
-                                        String(localized: "groq.apiKey.placeholder"),
-                                        text: viewStore.binding(
-                                            get: \.apiKey,
-                                            send: GroqCredentialsFeature.Action.apiKeyChanged
-                                        )
-                                    )
-                                }
-                            }
-                            .textContentType(.password)
-                            .autocorrectionDisabled()
-                            .textInputAutocapitalization(.never)
-
-                            Button {
-                                isKeyRevealed.toggle()
-                            } label: {
-                                Image(systemName: isKeyRevealed ? "eye.slash" : "eye")
-                                    .foregroundStyle(.secondary)
-                            }
-                        }
+                        SecureFieldWithReveal(
+                            placeholder: String(localized: "groq.apiKey.placeholder"),
+                            text: viewStore.binding(
+                                get: \.apiKey,
+                                send: GroqCredentialsFeature.Action.apiKeyChanged
+                            )
+                        )
                     } header: {
                         Text(String(localized: "groq.apiKey"))
                     } footer: {

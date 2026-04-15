@@ -14,7 +14,6 @@ struct AzureCredentialsView: View {
     let store: StoreOf<AzureCredentialsFeature>
     var onSaved: () -> Void = {}
 
-    @State private var isKeyRevealed = false
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
@@ -22,37 +21,13 @@ struct AzureCredentialsView: View {
             NavigationStack {
                 Form {
                     Section {
-                        HStack(spacing: 8) {
-                            Group {
-                                if isKeyRevealed {
-                                    TextField(
-                                        String(localized: "azure.apiKey.placeholder"),
-                                        text: viewStore.binding(
-                                            get: \.apiKey,
-                                            send: AzureCredentialsFeature.Action.apiKeyChanged
-                                        )
-                                    )
-                                } else {
-                                    SecureField(
-                                        String(localized: "azure.apiKey.placeholder"),
-                                        text: viewStore.binding(
-                                            get: \.apiKey,
-                                            send: AzureCredentialsFeature.Action.apiKeyChanged
-                                        )
-                                    )
-                                }
-                            }
-                            .textContentType(.password)
-                            .autocorrectionDisabled()
-                            .textInputAutocapitalization(.never)
-
-                            Button {
-                                isKeyRevealed.toggle()
-                            } label: {
-                                Image(systemName: isKeyRevealed ? "eye.slash" : "eye")
-                                    .foregroundStyle(.secondary)
-                            }
-                        }
+                        SecureFieldWithReveal(
+                            placeholder: String(localized: "azure.apiKey.placeholder"),
+                            text: viewStore.binding(
+                                get: \.apiKey,
+                                send: AzureCredentialsFeature.Action.apiKeyChanged
+                            )
+                        )
                     } header: {
                         Text(String(localized: "azure.apiKey"))
                     }
