@@ -163,4 +163,89 @@ extension ChatFeatureTests {
             )
         }
     }
+    
+    @Test("speakSentenceEnqueued: 문장이 최대 길이 초과면 drop")
+    func enqueueDropsOversizedSentence() async {
+        var state = makeState()
+        state.speechSettings.autoSpeak = true
+
+        let store = TestStore(initialState: state) { ChatFeature() } withDependencies: {
+            applyDefaultDependencies(&$0)
+        }
+        store.exhaustivity = .off
+
+        let huge = String(repeating: "가", count: SpeechBudget.maxSentenceChars + 1)
+        await store.send(.speakSentenceEnqueued(huge))
+        // speakQueue는 비어 있어야 함 (상태 변화 없음)
+        #expect(store.state.speakQueue.isEmpty)
+    }
+    
+    @Test("speakSentenceEnqueued: 큐가 가득 차면 신규 drop")
+    func enqueueDropsWhenQueueFull() async {
+        var state = makeState()
+        state.speechSettings.autoSpeak = true
+        state.isSpeakingQueue = true  // 자동 processSpeakQueue 억제
+        state.speakQueue = Array(repeating: "채움", count: SpeechBudget.maxQueueCount)
+
+        let store = TestStore(initialState: state) { ChatFeature() } withDependencies: {
+            applyDefaultDependencies(&$0)
+        }
+        store.exhaustivity = .off
+
+        await store.send(.speakSentenceEnqueued("새 문장"))
+        #expect(store.state.speakQueue.count == SpeechBudget.maxQueueCount)
+    }
+    
+    @Test("speakSentenceEnqueued: 누적 문자 cap 초과분 drop")
+    func enqueueDropsWhenTotalCharsCapped() async {
+        var state = makeState()
+        state.speechSettings.autoSpeak = true
+        state.isSpeakingQueue = true
+        state.speakTotalChars = SpeechBudget.maxTotalCharsPerResponse - 10
+
+        let store = TestStore(initialState: state) { ChatFeature() } withDependencies: {
+          applyDefaultDependencies(&$0)
+        }
+        store.exhaustivity = .off
+
+        let sentence = String(repeating: "가", count: 20)  // cap 넘김
+        await store.send(.speakSentenceEnqueued(sentence))
+        #expect(store.state.speakQueue.isEmpty)
+        #expect(store.state.speakTotalChars == SpeechBudget.maxTotalCharsPerResponse - 10)
+    }
+    
+    @Test("sendTapped: speakTotalChars 리셋")
+    func sendTappedResetsTotalChars() async {
+        var state = makeState()
+        state.inputText = "hi"
+        state.speakTotalChars = 1234
+
+        let store = TestStore(initialState: state) { ChatFeature() } withDependencies: {
+            applyDefaultDependencies(&$0)
+            // 네트워크 차단하고 싶으면 llmClient.streamMessage stub
+        }
+        store.exhaustivity = .off
+
+        await store.send(.sendTapped)
+        #expect(store.state.speakTotalChars == 0)
+    }
+
+    @Test("speakTapped: text가 응답당 cap 초과면 tooLong 에러")
+    func speakTappedTooLong() async {
+        let huge = String(repeating: "가", count: SpeechBudget.maxTotalCharsPerResponse + 1)
+        var state = makeState()
+        state.conversation = state.conversation.appending(Self.assistantMsg(huge))
+        let id = state.conversation.messages.last!.id
+
+        let store = TestStore(initialState: state) { ChatFeature() } withDependencies: {
+            applyDefaultDependencies(&$0)
+        }
+        store.exhaustivity = .off
+
+        await store.send(.speakTapped(id)) {
+            $0.speakError = .tooLong
+        }
+        #expect(store.state.speakQueue.isEmpty)
+        #expect(store.state.speakingMessageID == nil)
+    }
 }

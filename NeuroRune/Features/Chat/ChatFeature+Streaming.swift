@@ -41,6 +41,7 @@ nonisolated extension ChatFeature {
             state.inputText = ""
             state.isStreaming = true
             state.error = nil
+            state.speakTotalChars = 0
 
             // 디스크엔 placeholder 없이 저장. placeholder는 UI 전용 스트리밍 타겟.
             let conversationForDisk = state.conversation.droppingLastMessage()

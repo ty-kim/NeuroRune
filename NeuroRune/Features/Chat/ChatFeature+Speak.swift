@@ -36,10 +36,15 @@ nonisolated extension ChatFeature {
 
             let text = speechPlainText(from: message.content)
             guard !text.isEmpty else { return .none }
+            guard text.count <= SpeechBudget.maxTotalCharsPerResponse else {
+                state.speakError = .tooLong
+                return .none
+            }
             state.speakError = nil
             // 수동 재생은 문장 큐를 덮어씀
             state.speakQueue = []
             state.isSpeakingQueue = false
+            state.speakTotalChars = 0
 
             let settings = state.speechSettings
 
@@ -107,7 +112,11 @@ nonisolated extension ChatFeature {
         case let .speakSentenceEnqueued(sentence):
             let cleaned = speechPlainText(from: sentence)
             guard !cleaned.isEmpty else { return .none }
+            guard cleaned.count <= SpeechBudget.maxSentenceChars else { return .none }
+            guard state.speakQueue.count < SpeechBudget.maxQueueCount else { return .none }
+            guard state.speakTotalChars + cleaned.count <= SpeechBudget.maxTotalCharsPerResponse else { return .none }
             state.speakQueue.append(cleaned)
+            state.speakTotalChars += cleaned.count
             if !state.isSpeakingQueue {
                 return .send(.processSpeakQueue)
             }

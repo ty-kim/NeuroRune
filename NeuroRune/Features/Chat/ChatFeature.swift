@@ -47,6 +47,8 @@ nonisolated struct ChatFeature: Reducer {
         var speakQueue: [String] = []
         /// 현재 큐 처리 중 여부.
         var isSpeakingQueue: Bool = false
+        /// 현재 assistant 응답의 TTS 누적 문자 수.
+        var speakTotalChars: Int = 0
     }
 
     /// 사용자에게 보여줄 tool 호출 정보 (id로 lifecycle 추적).

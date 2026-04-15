@@ -3853,6 +3853,41 @@
         }
       }
     },
+    "speech.error.tooLong": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Response too long to speak."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "応答が長すぎて再生できません。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "응답이 너무 길어 재생하지 않습니다."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "回复过长，无法朗读。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "回覆過長，無法朗讀。"
+          }
+        }
+      }
+    },
     "speech.error.decoding": {
       "extractionState": "manual",
       "localizations": {
