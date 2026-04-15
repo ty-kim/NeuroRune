@@ -163,130 +163,10 @@ nonisolated struct ChatFeature: Reducer {
             state.error = nil
             return .none
 
-        case .sendTapped:
-            guard !state.inputText.isEmpty, !state.isStreaming else { return .none }
-            let userMessage = Message(
-                role: .user,
-                content: state.inputText,
-                createdAt: date.now
-            )
-            let placeholder = Message(
-                role: .assistant,
-                content: "",
-                createdAt: date.now
-            )
-            state.conversation = state.conversation
-                .appending(userMessage)
-                .appending(placeholder)
-            state.inputText = ""
-            state.isStreaming = true
-            state.error = nil
+        // MARK: - Streaming (ChatFeature+Streaming.swift로 위임)
 
-            // 디스크엔 placeholder 없이 저장. placeholder는 UI 전용 스트리밍 타겟.
-            let conversationForDisk = state.conversation.droppingLastMessage()
-            let messagesForAPI = conversationForDisk.messages
-            let model = LLMModel.resolve(id: state.conversation.modelId)
-            return .run { send in
-                await Self.save(conversationForDisk, using: conversationStore, send: send)
-                do {
-                    let system = await Self.loadSystemPrompt(
-                        github: githubClient,
-                        creds: githubCredentialsClient
-                    )
-                    var roundMessages: [APIMessage] = messagesForAPI.map {
-                        APIMessage.text(role: $0.role.rawValue, content: $0.content)
-                    }
-                    let tools: [LLMTool] = [.readMemory, .writeMemory]
-                    let maxRounds = 5
-                    for _ in 0..<maxRounds {
-                        var roundText = ""
-                        var roundToolUses: [(id: String, name: String, inputJSON: String)] = []
-                        let stream = try await llmClient.streamMessage(
-                            roundMessages, model, conversationForDisk.effort, system, tools
-                        )
-                        for try await event in stream {
-                            switch event {
-                            case .textDelta(let text):
-                                roundText += text
-                                await send(.streamChunkReceived(text))
-                            case let .toolUseRequest(id, name, inputJSON):
-                                roundToolUses.append((id, name, inputJSON))
-                            case let .rateLimitUpdate(state):
-                                await send(.rateLimitUpdated(state))
-                            }
-                        }
-                        if roundToolUses.isEmpty { break }
-
-                        // 다음 라운드: 이번 round의 assistant content + tool_result blocks
-                        roundMessages.append(Self.buildAssistantTurn(roundText: roundText, toolUses: roundToolUses))
-                        let resultBlocks = await Self.executeTools(
-                            roundToolUses,
-                            send: send,
-                            github: githubClient,
-                            creds: githubCredentialsClient,
-                            gate: writeApprovalGate
-                        )
-                        roundMessages.append(APIMessage(role: "user", content: .blocks(resultBlocks)))
-                    }
-                    await send(.streamFinished)
-                } catch is CancellationError {
-                    // stopTapped가 streamFinished를 명시적으로 보낸다.
-                    // 취소된 effect는 후속 액션을 중복 발행하지 않는다.
-                } catch let error as LLMError {
-                    await send(.errorOccurred(error))
-                } catch {
-                    await send(.errorOccurred(.network(error.localizedDescription)))
-                }
-            }
-            .cancellable(id: CancelID.streaming, cancelInFlight: true)
-
-        case .stopTapped:
-            // 현재 진행 중인 스트리밍 effect를 취소하고 기존 완료 경로로 정리한다.
-            guard state.isStreaming else { return .none }
-            return .concatenate(
-                .cancel(id: CancelID.streaming),
-                .send(.streamFinished)
-            )
-
-        case let .streamChunkReceived(chunk):
-            guard let last = state.conversation.messages.last, last.role == .assistant else {
-                return .none
-            }
-            let updated = Message(
-                id: last.id,
-                role: last.role,
-                content: last.content + chunk,
-                createdAt: last.createdAt
-            )
-            state.conversation = state.conversation.replacingLastMessage(with: updated)
-
-            // Phase 22.5: autoSpeak + 스트리밍이면 문장 단위로 큐에 enqueue
-            guard state.speechSettings.autoSpeak else { return .none }
-            let sentences = SentenceStreamer.extract(chunk, buffer: &state.speakBuffer)
-            guard !sentences.isEmpty else { return .none }
-            return .run { send in
-                for s in sentences {
-                    await send(.speakSentenceEnqueued(s))
-                }
-            }
-
-        case .streamFinished:
-            state.isStreaming = false
-            let conversation = state.conversation
-            // Phase 22.5 — autoSpeak 스트리밍 모드: 남은 버퍼를 마지막 문장으로 flush.
-            //   기존 Slice 8의 "전체 메시지 speakTapped 자동 발행"은 이 경로로 대체됨.
-            let finalSentence: String? = {
-                guard state.speechSettings.autoSpeak else { return nil }
-                let remainder = state.speakBuffer.trimmingCharacters(in: .whitespacesAndNewlines)
-                state.speakBuffer = ""
-                return remainder.isEmpty ? nil : remainder
-            }()
-            return .run { send in
-                await Self.save(conversation, using: conversationStore, send: send)
-                if let s = finalSentence {
-                    await send(.speakSentenceEnqueued(s))
-                }
-            }
+        case .sendTapped, .stopTapped, .streamChunkReceived, .streamFinished, .retryTapped:
+            return reduceStreaming(into: &state, action: action)
 
         case let .errorOccurred(llmError):
             state.error = llmError
@@ -336,17 +216,6 @@ nonisolated struct ChatFeature: Reducer {
             state.rateLimit = rateLimit
             return .none
 
-        case .retryTapped:
-            // errorOccurred에서 trailing assistant placeholder는 이미 드롭된 상태.
-            // 마지막 user 메시지를 꺼내고, 제거한 뒤 sendTapped로 재전송.
-            guard let last = state.conversation.messages.last, last.role == .user else {
-                return .none
-            }
-            state.error = nil
-            state.conversation = state.conversation.droppingLastMessage()
-            state.inputText = last.content
-            return .send(.sendTapped)
-
         case .errorDismissed:
             state.error = nil
             return .none
@@ -371,7 +240,7 @@ nonisolated struct ChatFeature: Reducer {
     }
 
     /// 이번 라운드 assistant 메시지 구성: text + tool_use 블록들.
-    private static func buildAssistantTurn(
+    static func buildAssistantTurn(
         roundText: String,
         toolUses: [(id: String, name: String, inputJSON: String)]
     ) -> APIMessage {
@@ -388,7 +257,7 @@ nonisolated struct ChatFeature: Reducer {
 
     /// 라운드 내 tool_use 블록들을 순차 실행해서 tool_result 블록 리스트 반환.
     /// write_memory는 gate.requestApproval로 사용자 응답 대기.
-    private static func executeTools(
+    static func executeTools(
         _ toolUses: [(id: String, name: String, inputJSON: String)],
         send: Send<Action>,
         github: GitHubClient,
@@ -420,7 +289,7 @@ nonisolated struct ChatFeature: Reducer {
 
     /// Claude의 tool_use input JSON을 [String:String]로 파싱.
     /// read_memory 같은 string-only 파라미터 tool 한정.
-    private static func parseToolInput(_ json: String) -> [String: String]? {
+    static func parseToolInput(_ json: String) -> [String: String]? {
         guard let data = json.data(using: .utf8) else { return nil }
         return try? JSONDecoder().decode([String: String].self, from: data)
     }
@@ -501,7 +370,7 @@ nonisolated struct ChatFeature: Reducer {
     /// 두 role(.global/.local)의 MEMORY.md를 fetch해 헤더 붙여 concat.
     /// credentials 없거나 fetch 실패한 role은 skip. 둘 다 비면 nil 반환.
     /// fetch 실패는 LLMError로 surface하지 않음 (메모리는 보조 컨텍스트, 누락이 send 자체를 막진 않음).
-    private static func loadSystemPrompt(
+    static func loadSystemPrompt(
         github: GitHubClient,
         creds: GitHubCredentialsClient
     ) async -> String? {
@@ -520,7 +389,7 @@ nonisolated struct ChatFeature: Reducer {
 
     /// 저장 실패 시 `.persistenceFailed(String)` 액션을 디스패치한다.
     /// sendTapped/streamFinished/errorOccurred의 공통 save 패턴 추출.
-    private static func save(
+    static func save(
         _ conversation: Conversation,
         using store: ConversationStore,
         send: Send<Action>
