@@ -92,6 +92,9 @@ nonisolated extension ChatFeature {
 
         case let .speakErrorOccurred(error):
             state.speakingMessageID = nil
+            state.isSpeakingQueue = false
+            state.speakQueue = []
+            state.speakBuffer = ""
             state.speakError = error
             return .none
 
