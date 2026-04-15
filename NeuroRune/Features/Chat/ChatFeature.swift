@@ -306,21 +306,10 @@ nonisolated struct ChatFeature: Reducer {
             state.activeToolCalls.removeAll { $0.id == id }
             return .none
 
-        case let .writeApprovalRequested(req):
-            state.pendingWrite = req
-            return .none
+        // MARK: - Write approval (ChatFeature+WriteApproval.swift로 위임)
 
-        case let .writeApproved(id):
-            state.pendingWrite = nil
-            return .run { _ in
-                writeApprovalGate.setApproval(id, .approve)
-            }
-
-        case let .writeRejected(id, reason):
-            state.pendingWrite = nil
-            return .run { _ in
-                writeApprovalGate.setApproval(id, .reject(reason: reason))
-            }
+        case .writeApprovalRequested, .writeApproved, .writeRejected:
+            return reduceWriteApproval(into: &state, action: action)
 
         case let .rateLimitUpdated(rateLimit):
             state.rateLimit = rateLimit
