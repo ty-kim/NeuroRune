@@ -18,39 +18,22 @@ struct AnthropicCredentialsView: View {
     var body: some View {
         WithViewStore(store, observe: { $0 }) { viewStore in
             NavigationStack {
-                VStack(spacing: 24) {
-                    Spacer()
-
-                    Image(systemName: "key.fill")
-                        .font(.system(size: 48))
-                        .foregroundStyle(Color.accentColor)
-
-                    Text("Anthropic API Key")
-                        .font(.title2.bold())
-
-                    Text(String(localized: "onboarding.description"))
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                        .multilineTextAlignment(.center)
-                        .fixedSize(horizontal: false, vertical: true)
-                        .padding(.horizontal)
-
-                    VStack(alignment: .leading, spacing: 8) {
+                Form {
+                    Section {
                         HStack(spacing: 8) {
                             Group {
                                 if isKeyRevealed {
                                     TextField("sk-ant-...", text: viewStore.binding(
-                                        get: \.apiKeyInput,
+                                        get: \.apiKey,
                                         send: AnthropicCredentialsFeature.Action.apiKeyChanged
                                     ))
                                 } else {
                                     SecureField("sk-ant-...", text: viewStore.binding(
-                                        get: \.apiKeyInput,
+                                        get: \.apiKey,
                                         send: AnthropicCredentialsFeature.Action.apiKeyChanged
                                     ))
                                 }
                             }
-                            .textFieldStyle(.roundedBorder)
                             .textContentType(.password)
                             .autocorrectionDisabled()
                             .textInputAutocapitalization(.never)
@@ -65,39 +48,49 @@ struct AnthropicCredentialsView: View {
                             }
                             .accessibilityLabel(String(localized: isKeyRevealed ? "a11y.onboarding.hideKey" : "a11y.onboarding.revealKey"))
                         }
+                    } header: {
+                        Text("Anthropic API Key")
+                    } footer: {
+                        Text(String(localized: "onboarding.description"))
+                    }
 
-                        if let error = viewStore.error {
+                    if let error = viewStore.error {
+                        Section {
                             Text(error)
                                 .font(.caption)
                                 .foregroundStyle(.red)
                         }
                     }
-                    .padding(.horizontal)
 
-                    Button {
-                        viewStore.send(.saveTapped)
-                    } label: {
-                        if viewStore.isSaving {
-                            ProgressView()
-                                .frame(maxWidth: .infinity)
-                        } else {
-                            Text(String(localized: "onboarding.save"))
-                                .frame(maxWidth: .infinity)
+                    Section {
+                        Button(role: .destructive) {
+                            viewStore.send(.clearTapped)
+                        } label: {
+                            Text(String(localized: "chat.resetApiKey"))
                         }
                     }
-                    .buttonStyle(.borderedProminent)
-                    .disabled(!viewStore.isValid || viewStore.isSaving)
-                    .padding(.horizontal)
-
-                    Spacer()
                 }
-                .navigationTitle("NeuroRune")
+                .navigationTitle(String(localized: "settings.anthropicKey"))
+                .navigationBarTitleDisplayMode(.inline)
                 .toolbar {
                     ToolbarItem(placement: .cancellationAction) {
                         Button(String(localized: "error.cancel")) {
                             dismiss()
                         }
                     }
+                    ToolbarItem(placement: .confirmationAction) {
+                        if viewStore.isSaving {
+                            ProgressView()
+                        } else {
+                            Button(String(localized: "onboarding.save")) {
+                                viewStore.send(.saveTapped)
+                            }
+                            .disabled(!viewStore.isValid)
+                        }
+                    }
+                }
+                .task {
+                    await viewStore.send(.loadExisting).finish()
                 }
                 .onChange(of: viewStore.isSaving) { wasSaving, isSaving in
                     if wasSaving && !isSaving && viewStore.error == nil {

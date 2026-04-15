@@ -29,19 +29,19 @@ struct ConversationListView: View {
                     ToolbarItem(placement: .topBarLeading) {
                         Menu {
                             Button {
+                                viewStore.send(.onboardingTapped)
+                            } label: {
+                                Label(
+                                    String(localized: "settings.anthropicKey"),
+                                    systemImage: "key"
+                                )
+                            }
+                            Button {
                                 viewStore.send(.memoryListTapped)
                             } label: {
                                 Label(
                                     String(localized: "a11y.list.memory"),
                                     systemImage: "book.closed"
-                                )
-                            }
-                            Button {
-                                viewStore.send(.groqCredentialsTapped)
-                            } label: {
-                                Label(
-                                    String(localized: "settings.groqKey"),
-                                    systemImage: "waveform"
                                 )
                             }
                             Button {
@@ -53,11 +53,11 @@ struct ConversationListView: View {
                                 )
                             }
                             Button {
-                                viewStore.send(.onboardingTapped)
+                                viewStore.send(.groqCredentialsTapped)
                             } label: {
                                 Label(
-                                    String(localized: "settings.anthropicKey"),
-                                    systemImage: "key"
+                                    String(localized: "settings.groqKey"),
+                                    systemImage: "waveform"
                                 )
                             }
                         } label: {
@@ -75,6 +75,21 @@ struct ConversationListView: View {
                         }
                         .accessibilityLabel(String(localized: "a11y.list.newChat"))
                     }
+                }
+                .sheet(
+                    isPresented: viewStore.binding(
+                        get: \.showOnboarding,
+                        send: ConversationListFeature.Action.onboardingDismissed
+                    )
+                ) {
+                    AnthropicCredentialsView(
+                        store: Store(initialState: AnthropicCredentialsFeature.State()) {
+                            AnthropicCredentialsFeature()
+                        },
+                        onComplete: {
+                            viewStore.send(.onboardingDismissed)
+                        }
+                    )
                 }
                 .sheet(
                     isPresented: viewStore.binding(
@@ -119,21 +134,6 @@ struct ConversationListView: View {
                         },
                         onSaved: {
                             viewStore.send(.azureCredentialsDismissed)
-                        }
-                    )
-                }
-                .sheet(
-                    isPresented: viewStore.binding(
-                        get: \.showOnboarding,
-                        send: ConversationListFeature.Action.onboardingDismissed
-                    )
-                ) {
-                    AnthropicCredentialsView(
-                        store: Store(initialState: AnthropicCredentialsFeature.State()) {
-                            AnthropicCredentialsFeature()
-                        },
-                        onComplete: {
-                            viewStore.send(.onboardingDismissed)
                         }
                     )
                 }

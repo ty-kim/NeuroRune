@@ -14,35 +14,35 @@ import ComposableArchitecture
 @MainActor
 struct AnthropicCredentialsFeatureTests {
 
-    @Test("초기 State: apiKeyInput 빈 문자열, isValid false, error nil")
+    @Test("초기 State: apiKey 빈 문자열, isValid false, error nil")
     func initialStateDefaults() {
         let state = AnthropicCredentialsFeature.State()
-        #expect(state.apiKeyInput == "")
+        #expect(state.apiKey == "")
         #expect(state.isValid == false)
         #expect(state.error == nil)
         #expect(state.isSaving == false)
     }
 
-    @Test("apiKeyChanged는 apiKeyInput을 업데이트한다")
+    @Test("apiKeyChanged는 apiKey을 업데이트한다")
     func apiKeyChangedUpdatesInput() async {
         let store = TestStore(initialState: AnthropicCredentialsFeature.State()) {
             AnthropicCredentialsFeature()
         }
 
         await store.send(.apiKeyChanged("sk-ant-test")) {
-            $0.apiKeyInput = "sk-ant-test"
+            $0.apiKey = "sk-ant-test"
         }
     }
 
     @Test("빈 문자열 input은 isValid false")
     func emptyInputIsInvalid() {
-        let state = AnthropicCredentialsFeature.State(apiKeyInput: "")
+        let state = AnthropicCredentialsFeature.State(apiKey: "")
         #expect(state.isValid == false)
     }
 
     @Test("sk-ant-로 시작하는 input은 isValid true")
     func validPrefixMakesStateValid() {
-        let state = AnthropicCredentialsFeature.State(apiKeyInput: "sk-ant-abc123")
+        let state = AnthropicCredentialsFeature.State(apiKey: "sk-ant-abc123")
         #expect(state.isValid == true)
     }
 
@@ -52,7 +52,7 @@ struct AnthropicCredentialsFeatureTests {
         let savedValue = LockIsolated<String?>(nil)
 
         let store = TestStore(
-            initialState: AnthropicCredentialsFeature.State(apiKeyInput: "sk-ant-valid")
+            initialState: AnthropicCredentialsFeature.State(apiKey: "sk-ant-valid")
         ) {
             AnthropicCredentialsFeature()
         } withDependencies: {
@@ -67,7 +67,7 @@ struct AnthropicCredentialsFeatureTests {
         }
         await store.receive(.saveSucceeded) {
             $0.isSaving = false
-            $0.apiKeyInput = ""
+            $0.apiKey = ""
         }
 
         #expect(savedKey.value == "anthropic_api_key")
@@ -77,7 +77,7 @@ struct AnthropicCredentialsFeatureTests {
     @Test("Keychain save 실패 시 state.error에 메시지가 세팅된다")
     func saveFailureSetsError() async {
         let store = TestStore(
-            initialState: AnthropicCredentialsFeature.State(apiKeyInput: "sk-ant-valid")
+            initialState: AnthropicCredentialsFeature.State(apiKey: "sk-ant-valid")
         ) {
             AnthropicCredentialsFeature()
         } withDependencies: {
@@ -100,7 +100,7 @@ struct AnthropicCredentialsFeatureTests {
         let savedValue = LockIsolated<String?>(nil)
 
         let store = TestStore(
-            initialState: AnthropicCredentialsFeature.State(apiKeyInput: "  sk-ant-valid\n")
+            initialState: AnthropicCredentialsFeature.State(apiKey: "  sk-ant-valid\n")
         ) {
             AnthropicCredentialsFeature()
         } withDependencies: {
@@ -114,29 +114,29 @@ struct AnthropicCredentialsFeatureTests {
         }
         await store.receive(.saveSucceeded) {
             $0.isSaving = false
-            $0.apiKeyInput = ""
+            $0.apiKey = ""
         }
 
         #expect(savedValue.value == "sk-ant-valid")
     }
 
-    @Test("saveSucceeded는 apiKeyInput을 clear한다")
+    @Test("saveSucceeded는 apiKey을 clear한다")
     func saveSucceededClearsInput() async {
         let store = TestStore(
-            initialState: AnthropicCredentialsFeature.State(apiKeyInput: "sk-ant-abc")
+            initialState: AnthropicCredentialsFeature.State(apiKey: "sk-ant-abc")
         ) {
             AnthropicCredentialsFeature()
         }
 
         await store.send(.saveSucceeded) {
-            $0.apiKeyInput = ""
+            $0.apiKey = ""
         }
     }
 
     @Test("isValid false일 때 saveTapped는 아무 효과 없음")
     func saveTappedNoOpWhenInvalid() async {
         let store = TestStore(
-            initialState: AnthropicCredentialsFeature.State(apiKeyInput: "")
+            initialState: AnthropicCredentialsFeature.State(apiKey: "")
         ) {
             AnthropicCredentialsFeature()
         }
