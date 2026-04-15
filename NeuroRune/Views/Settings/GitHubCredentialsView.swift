@@ -105,6 +105,14 @@ struct GitHubCredentialsView: View {
                                 .foregroundStyle(.red)
                         }
                     }
+
+                    Section {
+                        Button(role: .destructive) {
+                            viewStore.send(.clearTapped)
+                        } label: {
+                            Text(String(localized: "credentials.clear"))
+                        }
+                    }
                 }
                 .navigationTitle(String(localized: "credentials.title"))
                 .navigationBarTitleDisplayMode(.inline)
