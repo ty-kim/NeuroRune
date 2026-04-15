@@ -11,8 +11,10 @@ import ComposableArchitecture
 nonisolated struct ChatFeature: Reducer {
 
     /// Effect 취소 ID. Phase 20: 스트리밍 중 [Stop] 버튼으로 현재 LLM 요청 취소.
+    /// Phase 22: TTS 재생 중 새 탭으로 기존 재생 취소.
     enum CancelID: Hashable {
         case streaming
+        case speaking
     }
 
     struct State: Equatable {
@@ -31,6 +33,22 @@ nonisolated struct ChatFeature: Reducer {
         var isRecording: Bool = false
         /// STT 에러. LLMError와 별개 타입이라 별도 슬롯에 보관.
         var sttError: STTError? = nil
+        /// Phase 22 — 현재 재생 중인 메시지 id. nil이면 재생 중 아님.
+        var speakingMessageID: UUID? = nil
+        /// TTS 에러.
+        var speakError: SpeechError? = nil
+        /// 사용자 TTS 설정 (voice·rate·pitch·autoSpeak). 첫 진입 시 client.load()로 동기화.
+        var speechSettings: SpeechSettings = SpeechSettings()
+        /// 상세 설정 sheet 노출 여부.
+        var showSpeechSettings: Bool = false
+        /// Phase 22.5 — autoSpeak 스트리밍 시 문장 추출 버퍼.
+        var speakBuffer: String = ""
+        /// 합성·재생 대기 큐 (FIFO).
+        var speakQueue: [String] = []
+        /// 현재 큐 처리 중 여부.
+        var isSpeakingQueue: Bool = false
+        /// 현재 assistant 응답의 TTS 누적 문자 수.
+        var speakTotalChars: Int = 0
     }
 
     /// 사용자에게 보여줄 tool 호출 정보 (id로 lifecycle 추적).
@@ -47,6 +65,17 @@ nonisolated struct ChatFeature: Reducer {
         let path: String
         let content: String
         let commitMessage: String
+        /// 기존 파일 내용. nil이면 신규 생성. 승인 modal에서 before/after 비교에 사용.
+        let existingContent: String?
+
+        init(id: String, role: CredentialsRole, path: String, content: String, commitMessage: String, existingContent: String? = nil) {
+            self.id = id
+            self.role = role
+            self.path = path
+            self.content = content
+            self.commitMessage = commitMessage
+            self.existingContent = existingContent
+        }
     }
 
     enum Action: Equatable {
@@ -94,6 +123,30 @@ nonisolated struct ChatFeature: Reducer {
         case transcribed(STTResult)
         case sttErrorOccurred(STTError)
         case sttErrorDismissed
+
+        // MARK: - TTS (Phase 22)
+        /// assistant 버블 스피커 버튼. 해당 메시지 재생 시작 또는 중단 토글.
+        case speakTapped(UUID)
+        case speakingStarted(UUID)
+        case speakingFinished
+        case stopSpeakTapped
+        case speakErrorOccurred(SpeechError)
+        case speakErrorDismissed
+
+        // MARK: - TTS sentence queue (Phase 22.5)
+        case speakSentenceEnqueued(String)
+        case processSpeakQueue
+        case sentencePlaybackCompleted
+
+        // MARK: - Speech settings (Phase 22 Slice 7)
+        case loadSpeechSettings
+        case speechSettingsLoaded(SpeechSettings)
+        case speechVoiceSelected(String)
+        case autoSpeakToggled(Bool)
+        case speechRateChanged(Double)
+        case speechPitchChanged(Double)
+        case speechSettingsTapped
+        case speechSettingsDismissed
     }
 
     func reduce(into state: inout State, action: Action) -> Effect<Action> {
@@ -123,109 +176,10 @@ nonisolated struct ChatFeature: Reducer {
             state.error = nil
             return .none
 
-        case .sendTapped:
-            guard !state.inputText.isEmpty, !state.isStreaming else { return .none }
-            let userMessage = Message(
-                role: .user,
-                content: state.inputText,
-                createdAt: date.now
-            )
-            let placeholder = Message(
-                role: .assistant,
-                content: "",
-                createdAt: date.now
-            )
-            state.conversation = state.conversation
-                .appending(userMessage)
-                .appending(placeholder)
-            state.inputText = ""
-            state.isStreaming = true
-            state.error = nil
+        // MARK: - Streaming (ChatFeature+Streaming.swift로 위임)
 
-            // 디스크엔 placeholder 없이 저장. placeholder는 UI 전용 스트리밍 타겟.
-            let conversationForDisk = state.conversation.droppingLastMessage()
-            let messagesForAPI = conversationForDisk.messages
-            let model = LLMModel.resolve(id: state.conversation.modelId)
-            return .run { send in
-                await Self.save(conversationForDisk, using: conversationStore, send: send)
-                do {
-                    let system = await Self.loadSystemPrompt(
-                        github: githubClient,
-                        creds: githubCredentialsClient
-                    )
-                    var roundMessages: [APIMessage] = messagesForAPI.map {
-                        APIMessage.text(role: $0.role.rawValue, content: $0.content)
-                    }
-                    let tools: [LLMTool] = [.readMemory, .writeMemory]
-                    let maxRounds = 5
-                    for _ in 0..<maxRounds {
-                        var roundText = ""
-                        var roundToolUses: [(id: String, name: String, inputJSON: String)] = []
-                        let stream = try await llmClient.streamMessage(
-                            roundMessages, model, conversationForDisk.effort, system, tools
-                        )
-                        for try await event in stream {
-                            switch event {
-                            case .textDelta(let text):
-                                roundText += text
-                                await send(.streamChunkReceived(text))
-                            case let .toolUseRequest(id, name, inputJSON):
-                                roundToolUses.append((id, name, inputJSON))
-                            case let .rateLimitUpdate(state):
-                                await send(.rateLimitUpdated(state))
-                            }
-                        }
-                        if roundToolUses.isEmpty { break }
-
-                        // 다음 라운드: 이번 round의 assistant content + tool_result blocks
-                        roundMessages.append(Self.buildAssistantTurn(roundText: roundText, toolUses: roundToolUses))
-                        let resultBlocks = await Self.executeTools(
-                            roundToolUses,
-                            send: send,
-                            github: githubClient,
-                            creds: githubCredentialsClient,
-                            gate: writeApprovalGate
-                        )
-                        roundMessages.append(APIMessage(role: "user", content: .blocks(resultBlocks)))
-                    }
-                    await send(.streamFinished)
-                } catch is CancellationError {
-                    // stopTapped가 streamFinished를 명시적으로 보낸다.
-                    // 취소된 effect는 후속 액션을 중복 발행하지 않는다.
-                } catch let error as LLMError {
-                    await send(.errorOccurred(error))
-                } catch {
-                    await send(.errorOccurred(.network(error.localizedDescription)))
-                }
-            }
-            .cancellable(id: CancelID.streaming, cancelInFlight: true)
-
-        case .stopTapped:
-            // 현재 진행 중인 스트리밍 effect를 취소하고 기존 완료 경로로 정리한다.
-            guard state.isStreaming else { return .none }
-            return .concatenate(
-                .cancel(id: CancelID.streaming),
-                .send(.streamFinished)
-            )
-
-        case let .streamChunkReceived(chunk):
-            guard let last = state.conversation.messages.last, last.role == .assistant else {
-                return .none
-            }
-            let updated = Message(
-                role: last.role,
-                content: last.content + chunk,
-                createdAt: last.createdAt
-            )
-            state.conversation = state.conversation.replacingLastMessage(with: updated)
-            return .none
-
-        case .streamFinished:
-            state.isStreaming = false
-            let conversation = state.conversation
-            return .run { send in
-                await Self.save(conversation, using: conversationStore, send: send)
-            }
+        case .sendTapped, .stopTapped, .streamChunkReceived, .streamFinished, .retryTapped:
+            return reduceStreaming(into: &state, action: action)
 
         case let .errorOccurred(llmError):
             state.error = llmError
@@ -266,120 +220,40 @@ nonisolated struct ChatFeature: Reducer {
             state.activeToolCalls.removeAll { $0.id == id }
             return .none
 
-        case let .writeApprovalRequested(req):
-            state.pendingWrite = req
-            return .none
+        // MARK: - Write approval (ChatFeature+WriteApproval.swift로 위임)
 
-        case let .writeApproved(id):
-            state.pendingWrite = nil
-            return .run { _ in
-                writeApprovalGate.setApproval(id, .approve)
-            }
-
-        case let .writeRejected(id, reason):
-            state.pendingWrite = nil
-            return .run { _ in
-                writeApprovalGate.setApproval(id, .reject(reason: reason))
-            }
+        case .writeApprovalRequested, .writeApproved, .writeRejected:
+            return reduceWriteApproval(into: &state, action: action)
 
         case let .rateLimitUpdated(rateLimit):
             state.rateLimit = rateLimit
             return .none
 
-        case .retryTapped:
-            // errorOccurred에서 trailing assistant placeholder는 이미 드롭된 상태.
-            // 마지막 user 메시지를 꺼내고, 제거한 뒤 sendTapped로 재전송.
-            guard let last = state.conversation.messages.last, last.role == .user else {
-                return .none
-            }
-            state.error = nil
-            state.conversation = state.conversation.droppingLastMessage()
-            state.inputText = last.content
-            return .send(.sendTapped)
-
         case .errorDismissed:
             state.error = nil
             return .none
 
-        // MARK: - STT
+        // MARK: - STT (ChatFeature+STT.swift로 위임)
 
-        case .micTapped:
-            @Dependency(\.audioRecorder) var recorder
-            if state.isRecording {
-                // 중단 → stop → transcribe 파이프라인
-                return .run { send in
-                    do {
-                        let data = try await recorder.stop()
-                        await send(.recordingStopped(data))
-                    } catch let e as STTError {
-                        await send(.sttErrorOccurred(e))
-                    } catch {
-                        await send(.sttErrorOccurred(.recordingFailed(error.localizedDescription)))
-                    }
-                }
-            } else {
-                // 권한 → 시작
-                return .run { send in
-                    let granted = await recorder.requestPermission()
-                    guard granted else {
-                        await send(.sttErrorOccurred(.microphonePermissionDenied))
-                        return
-                    }
-                    do {
-                        try await recorder.start()
-                        await send(.recordingStarted)
-                    } catch let e as STTError {
-                        await send(.sttErrorOccurred(e))
-                    } catch {
-                        await send(.sttErrorOccurred(.recordingFailed(error.localizedDescription)))
-                    }
-                }
-            }
+        case .micTapped, .recordingStarted, .recordingStopped, .transcribed,
+             .sttErrorOccurred, .sttErrorDismissed:
+            return reduceSTT(into: &state, action: action)
 
-        case .recordingStarted:
-            state.isRecording = true
-            state.sttError = nil
-            return .none
+        // MARK: - TTS (ChatFeature+Speak.swift로 위임)
 
-        case let .recordingStopped(audio):
-            state.isRecording = false
-            @Dependency(\.locale) var locale
-            // BCP-47 언어 부분만. zh-Hans/zh-Hant는 "zh"로 축약 → Whisper 간체/번체 구분 안 함.
-            let language = locale.language.languageCode?.identifier ?? "ko"
-            return .run { send in
-                @Dependency(\.sttClient) var stt
-                do {
-                    let result = try await stt.transcribe(audio, language)
-                    await send(.transcribed(result))
-                } catch let e as STTError {
-                    await send(.sttErrorOccurred(e))
-                } catch {
-                    await send(.sttErrorOccurred(.network(error.localizedDescription)))
-                }
-            }
-
-        case let .transcribed(result):
-            // 전사 텍스트를 inputText에 삽입. 기존 내용이 있으면 공백 구분자로 이어붙임.
-            if state.inputText.isEmpty {
-                state.inputText = result.text
-            } else {
-                state.inputText += " " + result.text
-            }
-            return .none
-
-        case let .sttErrorOccurred(error):
-            state.isRecording = false
-            state.sttError = error
-            return .none
-
-        case .sttErrorDismissed:
-            state.sttError = nil
-            return .none
+        case .speakTapped, .speakingStarted, .speakingFinished,
+             .stopSpeakTapped, .speakErrorOccurred, .speakErrorDismissed,
+             .speakSentenceEnqueued, .processSpeakQueue, .sentencePlaybackCompleted,
+             .loadSpeechSettings, .speechSettingsLoaded,
+             .speechVoiceSelected, .autoSpeakToggled,
+             .speechRateChanged, .speechPitchChanged,
+             .speechSettingsTapped, .speechSettingsDismissed:
+            return reduceSpeak(into: &state, action: action)
         }
     }
 
     /// 이번 라운드 assistant 메시지 구성: text + tool_use 블록들.
-    private static func buildAssistantTurn(
+    static func buildAssistantTurn(
         roundText: String,
         toolUses: [(id: String, name: String, inputJSON: String)]
     ) -> APIMessage {
@@ -396,7 +270,7 @@ nonisolated struct ChatFeature: Reducer {
 
     /// 라운드 내 tool_use 블록들을 순차 실행해서 tool_result 블록 리스트 반환.
     /// write_memory는 gate.requestApproval로 사용자 응답 대기.
-    private static func executeTools(
+    static func executeTools(
         _ toolUses: [(id: String, name: String, inputJSON: String)],
         send: Send<Action>,
         github: GitHubClient,
@@ -408,7 +282,17 @@ nonisolated struct ChatFeature: Reducer {
             let input = parseToolInput(tool.inputJSON) ?? [:]
             await send(.toolUseRequested(id: tool.id, name: tool.name, input: input))
             let result: String
-            if tool.name == "write_memory", let req = parseWriteRequest(id: tool.id, input: input) {
+            if tool.name == "write_memory", let parsed = parseWriteRequest(id: tool.id, input: input) {
+                // 기존 파일 load — 실패(notFound 등)면 nil = 신규 생성
+                let existingContent = try? await github.loadFile(parsed.role, parsed.path).content
+                let req = WriteRequest(
+                    id: parsed.id,
+                    role: parsed.role,
+                    path: parsed.path,
+                    content: parsed.content,
+                    commitMessage: parsed.commitMessage,
+                    existingContent: existingContent
+                )
                 await send(.writeApprovalRequested(req))
                 let decision = await gate.requestApproval(tool.id)
                 switch decision {
@@ -428,7 +312,7 @@ nonisolated struct ChatFeature: Reducer {
 
     /// Claude의 tool_use input JSON을 [String:String]로 파싱.
     /// read_memory 같은 string-only 파라미터 tool 한정.
-    private static func parseToolInput(_ json: String) -> [String: String]? {
+    static func parseToolInput(_ json: String) -> [String: String]? {
         guard let data = json.data(using: .utf8) else { return nil }
         return try? JSONDecoder().decode([String: String].self, from: data)
     }
@@ -449,11 +333,12 @@ nonisolated struct ChatFeature: Reducer {
     }
 
     /// write_memory tool input → WriteRequest 파싱. role/path/content/commit_message 중 하나라도
-    /// 누락/잘못되면 nil.
+    /// 누락/잘못되면 nil. path는 `MemoryPathPolicy`로 검증·정규화.
     private static func parseWriteRequest(id: String, input: [String: String]) -> WriteRequest? {
         guard let roleStr = input["role"],
               let role = CredentialsRole(rawValue: roleStr),
-              let path = input["path"],
+              let rawPath = input["path"],
+              let path = try? MemoryPathPolicy.validate(rawPath),
               let content = input["content"],
               let commitMessage = input["commit_message"]
         else { return nil }
@@ -466,13 +351,13 @@ nonisolated struct ChatFeature: Reducer {
         github: GitHubClient,
         creds: GitHubCredentialsClient
     ) async -> String {
-        guard let credentials = try? creds.load(request.role) else {
+        guard (try? creds.load(request.role)) != nil else {
             return "Error: \(request.role.rawValue) credentials not configured"
         }
-        let existingSha = try? await github.loadFile(credentials.repoConfig, request.path).sha
+        let existingSha = try? await github.loadFile(request.role, request.path).sha
         do {
             let saved = try await github.saveFile(
-                credentials.repoConfig,
+                request.role,
                 request.path,
                 request.content,
                 existingSha,
@@ -492,14 +377,22 @@ nonisolated struct ChatFeature: Reducer {
         guard let roleStr = input["role"], let role = CredentialsRole(rawValue: roleStr) else {
             return "Error: missing or invalid 'role' (expected 'global' or 'local')"
         }
-        guard let path = input["path"] else {
+        guard let rawPath = input["path"] else {
             return "Error: missing 'path'"
         }
-        guard let credentials = try? creds.load(role) else {
+        let path: String
+        do {
+            path = try MemoryPathPolicy.validate(rawPath)
+        } catch let error as MemoryPathError {
+            return "Error: invalid path — \(error.localizedMessage)"
+        } catch {
+            return "Error: invalid path"
+        }
+        guard (try? creds.load(role)) != nil else {
             return "Error: \(role.rawValue) credentials not configured"
         }
         do {
-            let file = try await github.loadFile(credentials.repoConfig, path)
+            let file = try await github.loadFile(role, path)
             return file.content
         } catch {
             return "Error: \(error.localizedDescription)"
@@ -509,17 +402,18 @@ nonisolated struct ChatFeature: Reducer {
     /// 두 role(.global/.local)의 MEMORY.md를 fetch해 헤더 붙여 concat.
     /// credentials 없거나 fetch 실패한 role은 skip. 둘 다 비면 nil 반환.
     /// fetch 실패는 LLMError로 surface하지 않음 (메모리는 보조 컨텍스트, 누락이 send 자체를 막진 않음).
-    private static func loadSystemPrompt(
+    static func loadSystemPrompt(
         github: GitHubClient,
         creds: GitHubCredentialsClient
     ) async -> String? {
         var sections: [String] = []
         for role in CredentialsRole.allCases {
             guard let credentials = try? creds.load(role) else { continue }
-            let path = credentials.path.isEmpty
+            let rawPath = credentials.path.isEmpty
                 ? "MEMORY.md"
                 : "\(credentials.path)/MEMORY.md"
-            guard let file = try? await github.loadFile(credentials.repoConfig, path) else { continue }
+            guard let path = try? MemoryPathPolicy.validate(rawPath) else { continue }
+            guard let file = try? await github.loadFile(role, path) else { continue }
             let header = role == .global ? "## Global Memory" : "## Local Memory"
             sections.append("\(header)\n\n\(file.content)")
         }
@@ -528,7 +422,7 @@ nonisolated struct ChatFeature: Reducer {
 
     /// 저장 실패 시 `.persistenceFailed(String)` 액션을 디스패치한다.
     /// sendTapped/streamFinished/errorOccurred의 공통 save 패턴 추출.
-    private static func save(
+    static func save(
         _ conversation: Conversation,
         using store: ConversationStore,
         send: Send<Action>

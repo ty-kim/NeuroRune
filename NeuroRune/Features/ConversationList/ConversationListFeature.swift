@@ -15,11 +15,12 @@ nonisolated struct ConversationListFeature: Reducer {
         var isLoading: Bool = true
         var selectedConversation: Conversation?
         var showModelPicker: Bool = false
-        var showResetConfirmation: Bool = false
         var selectedEffort: EffortLevel? = nil
         var listError: String?
         var showMemoryList: Bool = false
         var showGroqCredentials: Bool = false
+        var showAzureCredentials: Bool = false
+        var showOnboarding: Bool = false
     }
 
     enum Action: Equatable {
@@ -36,11 +37,12 @@ nonisolated struct ConversationListFeature: Reducer {
         case effortSelected(EffortLevel?)
         case memoryListTapped
         case memoryListDismissed
-        case resetApiKeyTapped
+        case onboardingTapped
+        case onboardingDismissed
         case groqCredentialsTapped
         case groqCredentialsDismissed
-        case resetConfirmationDismissed
-        case resetApiKeyConfirmed
+        case azureCredentialsTapped
+        case azureCredentialsDismissed
         case errorDismissed
     }
 
@@ -105,7 +107,13 @@ nonisolated struct ConversationListFeature: Reducer {
             return .none
 
         case .newConversationTapped:
-            state.showModelPicker = true
+            // Anthropic 키 없으면 Onboarding sheet, 있으면 모델 피커.
+            let hasKey = (try? keychain.load(AnthropicCredentialsFeature.anthropicKeyName)) != nil
+            if hasKey {
+                state.showModelPicker = true
+            } else {
+                state.showOnboarding = true
+            }
             return .none
 
         case .modelPickerDismissed:
@@ -133,8 +141,12 @@ nonisolated struct ConversationListFeature: Reducer {
             state.showMemoryList = false
             return .none
 
-        case .resetApiKeyTapped:
-            state.showResetConfirmation = true
+        case .onboardingTapped:
+            state.showOnboarding = true
+            return .none
+
+        case .onboardingDismissed:
+            state.showOnboarding = false
             return .none
 
         case .groqCredentialsTapped:
@@ -145,16 +157,13 @@ nonisolated struct ConversationListFeature: Reducer {
             state.showGroqCredentials = false
             return .none
 
-        case .resetConfirmationDismissed:
-            state.showResetConfirmation = false
+        case .azureCredentialsTapped:
+            state.showAzureCredentials = true
             return .none
 
-        case .resetApiKeyConfirmed:
-            state.showResetConfirmation = false
-            let client = keychain
-            return .run { _ in
-                try? client.delete(OnboardingFeature.anthropicKeyName)
-            }
+        case .azureCredentialsDismissed:
+            state.showAzureCredentials = false
+            return .none
 
         case .errorDismissed:
             state.listError = nil
