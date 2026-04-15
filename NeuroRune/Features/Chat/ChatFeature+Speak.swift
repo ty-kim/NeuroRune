@@ -31,7 +31,8 @@ nonisolated extension ChatFeature {
                 return .none
             }
 
-            let text = message.content
+            let text = speechPlainText(from: message.content)
+            guard !text.isEmpty else { return .none }
             state.speakError = nil
 
             return .run { send in
