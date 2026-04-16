@@ -78,12 +78,41 @@ nonisolated extension ChatFeature {
             } else {
                 state.inputText += " " + result.text
             }
-            return .none
+            // 자동 전송 카운트다운 시작: 2 → 1 → send. 취소는 autoSendCancelled.
+            state.autoSendCountdown = 2
+            return .run { send in
+                @Dependency(\.continuousClock) var clock
+                try await clock.sleep(for: .seconds(1))
+                await send(.autoSendTick)
+            }
+            .cancellable(id: CancelID.autoSend, cancelInFlight: true)
+
+        case .autoSendTick:
+            guard let countdown = state.autoSendCountdown else { return .none }
+            if countdown > 1 {
+                state.autoSendCountdown = countdown - 1
+                return .run { send in
+                    @Dependency(\.continuousClock) var clock
+                    try await clock.sleep(for: .seconds(1))
+                    await send(.autoSendTick)
+                }
+                .cancellable(id: CancelID.autoSend, cancelInFlight: true)
+            } else {
+                state.autoSendCountdown = nil
+                return .run { send in
+                    await send(.sendTapped)
+                }
+            }
+
+        case .autoSendCancelled:
+            state.autoSendCountdown = nil
+            return .cancel(id: CancelID.autoSend)
 
         case let .sttErrorOccurred(error):
             state.isRecording = false
             state.sttError = error
-            return .none
+            state.autoSendCountdown = nil
+            return .cancel(id: CancelID.autoSend)
 
         case .sttErrorDismissed:
             state.sttError = nil

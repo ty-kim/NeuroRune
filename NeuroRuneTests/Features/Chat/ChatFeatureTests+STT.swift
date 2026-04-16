@@ -94,6 +94,7 @@ extension ChatFeatureTests {
 
         let store = TestStore(initialState: state) { ChatFeature() } withDependencies: {
             $0.locale = Locale(identifier: "ko_KR")
+            $0.continuousClock = TestClock()
             $0.audioRecorder = AudioRecorder(
                 requestPermission: { true },
                 start: { },
@@ -117,25 +118,43 @@ extension ChatFeatureTests {
         }
         await store.receive(.transcribed(STTResult(text: "변환된 텍스트"))) {
             $0.inputText = "변환된 텍스트"
+            $0.autoSendCountdown = 2
+        }
+        await store.send(.autoSendCancelled) {
+            $0.autoSendCountdown = nil
         }
     }
 
     @Test("기존 inputText가 있으면 공백 + 전사 텍스트 이어붙임")
     func transcribedAppendsToExistingText() async {
-        var state = makeState(inputText: "안녕")
-        let store = TestStore(initialState: state) { ChatFeature() }
+        let state = makeState(inputText: "안녕")
+        let store = TestStore(initialState: state) { ChatFeature() } withDependencies: {
+            $0.continuousClock = TestClock()
+        }
+        store.exhaustivity = .off
 
         await store.send(.transcribed(STTResult(text: "반가워요"))) {
             $0.inputText = "안녕 반가워요"
+            $0.autoSendCountdown = 2
+        }
+        await store.send(.autoSendCancelled) {
+            $0.autoSendCountdown = nil
         }
     }
 
     @Test("빈 inputText면 공백 없이 전사 텍스트가 그대로")
     func transcribedOnEmptyText() async {
-        let store = TestStore(initialState: makeState()) { ChatFeature() }
+        let store = TestStore(initialState: makeState()) { ChatFeature() } withDependencies: {
+            $0.continuousClock = TestClock()
+        }
+        store.exhaustivity = .off
 
         await store.send(.transcribed(STTResult(text: "처음 텍스트"))) {
             $0.inputText = "처음 텍스트"
+            $0.autoSendCountdown = 2
+        }
+        await store.send(.autoSendCancelled) {
+            $0.autoSendCountdown = nil
         }
     }
 
@@ -195,5 +214,90 @@ extension ChatFeatureTests {
             $0.isRecording = true
             $0.sttError = nil
         }
+    }
+
+    // MARK: - 자동 전송 카운트다운
+
+    @Test("transcribed 받으면 inputText 삽입 + autoSendCountdown=2")
+    func transcribedStartsCountdown() async {
+        let store = TestStore(initialState: makeState()) { ChatFeature() } withDependencies: {
+            $0.continuousClock = TestClock()
+        }
+        store.exhaustivity = .off
+
+        await store.send(.transcribed(STTResult(text: "안녕"))) {
+            $0.inputText = "안녕"
+            $0.autoSendCountdown = 2
+        }
+        await store.send(.autoSendCancelled) {
+            $0.autoSendCountdown = nil
+        }
+    }
+
+    @Test("autoSendTick: 2 → 1로 감소")
+    func autoSendTickDecrements() async {
+        var state = makeState()
+        state.autoSendCountdown = 2
+
+        let store = TestStore(initialState: state) { ChatFeature() } withDependencies: {
+            $0.continuousClock = TestClock()
+        }
+        store.exhaustivity = .off
+
+        await store.send(.autoSendTick) {
+            $0.autoSendCountdown = 1
+        }
+        await store.send(.autoSendCancelled) {
+            $0.autoSendCountdown = nil
+        }
+    }
+
+    @Test("autoSendTick: 1에서 호출되면 countdown=nil + sendTapped 발행")
+    func autoSendTickAtOneFiresSend() async {
+        var state = makeState()
+        state.autoSendCountdown = 1
+        state.inputText = "안녕"
+
+        let store = TestStore(initialState: state) { ChatFeature() } withDependencies: {
+            applyDefaultDependencies(&$0)
+        }
+
+        await store.send(.autoSendTick) {
+            $0.autoSendCountdown = nil
+        }
+        await store.receive(.sendTapped) {
+            $0.conversation = $0.conversation
+                .appending(Message(role: .user, content: "안녕", createdAt: Self.fixedDate))
+                .appending(Message(role: .assistant, content: "", createdAt: Self.fixedDate))
+            $0.inputText = ""
+            $0.isStreaming = true
+        }
+        await store.receive(.streamFinished) {
+            $0.isStreaming = false
+        }
+        await store.finish()
+    }
+
+    @Test("autoSendTick: countdown nil이면 no-op")
+    func autoSendTickNoopWhenNil() async {
+        let store = TestStore(initialState: makeState()) { ChatFeature() }
+        store.exhaustivity = .off
+        await store.send(.autoSendTick)
+    }
+
+    @Test("autoSendCancelled: countdown=nil, sendTapped 발행 X")
+    func autoSendCancelledStopsTimer() async {
+        var state = makeState()
+        state.autoSendCountdown = 2
+
+        let store = TestStore(initialState: state) { ChatFeature() } withDependencies: {
+            $0.continuousClock = TestClock()
+        }
+        store.exhaustivity = .off
+
+        await store.send(.autoSendCancelled) {
+            $0.autoSendCountdown = nil
+        }
+        // sendTapped 수신 안 함: 타이머가 취소됐음
     }
 }
