@@ -8,6 +8,7 @@
 import Foundation
 
 nonisolated enum AnthropicAPI {
+    // swiftlint:disable:next force_unwrapping
     static let endpoint = URL(string: "https://api.anthropic.com/v1/messages")!
     static let apiVersion = "2023-06-01"
     static let defaultMaxTokens = 4096
@@ -33,16 +34,19 @@ nonisolated enum AnthropicRequestBuilder {
 
         // 4.6 모델은 adaptive thinking + output_config.effort 사용 (manual budget_tokens deprecated).
         // 모델이 effort 미지원이면 둘 다 omit.
-        let usesEffort = model.supportsEffort && effort != nil
         let resolvedMessages: [APIMessage] = apiMessages
             ?? messages.map { APIMessage.text(role: $0.role.rawValue, content: $0.content) }
+        let effortConfig: AnthropicRequestBody.OutputConfig? = {
+            guard model.supportsEffort, let effort else { return nil }
+            return AnthropicRequestBody.OutputConfig(effort: effort.rawValue)
+        }()
         let body = AnthropicRequestBody(
             model: model.id,
             maxTokens: AnthropicAPI.defaultMaxTokens,
             messages: resolvedMessages,
             stream: stream ? true : nil,
-            thinking: usesEffort ? AnthropicRequestBody.Thinking(type: "adaptive") : nil,
-            outputConfig: usesEffort ? AnthropicRequestBody.OutputConfig(effort: effort!.rawValue) : nil,
+            thinking: effortConfig != nil ? AnthropicRequestBody.Thinking(type: "adaptive") : nil,
+            outputConfig: effortConfig,
             system: system,
             tools: tools
         )

@@ -81,7 +81,7 @@ nonisolated struct GroqCredentialsFeature: Reducer {
         case .loadExisting:
             return .run { send in
                 let creds = try? client.load()
-                await send(.existingLoaded(creds ?? nil))
+                await send(.existingLoaded(creds))
             }
 
         case let .existingLoaded(creds):

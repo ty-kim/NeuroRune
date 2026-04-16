@@ -86,23 +86,23 @@ nonisolated extension STTClient {
         let crlf = "\r\n"
 
         func appendField(name: String, value: String) {
-            body.append("--\(boundary)\(crlf)".data(using: .utf8)!)
-            body.append("Content-Disposition: form-data; name=\"\(name)\"\(crlf)\(crlf)".data(using: .utf8)!)
-            body.append("\(value)\(crlf)".data(using: .utf8)!)
+            body.append(Data("--\(boundary)\(crlf)".utf8))
+            body.append(Data("Content-Disposition: form-data; name=\"\(name)\"\(crlf)\(crlf)".utf8))
+            body.append(Data("\(value)\(crlf)".utf8))
         }
 
         // file
-        body.append("--\(boundary)\(crlf)".data(using: .utf8)!)
-        body.append("Content-Disposition: form-data; name=\"file\"; filename=\"audio.wav\"\(crlf)".data(using: .utf8)!)
-        body.append("Content-Type: audio/wav\(crlf)\(crlf)".data(using: .utf8)!)
+        body.append(Data("--\(boundary)\(crlf)".utf8))
+        body.append(Data("Content-Disposition: form-data; name=\"file\"; filename=\"audio.wav\"\(crlf)".utf8))
+        body.append(Data("Content-Type: audio/wav\(crlf)\(crlf)".utf8))
         body.append(audio)
-        body.append(crlf.data(using: .utf8)!)
+        body.append(Data(crlf.utf8))
 
         appendField(name: "model", value: "whisper-large-v3")
         appendField(name: "language", value: language)
         appendField(name: "response_format", value: "json")
 
-        body.append("--\(boundary)--\(crlf)".data(using: .utf8)!)
+        body.append(Data("--\(boundary)--\(crlf)".utf8))
         return body
     }
 

@@ -15,7 +15,9 @@ nonisolated struct GitHubClient: Sendable {
     var loadFile: @Sendable (CredentialsRole, String) async throws -> GitHubFile
     /// 파일 생성 또는 업데이트. 기존 파일이면 sha 필요, 신규면 sha=nil.
     /// 성공 시 갱신된 sha 포함 GitHubFile 반환.
-    var saveFile: @Sendable (CredentialsRole, _ path: String, _ content: String, _ sha: String?, _ message: String) async throws -> GitHubFile
+    var saveFile: @Sendable (
+        CredentialsRole, _ path: String, _ content: String, _ sha: String?, _ message: String
+    ) async throws -> GitHubFile
     /// 파일 삭제. sha 필수.
     var deleteFile: @Sendable (CredentialsRole, _ path: String, _ sha: String, _ message: String) async throws -> Void
 }

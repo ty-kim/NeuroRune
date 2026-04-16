@@ -80,7 +80,7 @@ nonisolated struct AnthropicCredentialsFeature: Reducer {
         case .loadExisting:
             return .run { send in
                 let existing = try? keychain.load(Self.anthropicKeyName)
-                await send(.existingLoaded(existing ?? nil))
+                await send(.existingLoaded(existing))
             }
 
         case let .existingLoaded(value):

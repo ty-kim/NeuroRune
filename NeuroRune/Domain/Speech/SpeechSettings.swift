@@ -58,13 +58,13 @@ nonisolated struct AzureVoice: Equatable, Sendable, Identifiable {
 
 nonisolated extension AzureVoice {
     static let presets: [AzureVoice] = [
-        AzureVoice(name: "ko-KR-SunHiNeural",    displayName: "선희 (여)",      language: "ko-KR"),
-        AzureVoice(name: "ko-KR-InJoonNeural",   displayName: "인준 (남)",      language: "ko-KR"),
-        AzureVoice(name: "ko-KR-JiMinNeural",    displayName: "지민 (여·감정)", language: "ko-KR"),
-        AzureVoice(name: "ko-KR-SeoHyeonNeural", displayName: "서현 (여)",      language: "ko-KR"),
-        AzureVoice(name: "ko-KR-SoonBokNeural",  displayName: "순복 (여·시니어)", language: "ko-KR"),
-        AzureVoice(name: "ko-KR-YuJinNeural",    displayName: "유진 (여)",      language: "ko-KR"),
-        AzureVoice(name: "en-US-JennyNeural",    displayName: "Jenny (F)",      language: "en-US"),
-        AzureVoice(name: "en-US-GuyNeural",      displayName: "Guy (M)",        language: "en-US"),
+        AzureVoice(name: "ko-KR-SunHiNeural", displayName: "선희 (여)", language: "ko-KR"),
+        AzureVoice(name: "ko-KR-InJoonNeural", displayName: "인준 (남)", language: "ko-KR"),
+        AzureVoice(name: "ko-KR-JiMinNeural", displayName: "지민 (여·감정)", language: "ko-KR"),
+        AzureVoice(name: "ko-KR-SeoHyeonNeural", displayName: "서현 (여)", language: "ko-KR"),
+        AzureVoice(name: "ko-KR-SoonBokNeural", displayName: "순복 (여·시니어)", language: "ko-KR"),
+        AzureVoice(name: "ko-KR-YuJinNeural", displayName: "유진 (여)", language: "ko-KR"),
+        AzureVoice(name: "en-US-JennyNeural", displayName: "Jenny (F)", language: "en-US"),
+        AzureVoice(name: "en-US-GuyNeural", displayName: "Guy (M)", language: "en-US"),
     ]
 }

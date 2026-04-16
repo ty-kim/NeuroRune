@@ -14,7 +14,7 @@ struct InlineErrorBanner: View {
     let title: String
     let message: String
     let icon: String
-    var primary: Action? = nil
+    var primary: Action?
     let onDismiss: () -> Void
 
     struct Action {

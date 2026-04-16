@@ -37,6 +37,7 @@ nonisolated extension LLMTool {
     /// MEMORY.md 인덱스를 보고 Claude가 필요한 파일을 직접 요청.
     static let readMemory = LLMTool(
         name: "read_memory",
+        // swiftlint:disable:next line_length
         description: "Load a memory file from the user's GitHub repository. Use this when the MEMORY.md index references a file you need to examine.",
         inputSchema: LLMTool.InputSchema(
             properties: [
@@ -57,6 +58,7 @@ nonisolated extension LLMTool {
     /// 사용자 confirm modal을 거친 후에만 commit. reject 시 tool_result에 거절 사유.
     static let writeMemory = LLMTool(
         name: "write_memory",
+        // swiftlint:disable:next line_length
         description: "Create or update a memory file in the user's GitHub repository. The user must approve via a confirmation modal before the change is committed.",
         inputSchema: LLMTool.InputSchema(
             properties: [

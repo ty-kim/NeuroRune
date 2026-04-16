@@ -73,4 +73,3 @@ struct ChatPersistenceBanner: View {
     )
     .dynamicTypeSize(.xxxLarge)
 }
-

@@ -14,8 +14,4 @@ import Foundation
 nonisolated struct STTResult: Equatable, Sendable {
     /// 전사된 텍스트.
     let text: String
-
-    init(text: String) {
-        self.text = text
-    }
 }

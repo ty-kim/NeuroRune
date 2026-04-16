@@ -1,0 +1,85 @@
+included:
+  - NeuroRune
+
+excluded:
+  - NeuroRuneTests
+  - NeuroRuneUITests
+  - .build
+  - DerivedData
+  - "**/.build"
+  - "**/Preview Content"
+
+disabled_rules:
+  - trailing_comma
+  - todo
+  - multiple_closures_with_trailing_closure
+  - large_tuple  # 도메인 3-tuple(id, name, input) 같은 내부 표현 허용
+
+opt_in_rules:
+  - empty_count
+  - empty_string
+  - explicit_init
+  - first_where
+  - last_where
+  - contains_over_first_not_nil
+  - sorted_first_last
+  - unneeded_parentheses_in_closure_argument
+  - redundant_nil_coalescing
+  - operator_usage_whitespace
+  - closure_end_indentation
+  - force_unwrapping
+
+line_length:
+  warning: 140
+  error: 200
+  ignores_urls: true
+  ignores_comments: true
+
+identifier_name:
+  min_length: 1
+  max_length:
+    warning: 60
+    error: 80
+  allowed_symbols: ["_"]
+
+type_name:
+  min_length: 3
+  max_length:
+    warning: 60
+    error: 80
+
+function_body_length:
+  warning: 200        # TCA reducer switch가 자연히 길어짐
+  error: 400
+
+type_body_length:
+  warning: 500
+  error: 800
+
+file_length:
+  warning: 800
+  error: 1200
+  ignore_comment_only_lines: true
+
+cyclomatic_complexity:
+  warning: 40         # TCA reducer switch case 수에 비례
+  error: 60
+
+function_parameter_count:
+  warning: 8          # SpeakerClient 같은 synth API가 파라미터 많음
+  error: 10
+
+nesting:
+  type_level:
+    warning: 3
+  function_level:
+    warning: 4
+
+force_unwrapping:
+  severity: warning
+
+force_try:
+  severity: error
+
+force_cast:
+  severity: warning

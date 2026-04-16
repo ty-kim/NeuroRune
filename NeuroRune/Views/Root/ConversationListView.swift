@@ -60,6 +60,15 @@ struct ConversationListView: View {
                                     systemImage: "waveform"
                                 )
                             }
+                            Divider()
+                            Button {
+                                viewStore.send(.consolidationTapped)
+                            } label: {
+                                Label(
+                                    String(localized: "consolidation.runNow"),
+                                    systemImage: "sparkles"
+                                )
+                            }
                         } label: {
                             Image(systemName: "gearshape")
                                 .font(.title3)
@@ -134,6 +143,21 @@ struct ConversationListView: View {
                         },
                         onSaved: {
                             viewStore.send(.azureCredentialsDismissed)
+                        }
+                    )
+                }
+                .sheet(
+                    isPresented: viewStore.binding(
+                        get: \.showConsolidation,
+                        send: ConversationListFeature.Action.consolidationDismissed
+                    )
+                ) {
+                    ConsolidationView(
+                        store: Store(initialState: ConsolidationFeature.State()) {
+                            ConsolidationFeature()
+                        },
+                        onDismiss: {
+                            viewStore.send(.consolidationDismissed)
                         }
                     )
                 }
