@@ -64,9 +64,24 @@ nonisolated extension ConsolidationClient {
 
 nonisolated extension ConsolidationClient: DependencyKey {
     static let liveValue = ConsolidationClient(
-        generate: { _ in
-            // Slice 3b에서 LLMClient 연결. 현재는 미구현.
-            throw ConsolidationError.llmFailed("not wired yet")
+        generate: { input in
+            @Dependency(\.llmClient) var llm
+            let (system, user) = ConsolidationPrompt.build(input)
+            let messages: [APIMessage] = [.text(role: "user", content: user)]
+            let stream = try await llm.streamMessage(
+                messages, .sonnet46, nil, system, nil
+            )
+            var buffer = ""
+            do {
+                for try await event in stream {
+                    if case let .textDelta(text) = event {
+                        buffer += text
+                    }
+                }
+            } catch {
+                throw ConsolidationError.llmFailed(error.localizedDescription)
+            }
+            return try ConsolidationClient.parseResponse(buffer)
         }
     )
 
