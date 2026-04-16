@@ -17,34 +17,34 @@ struct RateLimitBadge: View {
     let state: RateLimitState
 
     var body: some View {
-        if let display = Self.display(for: state) {
-            HStack(spacing: 8) {
-                Image(systemName: display.level == .critical ? "exclamationmark.octagon.fill" : "exclamationmark.triangle.fill")
-                    .foregroundStyle(display.level.tint)
-                Text(display.primaryText)
-                    .font(.footnote)
-                    .foregroundStyle(.primary)
-                Spacer()
-                if display.level == .critical {
-                    TimelineView(.periodic(from: .now, by: 1.0)) { context in
+        TimelineView(.periodic(from: .now, by: 1.0)) { context in
+            if let display = Self.display(for: state, at: context.date) {
+                HStack(spacing: 8) {
+                    Image(systemName: display.level == .critical ? "exclamationmark.octagon.fill" : "exclamationmark.triangle.fill")
+                        .foregroundStyle(display.level.tint)
+                    Text(display.primaryText)
+                        .font(.footnote)
+                        .foregroundStyle(.primary)
+                    Spacer()
+                    if display.level == .critical {
                         Text(Self.countdownText(to: display.quota.resetsAt, at: context.date))
                             .font(.footnote.monospacedDigit())
                             .foregroundStyle(.secondary)
                     }
                 }
+                .padding(.horizontal, 12)
+                .padding(.vertical, 8)
+                .background(display.level.background)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 8)
+                        .stroke(display.level.tint.opacity(0.35), lineWidth: 1)
+                )
+                .clipShape(RoundedRectangle(cornerRadius: 8))
+                .padding(.horizontal)
+                .padding(.vertical, 4)
+                .accessibilityElement(children: .combine)
+                .accessibilityLabel(display.accessibilityLabel)
             }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 8)
-            .background(display.level.background)
-            .overlay(
-                RoundedRectangle(cornerRadius: 8)
-                    .stroke(display.level.tint.opacity(0.35), lineWidth: 1)
-            )
-            .clipShape(RoundedRectangle(cornerRadius: 8))
-            .padding(.horizontal)
-            .padding(.vertical, 4)
-            .accessibilityElement(children: .combine)
-            .accessibilityLabel(display.accessibilityLabel)
         }
     }
 
@@ -114,6 +114,11 @@ struct RateLimitBadge: View {
     /// 가장 여유 없는 Quota 기준으로 Display를 생성한다.
     /// 동률 시 우선순위: outputTokens > tokens > inputTokens > requests (Opus 4.6 Max는 output이 가장 먼저 고갈).
     nonisolated static func display(for state: RateLimitState) -> Display? {
+        display(for: state, at: Date())
+    }
+
+    /// `now` 기준으로 display 판정. `resetsAt`이 지난 쿼터는 이미 리셋된 것으로 간주해 제외.
+    nonisolated static func display(for state: RateLimitState, at now: Date) -> Display? {
         let candidates: [(Kind, RateLimitState.Quota?)] = [
             (.outputTokens, state.outputTokens),
             (.tokens, state.tokens),
@@ -123,6 +128,8 @@ struct RateLimitBadge: View {
 
         let present: [(Kind, RateLimitState.Quota)] = candidates.compactMap { kind, quota in
             guard let quota else { return nil }
+            // resetsAt이 지난 쿼터는 서버 측에서 이미 재충전 — 다음 응답에 새 헤더가 올 때까지 표시 안 함.
+            guard quota.resetsAt > now else { return nil }
             return (kind, quota)
         }
 

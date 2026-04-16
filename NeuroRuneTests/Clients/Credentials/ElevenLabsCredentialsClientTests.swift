@@ -1,27 +1,29 @@
 //
-//  AzureCredentialsClientTests.swift
+//  ElevenLabsCredentialsClientTests.swift
 //  NeuroRuneTests
 //
 //  Created by tykim
+//
+//  ElevenLabsCredentialsClient.keychainBacked 통합 테스트.
 //
 
 import Foundation
 import Testing
 @testable import NeuroRune
 
-struct AzureCredentialsClientTests {
+struct ElevenLabsCredentialsClientTests {
 
-    private let client: AzureCredentialsClient
+    private let client: ElevenLabsCredentialsClient
 
     init() {
-        let uniqueService = "com.neurorune.tests.azure-creds.\(UUID().uuidString)"
+        let uniqueService = "com.neurorune.tests.elevenlabs-creds.\(UUID().uuidString)"
         let keychain = KeychainClient.liveBacked(service: uniqueService)
         self.client = .keychainBacked(keychain: keychain)
     }
 
     @Test("저장 후 로드 시 같은 credentials 반환")
     func saveThenLoad() throws {
-        let creds = AzureCredentials(apiKey: "azure-secret", region: "koreacentral")
+        let creds = ElevenLabsCredentials(apiKey: "sk_elevenlabs_xyz")
 
         try client.save(creds)
         let loaded = try client.load()
@@ -37,7 +39,7 @@ struct AzureCredentialsClientTests {
 
     @Test("clear 후 로드 시 nil")
     func clearRemovesCredentials() throws {
-        try client.save(AzureCredentials(apiKey: "k", region: "eastus"))
+        try client.save(ElevenLabsCredentials(apiKey: "sk_x"))
         try client.clear()
 
         #expect(try client.load() == nil)
@@ -45,9 +47,9 @@ struct AzureCredentialsClientTests {
 
     @Test("save는 기존 값을 덮어쓴다")
     func saveOverwrites() throws {
-        try client.save(AzureCredentials(apiKey: "k1", region: "eastus"))
-        try client.save(AzureCredentials(apiKey: "k2", region: "koreacentral"))
+        try client.save(ElevenLabsCredentials(apiKey: "sk_a"))
+        try client.save(ElevenLabsCredentials(apiKey: "sk_b"))
 
-        #expect(try client.load() == AzureCredentials(apiKey: "k2", region: "koreacentral"))
+        #expect(try client.load() == ElevenLabsCredentials(apiKey: "sk_b"))
     }
 }

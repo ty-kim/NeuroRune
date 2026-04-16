@@ -17,6 +17,11 @@ nonisolated extension ChatFeature {
     func reduceSTT(into state: inout State, action: Action) -> Effect<Action> {
         switch action {
         case .micTapped:
+            // 카운트다운 중이면 mic 재탭은 취소만. 새로 녹음 시작하지 않음.
+            if state.autoSendCountdown != nil {
+                state.autoSendCountdown = nil
+                return .cancel(id: CancelID.autoSend)
+            }
             @Dependency(\.audioRecorder) var recorder
             if state.isRecording {
                 // 중단 → stop → transcribe 파이프라인
@@ -78,12 +83,41 @@ nonisolated extension ChatFeature {
             } else {
                 state.inputText += " " + result.text
             }
-            return .none
+            // 자동 전송 카운트다운 시작: 2 → 1 → send. 취소는 autoSendCancelled.
+            state.autoSendCountdown = 2
+            return .run { send in
+                @Dependency(\.continuousClock) var clock
+                try await clock.sleep(for: .seconds(1))
+                await send(.autoSendTick)
+            }
+            .cancellable(id: CancelID.autoSend, cancelInFlight: true)
+
+        case .autoSendTick:
+            guard let countdown = state.autoSendCountdown else { return .none }
+            if countdown > 1 {
+                state.autoSendCountdown = countdown - 1
+                return .run { send in
+                    @Dependency(\.continuousClock) var clock
+                    try await clock.sleep(for: .seconds(1))
+                    await send(.autoSendTick)
+                }
+                .cancellable(id: CancelID.autoSend, cancelInFlight: true)
+            } else {
+                state.autoSendCountdown = nil
+                return .run { send in
+                    await send(.sendTapped)
+                }
+            }
+
+        case .autoSendCancelled:
+            state.autoSendCountdown = nil
+            return .cancel(id: CancelID.autoSend)
 
         case let .sttErrorOccurred(error):
             state.isRecording = false
             state.sttError = error
-            return .none
+            state.autoSendCountdown = nil
+            return .cancel(id: CancelID.autoSend)
 
         case .sttErrorDismissed:
             state.sttError = nil

@@ -15,6 +15,8 @@ nonisolated struct ChatFeature: Reducer {
     enum CancelID: Hashable {
         case streaming
         case speaking
+        /// STT 전사 완료 후 자동 전송 카운트다운 타이머.
+        case autoSend
     }
 
     struct State: Equatable {
@@ -49,6 +51,9 @@ nonisolated struct ChatFeature: Reducer {
         var isSpeakingQueue: Bool = false
         /// 현재 assistant 응답의 TTS 누적 문자 수.
         var speakTotalChars: Int = 0
+        /// Phase 21 — STT 전사 완료 후 자동 전송 카운트다운(2 → 1 → 발사/취소).
+        /// nil이면 카운트다운 없음. 입력창 탭 또는 mic 재탭으로 취소.
+        var autoSendCountdown: Int?
     }
 
     /// 사용자에게 보여줄 tool 호출 정보 (id로 lifecycle 추적).
@@ -123,6 +128,10 @@ nonisolated struct ChatFeature: Reducer {
         case transcribed(STTResult)
         case sttErrorOccurred(STTError)
         case sttErrorDismissed
+        /// Phase 21 — 전사 완료 후 자동 전송 타이머 tick. 2→1→sendTapped 또는 0→sendTapped.
+        case autoSendTick
+        /// 카운트다운 취소 (입력창 탭 또는 mic 재탭).
+        case autoSendCancelled
 
         // MARK: - TTS (Phase 22)
         /// assistant 버블 스피커 버튼. 해당 메시지 재생 시작 또는 중단 토글.
@@ -141,10 +150,12 @@ nonisolated struct ChatFeature: Reducer {
         // MARK: - Speech settings (Phase 22 Slice 7)
         case loadSpeechSettings
         case speechSettingsLoaded(SpeechSettings)
-        case speechVoiceSelected(String)
+        case speechVoiceSelected(voiceId: String, voiceName: String)
         case autoSpeakToggled(Bool)
-        case speechRateChanged(Double)
-        case speechPitchChanged(Double)
+        case speechStabilityChanged(Double)
+        case speechSimilarityChanged(Double)
+        case speechStyleChanged(Double)
+        case speechSpeakerBoostToggled(Bool)
         case speechSettingsTapped
         case speechSettingsDismissed
     }
@@ -161,6 +172,11 @@ nonisolated struct ChatFeature: Reducer {
         switch action {
         case let .inputChanged(text):
             state.inputText = text
+            // 카운트다운 중 입력 변경 = 사용자가 개입. 자동 전송 취소.
+            if state.autoSendCountdown != nil {
+                state.autoSendCountdown = nil
+                return .cancel(id: CancelID.autoSend)
+            }
             return .none
 
         case let .newConversationStarted(modelId):
@@ -236,7 +252,7 @@ nonisolated struct ChatFeature: Reducer {
         // MARK: - STT (ChatFeature+STT.swift로 위임)
 
         case .micTapped, .recordingStarted, .recordingStopped, .transcribed,
-             .sttErrorOccurred, .sttErrorDismissed:
+             .sttErrorOccurred, .sttErrorDismissed, .autoSendTick, .autoSendCancelled:
             return reduceSTT(into: &state, action: action)
 
         // MARK: - TTS (ChatFeature+Speak.swift로 위임)
@@ -246,7 +262,8 @@ nonisolated struct ChatFeature: Reducer {
              .speakSentenceEnqueued, .processSpeakQueue, .sentencePlaybackCompleted,
              .loadSpeechSettings, .speechSettingsLoaded,
              .speechVoiceSelected, .autoSpeakToggled,
-             .speechRateChanged, .speechPitchChanged,
+             .speechStabilityChanged, .speechSimilarityChanged,
+             .speechStyleChanged, .speechSpeakerBoostToggled,
              .speechSettingsTapped, .speechSettingsDismissed:
             return reduceSpeak(into: &state, action: action)
         }

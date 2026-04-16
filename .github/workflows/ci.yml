@@ -27,6 +27,7 @@ jobs:
     name: Build & Test
     runs-on: macos-15
     needs: lint
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
 
@@ -43,6 +44,12 @@ jobs:
           key: ${{ runner.os }}-spm-${{ hashFiles('**/Package.resolved', '**/project.pbxproj') }}
           restore-keys: |
             ${{ runner.os }}-spm-
+
+      # TCA Perception/Composable 매크로 신뢰 프롬프트 hang 방지.
+      - name: Disable macro validation prompts
+        run: |
+          defaults write com.apple.dt.Xcode IDESkipMacroFingerprintValidation -bool YES
+          defaults write com.apple.dt.Xcode IDESkipPackagePluginFingerprintValidatation -bool YES
 
       - name: Pick iPhone simulator
         id: sim

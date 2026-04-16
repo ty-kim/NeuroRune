@@ -79,6 +79,8 @@ struct ChatView: View {
                         onStop: { viewStore.send(.stopTapped) },
                         isRecording: viewStore.isRecording,
                         onMicTapped: { viewStore.send(.micTapped) },
+                        autoSendCountdown: viewStore.autoSendCountdown,
+                        onCancelCountdown: { viewStore.send(.autoSendCancelled) },
                         focus: $isInputFocused
                     )
                 }

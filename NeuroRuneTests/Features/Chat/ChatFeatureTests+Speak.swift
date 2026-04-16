@@ -42,7 +42,8 @@ extension ChatFeatureTests {
 
         let store = TestStore(initialState: state) { ChatFeature() } withDependencies: {
             applyDefaultDependencies(&$0)
-            $0.speakerClient.synthesize = { @Sendable _, _, _, _, _ in Data() }
+            $0.locale = Locale(identifier: "ko_KR")
+            $0.speakerClient.synthesize = { @Sendable _, _, _, _ in Data() }
             $0.audioPlayer.stop = { @Sendable in }
             $0.audioPlayer.play = { @Sendable _ in }
             $0.audioPlayer.isPlaying = { @Sendable in false }
@@ -63,7 +64,8 @@ extension ChatFeatureTests {
 
         let store = TestStore(initialState: state) { ChatFeature() } withDependencies: {
             applyDefaultDependencies(&$0)
-            $0.speakerClient.synthesize = { @Sendable _, _, _, _, _ in Data() }
+            $0.locale = Locale(identifier: "ko_KR")
+            $0.speakerClient.synthesize = { @Sendable _, _, _, _ in Data() }
             $0.audioPlayer.stop = { @Sendable in }
             $0.audioPlayer.play = { @Sendable _ in }
             $0.audioPlayer.isPlaying = { @Sendable in false }
@@ -148,19 +150,18 @@ extension ChatFeatureTests {
 
     @Test("loadSpeechSettings → speechSettingsLoaded 로 state 반영")
     func loadSpeechSettingsRoundtrip() async {
+        let saved = SpeechSettings(
+            voiceId: "abc", voiceName: "Rachel",
+            stability: 0.6, similarityBoost: 0.8, style: 0.1,
+            useSpeakerBoost: false, autoSpeak: true
+        )
         let store = TestStore(initialState: makeState()) { ChatFeature() } withDependencies: {
-            $0.speechSettingsClient.load = {
-                SpeechSettings(voiceName: "en-US-JennyNeural", rate: 1.2, pitch: 1.1, autoSpeak: true)
-            }
+            $0.speechSettingsClient.load = { saved }
         }
 
         await store.send(.loadSpeechSettings)
-        await store.receive(.speechSettingsLoaded(SpeechSettings(
-            voiceName: "en-US-JennyNeural", rate: 1.2, pitch: 1.1, autoSpeak: true
-        ))) {
-            $0.speechSettings = SpeechSettings(
-                voiceName: "en-US-JennyNeural", rate: 1.2, pitch: 1.1, autoSpeak: true
-            )
+        await store.receive(.speechSettingsLoaded(saved)) {
+            $0.speechSettings = saved
         }
     }
     

@@ -27,22 +27,14 @@ struct WriteApprovalModal: View {
                     changeSummary
 
                     if let existing = request.existingContent {
+                        diffBlock(old: existing, new: request.content)
+                    } else {
                         contentBlock(
-                            label: String(localized: "writeApproval.before"),
-                            content: existing,
-                            tint: Color.secondary.opacity(0.1)
+                            label: String(localized: "writeApproval.new"),
+                            content: request.content,
+                            tint: Color.green.opacity(0.1)
                         )
                     }
-
-                    contentBlock(
-                        label: request.existingContent == nil
-                            ? String(localized: "writeApproval.new")
-                            : String(localized: "writeApproval.after"),
-                        content: request.content,
-                        tint: request.existingContent == nil
-                            ? Color.green.opacity(0.1)
-                            : Color.accentColor.opacity(0.1)
-                    )
                 }
                 .padding()
             }
@@ -98,6 +90,62 @@ struct WriteApprovalModal: View {
             .padding(.vertical, 3)
             .background(tint.opacity(0.15))
             .clipShape(Capsule())
+    }
+
+    /// git diff 스타일 블록. 각 라인 prefix -/+/ 와 색상 구분.
+    private func diffBlock(old: String, new: String) -> some View {
+        let lines = LineDiff.compute(old: old, new: new)
+        return VStack(alignment: .leading, spacing: 0) {
+            Text(String(localized: "writeApproval.diff"))
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .padding(.bottom, 4)
+            VStack(alignment: .leading, spacing: 1) {
+                ForEach(Array(lines.enumerated()), id: \.offset) { _, line in
+                    diffLineView(line)
+                }
+            }
+            .padding(8)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(Color.secondary.opacity(0.06))
+            .clipShape(RoundedRectangle(cornerRadius: 8))
+        }
+    }
+
+    @ViewBuilder
+    private func diffLineView(_ line: DiffLine) -> some View {
+        switch line {
+        case let .context(text):
+            HStack(alignment: .top, spacing: 6) {
+                Text(" ").foregroundStyle(.secondary)
+                Text(text).foregroundStyle(.secondary)
+            }
+            .font(.system(.footnote, design: .monospaced))
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .textSelection(.enabled)
+
+        case let .added(text):
+            HStack(alignment: .top, spacing: 6) {
+                Text("+").foregroundStyle(.green)
+                Text(text).foregroundStyle(.primary)
+            }
+            .font(.system(.footnote, design: .monospaced))
+            .padding(.horizontal, 4)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(Color.green.opacity(0.15))
+            .textSelection(.enabled)
+
+        case let .removed(text):
+            HStack(alignment: .top, spacing: 6) {
+                Text("-").foregroundStyle(.red)
+                Text(text).foregroundStyle(.primary).strikethrough(color: .red.opacity(0.5))
+            }
+            .font(.system(.footnote, design: .monospaced))
+            .padding(.horizontal, 4)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(Color.red.opacity(0.12))
+            .textSelection(.enabled)
+        }
     }
 
     private func contentBlock(label: String, content: String, tint: Color) -> some View {

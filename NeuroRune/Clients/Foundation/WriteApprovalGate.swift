@@ -25,13 +25,23 @@ nonisolated struct WriteApprovalGate: Sendable {
 /// - 같은 id 중복 request 시 기존 continuation을 superseded로 resume
 private final nonisolated class WriteApprovalStore: @unchecked Sendable {
     private let lock = NSLock()
+    private let onRequestRegistered: @Sendable (String) -> Void
     private var continuations: [String: CheckedContinuation<WriteDecision, Never>] = [:]
     private var pendingDecisions: [String: WriteDecision] = [:]
+
+    init(onRequestRegistered: @escaping @Sendable (String) -> Void = { _ in }) {
+        self.onRequestRegistered = onRequestRegistered
+    }
 
     func request(_ id: String) async -> WriteDecision {
         await withTaskCancellationHandler {
             await withCheckedContinuation { cont in
                 lock.lock()
+                if Task.isCancelled {
+                    lock.unlock()
+                    cont.resume(returning: .reject(reason: "cancelled"))
+                    return
+                }
                 if let decision = pendingDecisions.removeValue(forKey: id) {
                     lock.unlock()
                     cont.resume(returning: decision)
@@ -42,6 +52,7 @@ private final nonisolated class WriteApprovalStore: @unchecked Sendable {
                 continuations[id] = cont
                 lock.unlock()
                 existing?.resume(returning: .reject(reason: "superseded"))
+                onRequestRegistered(id)
             }
         } onCancel: { [weak self] in
             guard let self else { return }
@@ -64,13 +75,15 @@ private final nonisolated class WriteApprovalStore: @unchecked Sendable {
 }
 
 nonisolated extension WriteApprovalGate: DependencyKey {
-    static let liveValue: WriteApprovalGate = {
-        let store = WriteApprovalStore()
+    static func live(onRequestRegistered: @escaping @Sendable (String) -> Void = { _ in }) -> WriteApprovalGate {
+        let store = WriteApprovalStore(onRequestRegistered: onRequestRegistered)
         return WriteApprovalGate(
             requestApproval: { id in await store.request(id) },
             setApproval: { id, decision in store.set(id, decision) }
         )
-    }()
+    }
+
+    static let liveValue = Self.live()
 
     static let testValue = WriteApprovalGate(
         requestApproval: unimplemented("WriteApprovalGate.requestApproval", placeholder: .reject(reason: nil)),
