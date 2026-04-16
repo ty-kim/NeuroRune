@@ -4258,39 +4258,14 @@
         }
       }
     },
-    "settings.azureKey" : {
+    "settings.elevenLabsKey" : {
       "extractionState" : "manual",
       "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Azure TTS Credentials"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Azure TTS Credentials"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Azure TTS 키"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Azure TTS Credentials"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Azure TTS Credentials"
-          }
-        }
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "ElevenLabs TTS Credentials" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "ElevenLabs TTS Credentials" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "ElevenLabs TTS 키" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "ElevenLabs TTS Credentials" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "ElevenLabs TTS Credentials" } }
       }
     },
     "settings.groqKey" : {

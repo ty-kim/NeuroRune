@@ -45,10 +45,10 @@ struct ConversationListView: View {
                                 )
                             }
                             Button {
-                                viewStore.send(.azureCredentialsTapped)
+                                viewStore.send(.elevenLabsCredentialsTapped)
                             } label: {
                                 Label(
-                                    String(localized: "settings.azureKey"),
+                                    String(localized: "settings.elevenLabsKey"),
                                     systemImage: "speaker.wave.2"
                                 )
                             }
@@ -133,16 +133,16 @@ struct ConversationListView: View {
                 }
                 .sheet(
                     isPresented: viewStore.binding(
-                        get: \.showAzureCredentials,
-                        send: ConversationListFeature.Action.azureCredentialsDismissed
+                        get: \.showElevenLabsCredentials,
+                        send: ConversationListFeature.Action.elevenLabsCredentialsDismissed
                     )
                 ) {
-                    AzureCredentialsView(
-                        store: Store(initialState: AzureCredentialsFeature.State()) {
-                            AzureCredentialsFeature()
+                    ElevenLabsCredentialsView(
+                        store: Store(initialState: ElevenLabsCredentialsFeature.State()) {
+                            ElevenLabsCredentialsFeature()
                         },
                         onSaved: {
-                            viewStore.send(.azureCredentialsDismissed)
+                            viewStore.send(.elevenLabsCredentialsDismissed)
                         }
                     )
                 }
