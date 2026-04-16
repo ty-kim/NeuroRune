@@ -18,6 +18,11 @@ nonisolated struct LLMModel: Equatable, Sendable, Identifiable {
         self.supportsEffort = supportsEffort
     }
 
+    static let opus47 = LLMModel(
+        id: "claude-opus-4-7",
+        displayName: "Claude Opus 4.7",
+        supportsEffort: true
+    )
     static let opus46 = LLMModel(
         id: "claude-opus-4-6",
         displayName: "Claude Opus 4.6",
@@ -34,7 +39,7 @@ nonisolated struct LLMModel: Equatable, Sendable, Identifiable {
         supportsEffort: false
     )
 
-    static let allSupported: [LLMModel] = [.opus46, .sonnet46, .haiku45]
+    static let allSupported: [LLMModel] = [.opus47, .opus46, .sonnet46, .haiku45]
 
     static func resolve(id: String) -> LLMModel {
         allSupported.first { $0.id == id } ?? LLMModel(id: id, displayName: id)
