@@ -10,7 +10,7 @@
 import Foundation
 
 nonisolated enum SpeechError: Error, Equatable, Sendable {
-    /// 401 — Azure API 키 불일치 또는 만료.
+    /// 401 — API 키 불일치 또는 만료.
     case unauthorized
     /// 429 — 쿼터 초과.
     case rateLimited

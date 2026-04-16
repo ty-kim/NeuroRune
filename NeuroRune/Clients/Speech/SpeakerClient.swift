@@ -4,9 +4,7 @@
 //
 //  Created by tykim
 //
-//  Phase 22 — Text-to-Speech 변환.
-//  텍스트·voice·언어·속도·피치를 받아 MP3 바이너리 반환.
-//  liveValue는 Azure Neural TTS(audio-16khz-32kbitrate-mono-mp3) 사용.
+//  ElevenLabs Text-to-Speech 변환. 텍스트·voice·voice_settings를 받아 MP3 Data 반환.
 //
 
 import Foundation
@@ -26,110 +24,9 @@ nonisolated struct SpeakerClient: Sendable {
     ) async throws -> Data
 }
 
-// MARK: - Azure Neural 구현 (Slice 9에서 제거 예정)
+// MARK: - ElevenLabs
 
 nonisolated extension SpeakerClient {
-
-    /// Azure 레거시. Slice 6에서 synthesize closure는 ElevenLabs 전용으로 전환.
-    /// Azure 관련 request/SSML 빌더는 유지(테스트용), 호출 경로는 제거 대기.
-    static func azureNeural(session: URLSession, credentials: AzureCredentials) -> SpeakerClient {
-        SpeakerClient(
-            synthesize: { _, _, _, _ in
-                throw SpeechError.network("Azure deprecated; use ElevenLabs")
-            }
-        )
-    }
-
-    /// Azure region 검증: 소문자/숫자/하이픈만. URL 조작 문자(점, 슬래시, @ 등) 차단.
-    static func isValidRegion(_ region: String) -> Bool {
-        guard !region.isEmpty else { return false }
-        return region.allSatisfy { c in
-            c.isLowercase && c.isLetter
-                || c.isNumber
-                || c == "-"
-        }
-    }
-
-    static func buildAzureRequest(
-        text: String,
-        voice: String,
-        language: String,
-        rate: Double,
-        pitch: Double,
-        credentials: AzureCredentials
-    ) throws -> URLRequest {
-        let region = credentials.region.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard isValidRegion(region) else {
-            throw SpeechError.network("invalid Azure region format")
-        }
-
-        var components = URLComponents()
-        components.scheme = "https"
-        components.host = "\(region).tts.speech.microsoft.com"
-        components.path = "/cognitiveservices/v1"
-        guard let url = components.url else {
-            throw SpeechError.network("invalid Azure endpoint URL")
-        }
-
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
-        request.setValue(credentials.apiKey, forHTTPHeaderField: "Ocp-Apim-Subscription-Key")
-        request.setValue("application/ssml+xml", forHTTPHeaderField: "Content-Type")
-        request.setValue("audio-16khz-32kbitrate-mono-mp3", forHTTPHeaderField: "X-Microsoft-OutputFormat")
-        request.setValue("NeuroRune", forHTTPHeaderField: "User-Agent")
-        request.httpBody = buildSSML(
-            text: text,
-            voice: voice,
-            language: language,
-            rate: rate,
-            pitch: pitch
-        ).data(using: .utf8)
-        return request
-    }
-
-    /// SSML 빌더. text/voice/language는 XML 이스케이프.
-    static func buildSSML(
-        text: String,
-        voice: String,
-        language: String,
-        rate: Double,
-        pitch: Double
-    ) -> String {
-        let pitchPercent = Int((pitch - 1.0) * 100)
-        let pitchStr = pitchPercent >= 0 ? "+\(pitchPercent)%" : "\(pitchPercent)%"
-        let rateStr = String(format: "%.2f", rate)
-        // swiftlint:disable:next line_length
-        return "<speak version=\"1.0\" xml:lang=\"\(xmlEscape(language))\"><voice name=\"\(xmlEscape(voice))\"><prosody rate=\"\(rateStr)\" pitch=\"\(pitchStr)\">\(xmlEscape(text))</prosody></voice></speak>"
-    }
-
-    /// XML 특수문자 이스케이프.
-    static func xmlEscape(_ s: String) -> String {
-        s
-            .replacingOccurrences(of: "&", with: "&amp;")
-            .replacingOccurrences(of: "<", with: "&lt;")
-            .replacingOccurrences(of: ">", with: "&gt;")
-            .replacingOccurrences(of: "\"", with: "&quot;")
-            .replacingOccurrences(of: "'", with: "&apos;")
-    }
-
-    static func handle(status: Int, body: Data) throws -> Data {
-        switch status {
-        case 200..<300:
-            guard !body.isEmpty else {
-                throw SpeechError.decoding("empty audio body")
-            }
-            return body
-        case 401:
-            throw SpeechError.unauthorized
-        case 429:
-            throw SpeechError.rateLimited
-        default:
-            let message = String(data: body, encoding: .utf8) ?? "Azure request failed"
-            throw SpeechError.server(status: status, message: message)
-        }
-    }
-
-    // MARK: - ElevenLabs
 
     static let elevenLabsOutputFormat = "mp3_44100_128"
 

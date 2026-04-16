@@ -4,7 +4,7 @@
 //
 //  Created by tykim
 //
-//  ElevenLabs TTS 자격 증명 입력/저장. AzureCredentialsFeature 패턴 + region 제거.
+//  ElevenLabs TTS 자격 증명 입력/저장. 단일 apiKey 필드.
 //
 
 import Foundation

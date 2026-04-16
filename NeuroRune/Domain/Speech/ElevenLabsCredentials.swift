@@ -4,7 +4,7 @@
 //
 //  Created by tykim
 //
-//  ElevenLabs TTS BYOK. Azure와 달리 region이 없어서 apiKey 하나만.
+//  ElevenLabs TTS BYOK. region 없고 apiKey 하나만.
 //
 
 import Foundation

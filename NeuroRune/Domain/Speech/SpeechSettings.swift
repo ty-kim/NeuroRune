@@ -4,7 +4,7 @@
 //
 //  Created by tykim
 //
-//  ElevenLabs TTS 사용자 설정. Azure rate/pitch에서 voice_settings로 교체.
+//  ElevenLabs TTS 사용자 설정. voice_id + voice_settings(stability/similarity/style/speakerBoost) + autoSpeak.
 //
 
 import Foundation
