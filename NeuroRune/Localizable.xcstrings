@@ -4740,6 +4740,16 @@
         }
       }
     },
+    "speech.error.voiceUnavailable" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "This voice isn't available on your current plan." } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "このボイスは現在のプランで利用できません。" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "이 음성은 현재 플랜에서 사용할 수 없습니다." } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "当前套餐无法使用此语音。" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "目前方案無法使用此語音。" } }
+      }
+    },
     "speech.error.unauthorized" : {
       "extractionState" : "manual",
       "localizations" : {

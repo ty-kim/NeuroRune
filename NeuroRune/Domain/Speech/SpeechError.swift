@@ -26,6 +26,8 @@ nonisolated enum SpeechError: Error, Equatable, Sendable {
     case cancelled
     /// 텍스트가 TTS 예산(SpeechBudget.maxTotalCharsPerResponse)을 초과.
     case tooLong
+    /// voice_id에 접근 불가 (플랜 다운그레이드로 PVC 권한 없음 등).
+    case voiceUnavailable
 }
 
 extension SpeechError {
@@ -39,13 +41,14 @@ extension SpeechError {
         case .playbackFailed:  return "speech.error.playback"
         case .cancelled:       return "speech.error.cancelled"
         case .tooLong:         return "speech.error.tooLong"
+        case .voiceUnavailable: return "speech.error.voiceUnavailable"
         }
     }
 
     var isRetryable: Bool {
         switch self {
-        case .cancelled, .tooLong: return false
-        default:                   return true
+        case .cancelled, .tooLong, .voiceUnavailable: return false
+        default:                                      return true
         }
     }
 }
