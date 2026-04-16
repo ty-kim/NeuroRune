@@ -68,10 +68,10 @@ struct ChatInputBar: View {
                 }
                 .accessibilityLabel(String(localized: "a11y.chat.stopButton"))
             } else if let countdown = autoSendCountdown {
-                // 카운트다운 중: 숫자 표시, 탭 시 취소.
+                // 카운트다운 중: 숫자 표시, 탭 시 즉시 전송 (reducer가 타이머 취소).
                 Button(action: {
                     UIImpactFeedbackGenerator(style: .medium).impactOccurred()
-                    onCancelCountdown?()
+                    onSend()
                 }) {
                     ZStack {
                         Circle()

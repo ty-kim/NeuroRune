@@ -51,31 +51,31 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Auto-send countdown. Tap to cancel."
+            "value" : "Auto-send countdown. Tap to send now."
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "自動送信カウントダウン。タップで取消。"
+            "value" : "自動送信カウントダウン。タップで今すぐ送信。"
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "자동 전송 카운트다운. 탭하여 취소."
+            "value" : "자동 전송 카운트다운. 탭하여 즉시 전송."
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "自动发送倒计时。点击取消。"
+            "value" : "自动发送倒计时。点击立即发送。"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "自動傳送倒數。點擊取消。"
+            "value" : "自動傳送倒數。點擊立即傳送。"
           }
         }
       }
