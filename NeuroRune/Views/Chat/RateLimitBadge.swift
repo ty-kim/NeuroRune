@@ -113,7 +113,7 @@ struct RateLimitBadge: View {
 
     /// 가장 여유 없는 Quota 기준으로 Display를 생성한다.
     /// 동률 시 우선순위: outputTokens > tokens > inputTokens > requests (Opus 4.6 Max는 output이 가장 먼저 고갈).
-    static func display(for state: RateLimitState) -> Display? {
+    nonisolated static func display(for state: RateLimitState) -> Display? {
         let candidates: [(Kind, RateLimitState.Quota?)] = [
             (.outputTokens, state.outputTokens),
             (.tokens, state.tokens),
@@ -141,7 +141,7 @@ struct RateLimitBadge: View {
     }
 
     /// 현재 시각 기준 resetsAt까지 남은 시간을 "mm:ss" 또는 "HH:mm:ss"로 표현.
-    static func countdownText(to resetsAt: Date, at now: Date) -> String {
+    nonisolated static func countdownText(to resetsAt: Date, at now: Date) -> String {
         let remaining = max(0, Int(resetsAt.timeIntervalSince(now).rounded()))
         let hours = remaining / 3600
         let minutes = (remaining % 3600) / 60
