@@ -5469,6 +5469,16 @@
         }
       }
     },
+    "writeApproval.diff" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Diff" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "差分" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "변경 내용" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "差异" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "差異" } }
+      }
+    },
     "writeApproval.before" : {
       "extractionState" : "manual",
       "localizations" : {
