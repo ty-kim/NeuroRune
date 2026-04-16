@@ -64,4 +64,12 @@ nonisolated extension SpeechSettings {
         nonisolated static let useSpeakerBoost = "tts.useSpeakerBoost"
         nonisolated static let autoSpeak = "tts.autoSpeak"
     }
+
+    /// Azure 기반 이전 키 잔재 제거. 앱 시작 시 1회 호출.
+    /// 새 스키마(voice_settings)로 전환하면서 tts.voice/tts.rate/tts.pitch는 무의미.
+    static func removeLegacyDefaults(from defaults: UserDefaults) {
+        for key in ["tts.voice", "tts.rate", "tts.pitch"] {
+            defaults.removeObject(forKey: key)
+        }
+    }
 }
