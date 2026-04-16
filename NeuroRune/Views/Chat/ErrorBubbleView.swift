@@ -72,7 +72,7 @@ struct ErrorBubbleView: View {
         .accessibilityElement(children: .contain)
     }
 
-    static func formatCountdown(_ seconds: Int) -> String {
+    nonisolated static func formatCountdown(_ seconds: Int) -> String {
         let minutes = seconds / 60
         let s = seconds % 60
         if minutes > 0 {
