@@ -142,13 +142,37 @@ struct RateLimitBadgeTests {
         #expect(RateLimitBadge.countdownText(to: now, at: now) == "00:00")
     }
 
+    // MARK: - resetsAt 경과 시 숨김
+
+    @Test("resetsAt이 지난 쿼터는 display 대상에서 제외 — 배지 숨김")
+    func 리셋_시각_지나면_숨김() {
+        let past = Date(timeIntervalSince1970: 1_000)
+        let now = Date(timeIntervalSince1970: 2_000)
+        let state = RateLimitState(
+            tokens: RateLimitState.Quota(limit: 1000, remaining: 10, resetsAt: past)  // 1%
+        )
+        #expect(RateLimitBadge.display(for: state, at: now) == nil)
+    }
+
+    @Test("resetsAt이 아직 안 지난 쿼터는 정상 표시")
+    func 리셋_시각_남으면_표시() {
+        let future = Date(timeIntervalSince1970: 3_000)
+        let now = Date(timeIntervalSince1970: 2_000)
+        let state = RateLimitState(
+            tokens: RateLimitState.Quota(limit: 1000, remaining: 10, resetsAt: future)
+        )
+        let display = RateLimitBadge.display(for: state, at: now)
+        #expect(display?.level == .critical)
+    }
+
     // MARK: - Helper
 
     private func quota(limit: Int, remaining: Int) -> RateLimitState.Quota {
+        // 1시간 뒤 리셋 → display(for:)의 기본 Date() 기준에서 항상 "아직 안 지남".
         RateLimitState.Quota(
             limit: limit,
             remaining: remaining,
-            resetsAt: Date(timeIntervalSince1970: 1_700_000_000)
+            resetsAt: Date().addingTimeInterval(3600)
         )
     }
 }
