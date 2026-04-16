@@ -61,6 +61,7 @@ jobs:
             -scheme NeuroRune \
             -destination "platform=iOS Simulator,name=${{ steps.sim.outputs.device }}" \
             -only-testing:NeuroRuneTests \
+            -skipMacroValidation \
             test \
             | xcbeautify --renderer github-actions
         env:
