@@ -99,6 +99,16 @@
         }
       }
     },
+    "a11y.chat.autoSendCountdown" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Auto-send countdown. Tap to cancel." } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "自動送信カウントダウン。タップで取消。" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "자동 전송 카운트다운. 탭하여 취소." } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "自动发送倒计时。点击取消。" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "自動傳送倒數。點擊取消。" } }
+      }
+    },
     "a11y.chat.sendButton" : {
       "localizations" : {
         "en" : {

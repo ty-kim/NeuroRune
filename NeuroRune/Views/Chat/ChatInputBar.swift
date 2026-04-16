@@ -16,6 +16,11 @@ struct ChatInputBar: View {
     /// Phase 21 — 마이크 버튼 상태·토글 핸들러. nil이면 마이크 버튼 숨김.
     var isRecording: Bool = false
     var onMicTapped: (() -> Void)?
+    /// Phase 21 — STT 전사 후 자동 전송 카운트다운(2 → 1 → send).
+    /// nil이 아니면 Send 버튼 자리에 숫자 표시 + 탭 시 취소.
+    var autoSendCountdown: Int?
+    /// 카운트다운 취소 핸들러(Send 자리 탭 or TextField 포커스).
+    var onCancelCountdown: (() -> Void)?
     var focus: FocusState<Bool>.Binding
 
     var body: some View {
@@ -28,6 +33,12 @@ struct ChatInputBar: View {
                     onSend()
                 }
                 .focused(focus)
+                .onChange(of: focus.wrappedValue) { _, focused in
+                    // 입력창 탭(포커스 진입) = 카운트다운 취소.
+                    if focused, autoSendCountdown != nil {
+                        onCancelCountdown?()
+                    }
+                }
 
             if let onMicTapped, !isStreaming {
                 Button(action: {
@@ -56,6 +67,24 @@ struct ChatInputBar: View {
                         .foregroundStyle(.red)
                 }
                 .accessibilityLabel(String(localized: "a11y.chat.stopButton"))
+            } else if let countdown = autoSendCountdown {
+                // 카운트다운 중: 숫자 표시, 탭 시 취소.
+                Button(action: {
+                    UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+                    onCancelCountdown?()
+                }) {
+                    ZStack {
+                        Circle()
+                            .fill(Color.accentColor)
+                            .frame(width: 28, height: 28)
+                        Text("\(countdown)")
+                            .font(.callout.bold())
+                            .foregroundStyle(.white)
+                            .monospacedDigit()
+                    }
+                }
+                .accessibilityLabel(String(localized: "a11y.chat.autoSendCountdown"))
+                .accessibilityValue("\(countdown)")
             } else {
                 Button(action: {
                     UIImpactFeedbackGenerator(style: .light).impactOccurred()

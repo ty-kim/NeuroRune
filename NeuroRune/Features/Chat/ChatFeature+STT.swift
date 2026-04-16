@@ -17,6 +17,11 @@ nonisolated extension ChatFeature {
     func reduceSTT(into state: inout State, action: Action) -> Effect<Action> {
         switch action {
         case .micTapped:
+            // 카운트다운 중이면 mic 재탭은 취소만. 새로 녹음 시작하지 않음.
+            if state.autoSendCountdown != nil {
+                state.autoSendCountdown = nil
+                return .cancel(id: CancelID.autoSend)
+            }
             @Dependency(\.audioRecorder) var recorder
             if state.isRecording {
                 // 중단 → stop → transcribe 파이프라인

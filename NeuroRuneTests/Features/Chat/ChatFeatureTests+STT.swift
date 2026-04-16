@@ -300,4 +300,38 @@ extension ChatFeatureTests {
         }
         // sendTapped 수신 안 함: 타이머가 취소됐음
     }
+
+    @Test("카운트다운 중 micTapped → 카운트다운 취소, 녹음 시작 X")
+    func micTappedDuringCountdownCancels() async {
+        var state = makeState()
+        state.autoSendCountdown = 2
+
+        let store = TestStore(initialState: state) { ChatFeature() } withDependencies: {
+            $0.continuousClock = TestClock()
+            // audioRecorder 미주입. 녹음 시작 경로면 unimplemented crash.
+        }
+        store.exhaustivity = .off
+
+        await store.send(.micTapped) {
+            $0.autoSendCountdown = nil
+        }
+        // recordingStarted 수신 안 함
+    }
+
+    @Test("카운트다운 중 inputChanged → 카운트다운 취소")
+    func inputChangedDuringCountdownCancels() async {
+        var state = makeState()
+        state.inputText = "안녕"
+        state.autoSendCountdown = 2
+
+        let store = TestStore(initialState: state) { ChatFeature() } withDependencies: {
+            $0.continuousClock = TestClock()
+        }
+        store.exhaustivity = .off
+
+        await store.send(.inputChanged("안녕하")) {
+            $0.inputText = "안녕하"
+            $0.autoSendCountdown = nil
+        }
+    }
 }

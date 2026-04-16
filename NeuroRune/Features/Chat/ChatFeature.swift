@@ -170,6 +170,11 @@ nonisolated struct ChatFeature: Reducer {
         switch action {
         case let .inputChanged(text):
             state.inputText = text
+            // 카운트다운 중 입력 변경 = 사용자가 개입. 자동 전송 취소.
+            if state.autoSendCountdown != nil {
+                state.autoSendCountdown = nil
+                return .cancel(id: CancelID.autoSend)
+            }
             return .none
 
         case let .newConversationStarted(modelId):
