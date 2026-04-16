@@ -4163,175 +4163,85 @@
         }
       }
     },
-    "settings.tts.pitch" : {
+    "settings.tts.stability" : {
       "extractionState" : "manual",
       "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Pitch"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Pitch"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "피치"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Pitch"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Pitch"
-          }
-        }
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Stability" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "安定性" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "안정성" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "稳定性" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "穩定性" } }
       }
     },
-    "settings.tts.pitch.footer" : {
+    "settings.tts.stability.footer" : {
       "extractionState" : "manual",
       "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "-50% (low) to +50% (high). Default 0."
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "-50% (low) to +50% (high). Default 0."
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "-50% (낮음) ~ +50% (높음). 기본 0."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "-50% (low) to +50% (high). Default 0."
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "-50% (low) to +50% (high). Default 0."
-          }
-        }
-      }
-    },
-    "settings.tts.rate" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Rate"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Rate"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "속도"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Rate"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Rate"
-          }
-        }
-      }
-    },
-    "settings.tts.rate.footer" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "0.5x (slow) to 1.5x (fast). Default 1.0."
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "0.5x (slow) to 1.5x (fast). Default 1.0."
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "0.5배(느림) ~ 1.5배(빠름). 기본 1.0."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "0.5x (slow) to 1.5x (fast). Default 1.0."
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "0.5x (slow) to 1.5x (fast). Default 1.0."
-          }
-        }
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "0=expressive variation, 1=consistent. Default 0.5." } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "0=表現豊か、1=一貫性。デフォルト 0.5。" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "0=다양한 표현, 1=일관성. 기본 0.5." } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "0=表达多样，1=一致性。默认 0.5。" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "0=表達多樣，1=一致性。預設 0.5。" } }
       }
     },
     "settings.tts.similarity" : {
-
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Similarity" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "類似度" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "유사도" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "相似度" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "相似度" } }
+      }
     },
     "settings.tts.similarity.footer" : {
-
-    },
-    "settings.tts.speakerBoost" : {
-      "comment" : "A toggle label for enabling or disabling the speaker boost feature in the text-to-speech settings.",
-      "isCommentAutoGenerated" : true
-    },
-    "settings.tts.speakerBoost.footer" : {
-      "comment" : "A footer text displayed below the \"Speaker Boost\" toggle in the speech settings view.",
-      "isCommentAutoGenerated" : true
-    },
-    "settings.tts.stability" : {
-      "comment" : "A setting related to the stability of the synthesized speech.",
-      "isCommentAutoGenerated" : true
-    },
-    "settings.tts.stability.footer" : {
-      "comment" : "A footer explaining the effect of changing the TTS stability setting.",
-      "isCommentAutoGenerated" : true
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Higher = closer to the original voice. Default 0.75." } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "高いほど元の音声に近い。デフォルト 0.75。" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "높을수록 원본 음성에 가까움. 기본 0.75." } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "越高越接近原始声音。默认 0.75。" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "越高越接近原始聲音。預設 0.75。" } }
+      }
     },
     "settings.tts.style" : {
-      "comment" : "A label for the \"Style\" slider in the TTS settings.",
-      "isCommentAutoGenerated" : true
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Style" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "スタイル" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "스타일" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "风格" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "風格" } }
+      }
     },
     "settings.tts.style.footer" : {
-      "comment" : "Footer text under the \"Style\" slider in the TTS settings.",
-      "isCommentAutoGenerated" : true
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Higher = more expressive but slower. Default 0." } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "高いほど表現豊かだが遅い。デフォルト 0。" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "높을수록 표현 강해지지만 느려짐. 기본 0." } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "越高越有表现力但更慢。默认 0。" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "越高越有表現力但更慢。預設 0。" } }
+      }
+    },
+    "settings.tts.speakerBoost" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Speaker boost" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "スピーカーブースト" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "스피커 부스트" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "扬声器增强" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "揚聲器增強" } }
+      }
+    },
+    "settings.tts.speakerBoost.footer" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Improves clarity of the speaker's voice." } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "話者の声を明瞭にします。" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "화자 음성 명료도를 향상시킴." } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "提升说话者声音的清晰度。" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "提升說話者聲音的清晰度。" } }
+      }
     },
     "settings.tts.title" : {
       "extractionState" : "manual",
@@ -4404,16 +4314,34 @@
       }
     },
     "settings.tts.voice.empty" : {
-      "comment" : "A message displayed when there are no voices available to choose from in the speech settings.",
-      "isCommentAutoGenerated" : true
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "No voices available." } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "利用できるボイスがありません。" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "사용 가능한 음성이 없습니다." } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "没有可用的语音。" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "沒有可用的語音。" } }
+      }
     },
     "settings.tts.voice.loading" : {
-      "comment" : "A message displayed while loading the list of available voices for text-to-speech.",
-      "isCommentAutoGenerated" : true
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Loading voices…" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "ボイスを読み込み中…" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "음성 목록 로드 중…" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "正在加载语音…" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "正在載入語音…" } }
+      }
     },
     "settings.tts.voice.retry" : {
-      "comment" : "A button label that retries loading voices.",
-      "isCommentAutoGenerated" : true
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Retry" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "再試行" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "다시 시도" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "重试" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "重試" } }
+      }
     },
     "sk-ant-..." : {
       "comment" : "A placeholder text for an Anthropic API key.",
