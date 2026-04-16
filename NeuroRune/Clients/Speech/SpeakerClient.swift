@@ -123,9 +123,8 @@ nonisolated extension SpeakerClient {
         let pitchPercent = Int((pitch - 1.0) * 100)
         let pitchStr = pitchPercent >= 0 ? "+\(pitchPercent)%" : "\(pitchPercent)%"
         let rateStr = String(format: "%.2f", rate)
-        return """
-        <speak version="1.0" xml:lang="\(xmlEscape(language))"><voice name="\(xmlEscape(voice))"><prosody rate="\(rateStr)" pitch="\(pitchStr)">\(xmlEscape(text))</prosody></voice></speak>
-        """
+        // swiftlint:disable:next line_length
+        return "<speak version=\"1.0\" xml:lang=\"\(xmlEscape(language))\"><voice name=\"\(xmlEscape(voice))\"><prosody rate=\"\(rateStr)\" pitch=\"\(pitchStr)\">\(xmlEscape(text))</prosody></voice></speak>"
     }
 
     /// XML 특수문자 이스케이프.

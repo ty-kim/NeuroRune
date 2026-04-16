@@ -116,9 +116,9 @@ struct RateLimitBadge: View {
     static func display(for state: RateLimitState) -> Display? {
         let candidates: [(Kind, RateLimitState.Quota?)] = [
             (.outputTokens, state.outputTokens),
-            (.tokens,       state.tokens),
-            (.inputTokens,  state.inputTokens),
-            (.requests,     state.requests)
+            (.tokens, state.tokens),
+            (.inputTokens, state.inputTokens),
+            (.requests, state.requests)
         ]
 
         let present: [(Kind, RateLimitState.Quota)] = candidates.compactMap { kind, quota in

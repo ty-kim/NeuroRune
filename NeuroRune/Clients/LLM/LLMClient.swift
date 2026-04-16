@@ -10,6 +10,7 @@ import Dependencies
 import os
 
 nonisolated struct LLMClient: Sendable {
+    // swiftlint:disable:next line_length
     var streamMessage: @Sendable ([APIMessage], LLMModel, EffortLevel?, String?, [LLMTool]?) async throws -> AsyncThrowingStream<LLMStreamEvent, Error>
 }
 
@@ -18,7 +19,12 @@ nonisolated extension LLMClient: DependencyKey {
         LLMClient(
             streamMessage: { apiMessages, model, effort, system, tools in
                 let apiKey = try loadAnthropicAPIKey()
-                Logger.llm.info("stream, model: \(model.id, privacy: .public), messages: \(apiMessages.count), effort: \(effort?.rawValue ?? "default", privacy: .public), system: \(system != nil ? "yes(\(system!.count))" : "no", privacy: .public), tools: \(tools?.count ?? 0)")
+                let systemDesc = system.map { "yes(\($0.count))" } ?? "no"
+                let effortDesc = effort?.rawValue ?? "default"
+                Logger.llm.info(
+                    // swiftlint:disable:next line_length
+                    "stream, model: \(model.id, privacy: .public), messages: \(apiMessages.count), effort: \(effortDesc, privacy: .public), system: \(systemDesc, privacy: .public), tools: \(tools?.count ?? 0)"
+                )
                 let client = LLMClient.anthropic(session: .shared, apiKey: apiKey)
                 return try await client.streamMessage(apiMessages, model, effort, system, tools)
             }

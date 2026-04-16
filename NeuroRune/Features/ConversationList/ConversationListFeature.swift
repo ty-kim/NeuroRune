@@ -15,7 +15,7 @@ nonisolated struct ConversationListFeature: Reducer {
         var isLoading: Bool = true
         var selectedConversation: Conversation?
         var showModelPicker: Bool = false
-        var selectedEffort: EffortLevel? = nil
+        var selectedEffort: EffortLevel?
         var listError: String?
         var showMemoryList: Bool = false
         var showGroqCredentials: Bool = false

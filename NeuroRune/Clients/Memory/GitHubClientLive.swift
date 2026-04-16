@@ -106,6 +106,7 @@ private nonisolated func makeRequest(
         components.queryItems = [URLQueryItem(name: "ref", value: config.branch)]
     }
 
+    // swiftlint:disable:next force_unwrapping
     var request = URLRequest(url: components.url!)
     request.httpMethod = method
     request.setValue("Bearer \(pat)", forHTTPHeaderField: "Authorization")

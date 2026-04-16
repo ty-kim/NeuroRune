@@ -16,8 +16,8 @@ struct ChatMessageList: View {
     var isInputFocused: Bool = false
     var onTap: () -> Void = {}
     /// Phase 22 — 현재 TTS 재생 중인 메시지 id. assistant 버블에 재생/중지 버튼 노출.
-    var speakingMessageID: UUID? = nil
-    var onSpeakTapped: ((UUID) -> Void)? = nil
+    var speakingMessageID: UUID?
+    var onSpeakTapped: ((UUID) -> Void)?
 
     var body: some View {
         ScrollViewReader { proxy in

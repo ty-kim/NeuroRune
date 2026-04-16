@@ -13,7 +13,12 @@ nonisolated extension LLMClient {
     static func anthropic(session: URLSession, apiKey: String) -> LLMClient {
         LLMClient(
             streamMessage: { apiMessages, model, effort, system, tools in
-                Logger.network.info("stream request, model: \(model.id, privacy: .public), messages: \(apiMessages.count), effort: \(effort?.rawValue ?? "default", privacy: .public), system: \(system != nil ? "yes(\(system!.count))" : "no", privacy: .public), tools: \(tools?.count ?? 0)")
+                let systemDesc = system.map { "yes(\($0.count))" } ?? "no"
+                let effortDesc = effort?.rawValue ?? "default"
+                Logger.network.info(
+                    // swiftlint:disable:next line_length
+                    "stream request, model: \(model.id, privacy: .public), messages: \(apiMessages.count), effort: \(effortDesc, privacy: .public), system: \(systemDesc, privacy: .public), tools: \(tools?.count ?? 0)"
+                )
 
                 let request: URLRequest
                 do {

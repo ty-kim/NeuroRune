@@ -123,7 +123,7 @@ nonisolated struct GitHubCredentialsFeature: Reducer {
             let role = state.role
             return .run { send in
                 let creds = try? client.load(role)
-                await send(.existingLoaded(creds ?? nil))
+                await send(.existingLoaded(creds))
             }
 
         case let .existingLoaded(creds):

@@ -22,21 +22,21 @@ nonisolated struct ChatFeature: Reducer {
         var inputText: String
         var isStreaming: Bool
         var error: LLMError?
-        var persistenceError: String? = nil
+        var persistenceError: String?
         /// 진행 중인 tool 호출. 칩으로 표시되고 완료 시 제거.
         var activeToolCalls: [ToolCallStatus] = []
         /// Claude가 write_memory 요청. nil이 아니면 confirm modal 열림.
-        var pendingWrite: WriteRequest? = nil
+        var pendingWrite: WriteRequest?
         /// 가장 최근 응답에서 파싱된 Anthropic rate limit 쿼터. nil이면 아직 정보 없음.
-        var rateLimit: RateLimitState? = nil
+        var rateLimit: RateLimitState?
         /// Phase 21 — 마이크 녹음 중 여부.
         var isRecording: Bool = false
         /// STT 에러. LLMError와 별개 타입이라 별도 슬롯에 보관.
-        var sttError: STTError? = nil
+        var sttError: STTError?
         /// Phase 22 — 현재 재생 중인 메시지 id. nil이면 재생 중 아님.
-        var speakingMessageID: UUID? = nil
+        var speakingMessageID: UUID?
         /// TTS 에러.
-        var speakError: SpeechError? = nil
+        var speakError: SpeechError?
         /// 사용자 TTS 설정 (voice·rate·pitch·autoSpeak). 첫 진입 시 client.load()로 동기화.
         var speechSettings: SpeechSettings = SpeechSettings()
         /// 상세 설정 sheet 노출 여부.

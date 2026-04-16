@@ -1,5 +1,7 @@
 # NeuroRune
 
+[![CI](https://github.com/ty-kim/NeuroRune/actions/workflows/ci.yml/badge.svg)](https://github.com/ty-kim/NeuroRune/actions/workflows/ci.yml)
+
 iOS client for Claude. Sessions die, memory carries on.
 
 ## Overview

@@ -69,7 +69,7 @@ nonisolated extension GitHubCredentialsClient {
 nonisolated extension GitHubCredentialsClient {
     /// 로드 실패(Keychain 에러 등)와 미설정을 모두 nil로 통합.
     func loadIgnoringError(role: CredentialsRole = .global) -> GitHubCredentials? {
-        (try? load(role)) ?? nil
+        (try? load(role))
     }
 }
 

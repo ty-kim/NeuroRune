@@ -12,10 +12,10 @@ struct ChatInputBar: View {
     let isStreaming: Bool
     let onSend: () -> Void
     /// 스트리밍 중 [Stop] 버튼 탭 — Phase 20에서 도입. nil 넘기면 Stop 비활성.
-    var onStop: (() -> Void)? = nil
+    var onStop: (() -> Void)?
     /// Phase 21 — 마이크 버튼 상태·토글 핸들러. nil이면 마이크 버튼 숨김.
     var isRecording: Bool = false
-    var onMicTapped: (() -> Void)? = nil
+    var onMicTapped: (() -> Void)?
     var focus: FocusState<Bool>.Binding
 
     var body: some View {
@@ -105,4 +105,3 @@ private struct InputBarPreview: View {
         ChatInputBar(text: $text, isStreaming: isStreaming, onSend: {}, focus: $focus)
     }
 }
-

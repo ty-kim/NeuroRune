@@ -16,7 +16,7 @@ struct MessageView: View {
     /// Phase 22 — 이 메시지가 현재 TTS 재생 중일 때 true.
     var isSpeaking: Bool = false
     /// 스피커 버튼 탭 핸들러. nil이면 버튼 숨김.
-    var onSpeakTapped: (() -> Void)? = nil
+    var onSpeakTapped: (() -> Void)?
 
     var body: some View {
         HStack {
