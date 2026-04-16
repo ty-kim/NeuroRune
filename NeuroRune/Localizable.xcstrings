@@ -5135,6 +5135,186 @@
           }
         }
       }
+    },
+    "common.done": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Done" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "完了" } },
+        "ko": { "stringUnit": { "state": "translated", "value": "완료" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "完成" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "完成" } }
+      }
+    },
+    "common.ok": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "OK" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "OK" } },
+        "ko": { "stringUnit": { "state": "translated", "value": "확인" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "确定" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "確定" } }
+      }
+    },
+    "consolidation.title": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Consolidation" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "統合" } },
+        "ko": { "stringUnit": { "state": "translated", "value": "정제" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "整理" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "整理" } }
+      }
+    },
+    "consolidation.runNow": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Consolidate now" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "今すぐ統合" } },
+        "ko": { "stringUnit": { "state": "translated", "value": "지금 정제" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "立即整理" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "立即整理" } }
+      }
+    },
+    "consolidation.loading": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Reviewing conversations and memory…" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "会話とメモリを確認中…" } },
+        "ko": { "stringUnit": { "state": "translated", "value": "대화·메모리 살피는 중…" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "正在整理对话与记忆…" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "正在整理對話與記憶…" } }
+      }
+    },
+    "consolidation.empty.tapToStart": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Tap sparkles to start." } },
+        "ja": { "stringUnit": { "state": "translated", "value": "きらめきをタップして開始。" } },
+        "ko": { "stringUnit": { "state": "translated", "value": "반짝이 아이콘을 눌러 시작." } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "点击闪烁图标开始。" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "點擊閃爍圖示開始。" } }
+      }
+    },
+    "consolidation.empty.quietMorning": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "No new patterns today.\nQuiet mornings are good mornings." } },
+        "ja": { "stringUnit": { "state": "translated", "value": "今日は新しいパターンなし。\n静かな朝こそ良い朝。" } },
+        "ko": { "stringUnit": { "state": "translated", "value": "오늘은 정제할 새 패턴 없음.\n조용한 morning이 좋은 morning." } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "今天没有新模式。\n安静的早晨是好早晨。" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "今天沒有新模式。\n安靜的早晨是好早晨。" } }
+      }
+    },
+    "consolidation.diff": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Diff" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "差分" } },
+        "ko": { "stringUnit": { "state": "translated", "value": "변경 내용" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "差异" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "差異" } }
+      }
+    },
+    "consolidation.preview": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Preview" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "プレビュー" } },
+        "ko": { "stringUnit": { "state": "translated", "value": "미리보기" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "预览" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "預覽" } }
+      }
+    },
+    "consolidation.accept": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Accept" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "受け入れ" } },
+        "ko": { "stringUnit": { "state": "translated", "value": "수락" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "接受" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "接受" } }
+      }
+    },
+    "consolidation.reject": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Reject" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "却下" } },
+        "ko": { "stringUnit": { "state": "translated", "value": "거절" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "拒绝" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "拒絕" } }
+      }
+    },
+    "consolidation.action.create": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "CREATE" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "作成" } },
+        "ko": { "stringUnit": { "state": "translated", "value": "생성" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "新建" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "新建" } }
+      }
+    },
+    "consolidation.action.update": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "UPDATE" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "更新" } },
+        "ko": { "stringUnit": { "state": "translated", "value": "갱신" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "更新" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "更新" } }
+      }
+    },
+    "consolidation.action.delete": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "DELETE" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "削除" } },
+        "ko": { "stringUnit": { "state": "translated", "value": "삭제" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "删除" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "刪除" } }
+      }
+    },
+    "consolidation.action.skip": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "SKIP" } },
+        "ja": { "stringUnit": { "state": "translated", "value": "スキップ" } },
+        "ko": { "stringUnit": { "state": "translated", "value": "건너뜀" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "跳过" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "跳過" } }
+      }
+    },
+    "consolidation.error.llm": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "LLM call failed." } },
+        "ja": { "stringUnit": { "state": "translated", "value": "LLM呼び出しに失敗しました。" } },
+        "ko": { "stringUnit": { "state": "translated", "value": "LLM 호출 실패." } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "LLM 调用失败。" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "LLM 呼叫失敗。" } }
+      }
+    },
+    "consolidation.error.invalidJSON": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Response format invalid." } },
+        "ja": { "stringUnit": { "state": "translated", "value": "応答形式が無効です。" } },
+        "ko": { "stringUnit": { "state": "translated", "value": "응답 형식이 올바르지 않습니다." } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "响应格式无效。" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "回應格式無效。" } }
+      }
+    },
+    "consolidation.error.empty": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Empty response." } },
+        "ja": { "stringUnit": { "state": "translated", "value": "空の応答です。" } },
+        "ko": { "stringUnit": { "state": "translated", "value": "응답이 비어있습니다." } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "响应为空。" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "回應為空。" } }
+      }
     }
   },
   "version": "1.1"

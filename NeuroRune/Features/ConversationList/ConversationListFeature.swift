@@ -21,6 +21,7 @@ nonisolated struct ConversationListFeature: Reducer {
         var showGroqCredentials: Bool = false
         var showAzureCredentials: Bool = false
         var showOnboarding: Bool = false
+        var showConsolidation: Bool = false
     }
 
     enum Action: Equatable {
@@ -43,6 +44,8 @@ nonisolated struct ConversationListFeature: Reducer {
         case groqCredentialsDismissed
         case azureCredentialsTapped
         case azureCredentialsDismissed
+        case consolidationTapped
+        case consolidationDismissed
         case errorDismissed
     }
 
@@ -163,6 +166,14 @@ nonisolated struct ConversationListFeature: Reducer {
 
         case .azureCredentialsDismissed:
             state.showAzureCredentials = false
+            return .none
+
+        case .consolidationTapped:
+            state.showConsolidation = true
+            return .none
+
+        case .consolidationDismissed:
+            state.showConsolidation = false
             return .none
 
         case .errorDismissed:
