@@ -51,15 +51,20 @@ nonisolated extension ChatFeature {
             return .run { send in
                 @Dependency(\.speakerClient) var speaker
                 @Dependency(\.audioPlayer) var player
+                @Dependency(\.locale) var locale
 
-                let voice = settings.voiceName
-                let bcp47 = settings.bcp47Language
+                let languageCode = locale.language.languageCode?.identifier
 
                 // 기존 재생 중단 (cancelled throw, stopSpeakTapped가 이미 처리)
                 await player.stop()
 
                 do {
-                    let audio = try await speaker.synthesize(text, voice, bcp47, settings.rate, settings.pitch)
+                    let audio = try await speaker.synthesize(
+                        text,
+                        settings.voiceId,
+                        languageCode,
+                        settings.voiceSettings
+                    )
                     await send(.speakingStarted(id))
                     try await player.play(audio)
                     await send(.speakingFinished)
@@ -133,13 +138,14 @@ nonisolated extension ChatFeature {
             return .run { send in
                 @Dependency(\.speakerClient) var speaker
                 @Dependency(\.audioPlayer) var player
+                @Dependency(\.locale) var locale
+                let languageCode = locale.language.languageCode?.identifier
                 do {
                     let audio = try await speaker.synthesize(
                         sentence,
-                        settings.voiceName,
-                        settings.bcp47Language,
-                        settings.rate,
-                        settings.pitch
+                        settings.voiceId,
+                        languageCode,
+                        settings.voiceSettings
                     )
                     try await player.play(audio)
                     await send(.sentencePlaybackCompleted)
@@ -174,20 +180,29 @@ nonisolated extension ChatFeature {
             state.speechSettings = settings
             return .none
 
-        case let .speechVoiceSelected(name):
-            state.speechSettings.voiceName = name
+        case let .speechVoiceSelected(voiceId, voiceName):
+            state.speechSettings.voiceId = voiceId
+            state.speechSettings.voiceName = voiceName
             return persistSettings(state.speechSettings)
 
         case let .autoSpeakToggled(on):
             state.speechSettings.autoSpeak = on
             return persistSettings(state.speechSettings)
 
-        case let .speechRateChanged(rate):
-            state.speechSettings.rate = rate
+        case let .speechStabilityChanged(value):
+            state.speechSettings.stability = value
             return persistSettings(state.speechSettings)
 
-        case let .speechPitchChanged(pitch):
-            state.speechSettings.pitch = pitch
+        case let .speechSimilarityChanged(value):
+            state.speechSettings.similarityBoost = value
+            return persistSettings(state.speechSettings)
+
+        case let .speechStyleChanged(value):
+            state.speechSettings.style = value
+            return persistSettings(state.speechSettings)
+
+        case let .speechSpeakerBoostToggled(on):
+            state.speechSettings.useSpeakerBoost = on
             return persistSettings(state.speechSettings)
 
         case .speechSettingsTapped:

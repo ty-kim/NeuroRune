@@ -150,10 +150,12 @@ nonisolated struct ChatFeature: Reducer {
         // MARK: - Speech settings (Phase 22 Slice 7)
         case loadSpeechSettings
         case speechSettingsLoaded(SpeechSettings)
-        case speechVoiceSelected(String)
+        case speechVoiceSelected(voiceId: String, voiceName: String)
         case autoSpeakToggled(Bool)
-        case speechRateChanged(Double)
-        case speechPitchChanged(Double)
+        case speechStabilityChanged(Double)
+        case speechSimilarityChanged(Double)
+        case speechStyleChanged(Double)
+        case speechSpeakerBoostToggled(Bool)
         case speechSettingsTapped
         case speechSettingsDismissed
     }
@@ -260,7 +262,8 @@ nonisolated struct ChatFeature: Reducer {
              .speakSentenceEnqueued, .processSpeakQueue, .sentencePlaybackCompleted,
              .loadSpeechSettings, .speechSettingsLoaded,
              .speechVoiceSelected, .autoSpeakToggled,
-             .speechRateChanged, .speechPitchChanged,
+             .speechStabilityChanged, .speechSimilarityChanged,
+             .speechStyleChanged, .speechSpeakerBoostToggled,
              .speechSettingsTapped, .speechSettingsDismissed:
             return reduceSpeak(into: &state, action: action)
         }

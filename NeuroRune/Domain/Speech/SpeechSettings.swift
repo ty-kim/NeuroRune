@@ -4,67 +4,64 @@
 //
 //  Created by tykim
 //
-//  Phase 22 Slice 7 — TTS 사용자 설정 (voice·rate·pitch·autoSpeak).
+//  ElevenLabs TTS 사용자 설정. Azure rate/pitch에서 voice_settings로 교체.
 //
 
 import Foundation
 
 nonisolated struct SpeechSettings: Equatable, Sendable {
+    /// ElevenLabs voice_id (UUID-like 20~30자 문자열). 빈 문자열이면 "미선택".
+    var voiceId: String
+    /// 표시용 voice 이름. API에서 받아온 name 캐시. UI가 voiceId만으로는 뭔지 모름.
     var voiceName: String
-    /// 0.5(느림) ~ 1.5(빠름). 1.0 기본.
-    var rate: Double
-    /// 0.5(낮음) ~ 1.5(높음). 1.0 기본 = ±0%.
-    var pitch: Double
+    /// 0~1. 0에 가까울수록 표현 다양, 1에 가까울수록 일관성. 기본 0.5.
+    var stability: Double
+    /// 0~1. 원본 음성 유사도. 기본 0.75.
+    var similarityBoost: Double
+    /// 0~1. 감정 표현 강도. 기본 0. 높이면 latency↑.
+    var style: Double
+    /// speaker boost 효과. 명료도↑.
+    var useSpeakerBoost: Bool
     /// 스트리밍 완료 시 자동 재생 여부.
     var autoSpeak: Bool
 
     init(
-        voiceName: String = "ko-KR-SunHiNeural",
-        rate: Double = 1.0,
-        pitch: Double = 1.0,
+        voiceId: String = "",
+        voiceName: String = "",
+        stability: Double = 0.5,
+        similarityBoost: Double = 0.75,
+        style: Double = 0.0,
+        useSpeakerBoost: Bool = true,
         autoSpeak: Bool = false
     ) {
+        self.voiceId = voiceId
         self.voiceName = voiceName
-        self.rate = rate
-        self.pitch = pitch
+        self.stability = stability
+        self.similarityBoost = similarityBoost
+        self.style = style
+        self.useSpeakerBoost = useSpeakerBoost
         self.autoSpeak = autoSpeak
     }
 
-    /// voice 이름에서 BCP-47 언어 추출. `ko-KR-SunHiNeural` → `ko-KR`.
-    var bcp47Language: String {
-        let parts = voiceName.split(separator: "-")
-        guard parts.count >= 2 else { return "ko-KR" }
-        return "\(parts[0])-\(parts[1])"
+    /// ElevenLabs voice_settings payload로 변환.
+    var voiceSettings: ElevenLabsVoiceSettings {
+        ElevenLabsVoiceSettings(
+            stability: stability,
+            similarityBoost: similarityBoost,
+            style: style,
+            useSpeakerBoost: useSpeakerBoost
+        )
     }
 }
 
 nonisolated extension SpeechSettings {
     nonisolated enum DefaultsKey {
-        nonisolated static let voice = "tts.voice"
-        nonisolated static let rate = "tts.rate"
-        nonisolated static let pitch = "tts.pitch"
+        nonisolated static let voiceId = "tts.voiceId"
+        nonisolated static let voiceName = "tts.voiceName"
+        nonisolated static let stability = "tts.stability"
+        nonisolated static let similarityBoost = "tts.similarityBoost"
+        nonisolated static let style = "tts.style"
+        nonisolated static let useSpeakerBoost = "tts.useSpeakerBoost"
         nonisolated static let autoSpeak = "tts.autoSpeak"
     }
-}
-
-/// Azure Neural voice 프리셋. Menu·picker에 노출되는 목록.
-nonisolated struct AzureVoice: Equatable, Sendable, Identifiable {
-    let name: String
-    let displayName: String
-    let language: String
-
-    var id: String { name }
-}
-
-nonisolated extension AzureVoice {
-    static let presets: [AzureVoice] = [
-        AzureVoice(name: "ko-KR-SunHiNeural", displayName: "선희 (여)", language: "ko-KR"),
-        AzureVoice(name: "ko-KR-InJoonNeural", displayName: "인준 (남)", language: "ko-KR"),
-        AzureVoice(name: "ko-KR-JiMinNeural", displayName: "지민 (여·감정)", language: "ko-KR"),
-        AzureVoice(name: "ko-KR-SeoHyeonNeural", displayName: "서현 (여)", language: "ko-KR"),
-        AzureVoice(name: "ko-KR-SoonBokNeural", displayName: "순복 (여·시니어)", language: "ko-KR"),
-        AzureVoice(name: "ko-KR-YuJinNeural", displayName: "유진 (여)", language: "ko-KR"),
-        AzureVoice(name: "en-US-JennyNeural", displayName: "Jenny (F)", language: "en-US"),
-        AzureVoice(name: "en-US-GuyNeural", displayName: "Guy (M)", language: "en-US"),
-    ]
 }

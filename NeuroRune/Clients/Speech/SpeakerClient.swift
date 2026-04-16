@@ -14,53 +14,28 @@ import Dependencies
 import os
 
 nonisolated struct SpeakerClient: Sendable {
-    /// 텍스트를 합성해 MP3 바이너리 반환.
-    /// - voice: Azure voice 이름 (e.g. `ko-KR-SunHiNeural`)
-    /// - language: BCP-47 (e.g. `ko-KR`, `en-US`)
-    /// - rate: 0.5~1.5 (1.0이 기본)
-    /// - pitch: 0.5~1.5 (1.0이 기본 = ±0%)
+    /// 텍스트를 합성해 MP3 바이너리 반환 (ElevenLabs).
+    /// - voiceId: ElevenLabs voice_id
+    /// - languageCode: ISO 639-1 (예: "ko", "en"). nil이면 모델 자동 판별.
+    /// - settings: voice_settings (stability/similarity/style/speakerBoost)
     var synthesize: @Sendable (
         _ text: String,
-        _ voice: String,
-        _ language: String,
-        _ rate: Double,
-        _ pitch: Double
+        _ voiceId: String,
+        _ languageCode: String?,
+        _ settings: ElevenLabsVoiceSettings
     ) async throws -> Data
 }
 
-// MARK: - Azure Neural 구현
+// MARK: - Azure Neural 구현 (Slice 9에서 제거 예정)
 
 nonisolated extension SpeakerClient {
 
+    /// Azure 레거시. Slice 6에서 synthesize closure는 ElevenLabs 전용으로 전환.
+    /// Azure 관련 request/SSML 빌더는 유지(테스트용), 호출 경로는 제거 대기.
     static func azureNeural(session: URLSession, credentials: AzureCredentials) -> SpeakerClient {
         SpeakerClient(
-            synthesize: { text, voice, language, rate, pitch in
-                let request = try buildAzureRequest(
-                    text: text,
-                    voice: voice,
-                    language: language,
-                    rate: rate,
-                    pitch: pitch,
-                    credentials: credentials
-                )
-
-                let data: Data
-                let response: URLResponse
-                do {
-                    (data, response) = try await session.data(for: request)
-                } catch let urlError as URLError where urlError.code == .cancelled {
-                    throw SpeechError.cancelled
-                } catch let urlError as URLError {
-                    throw SpeechError.network(urlError.localizedDescription)
-                } catch {
-                    throw SpeechError.network(error.localizedDescription)
-                }
-
-                guard let http = response as? HTTPURLResponse else {
-                    throw SpeechError.network("non-http response")
-                }
-
-                return try handle(status: http.statusCode, body: data)
+            synthesize: { _, _, _, _ in
+                throw SpeechError.network("Azure deprecated; use ElevenLabs")
             }
         )
     }
@@ -272,13 +247,20 @@ nonisolated extension SpeakerClient {
 nonisolated extension SpeakerClient: DependencyKey {
     static let liveValue: SpeakerClient = {
         SpeakerClient(
-            synthesize: { text, voice, language, rate, pitch in
-                guard let credentials = try AzureCredentialsClient.liveValue.load() else {
-                    Logger.network.error("SpeakerClient synthesize: Azure credentials missing")
+            synthesize: { text, voiceId, languageCode, settings in
+                guard let credentials = try ElevenLabsCredentialsClient.liveValue.load() else {
+                    Logger.network.error("SpeakerClient synthesize: ElevenLabs credentials missing")
                     throw SpeechError.unauthorized
                 }
-                let client = SpeakerClient.azureNeural(session: .shared, credentials: credentials)
-                return try await client.synthesize(text, voice, language, rate, pitch)
+                return try await SpeakerClient.elevenLabs(
+                    session: .shared,
+                    text: text,
+                    voiceId: voiceId,
+                    modelId: SpeakerClient.elevenLabsDefaultModelId,
+                    languageCode: languageCode,
+                    settings: settings,
+                    credentials: credentials
+                )
             }
         )
     }()
@@ -288,8 +270,11 @@ nonisolated extension SpeakerClient: DependencyKey {
     )
 
     static let previewValue = SpeakerClient(
-        synthesize: { _, _, _, _, _ in Data(count: 1024) }
+        synthesize: { _, _, _, _ in Data(count: 1024) }
     )
+
+    /// ElevenLabs 기본 모델 ID. curl 테스트로 확정 (Eleven v3).
+    static let elevenLabsDefaultModelId = "eleven_v3"
 }
 
 extension DependencyValues {
