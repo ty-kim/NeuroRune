@@ -146,6 +146,7 @@ private struct DisabledImageProvider: ImageProvider {
 // MARK: - MarkdownUI Theme
 
 extension MarkdownUI.Theme {
+    @MainActor
     static let neuroRune = Theme()
         .codeBlock { configuration in
             ScrollView(.horizontal, showsIndicators: true) {
