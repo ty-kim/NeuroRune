@@ -49,12 +49,12 @@ nonisolated struct MemoryEditFeature: Reducer {
             let path = state.file.path
             let role = state.role
             return .run { send in
-                guard let loaded = credsClient.loadIgnoringError(role: role) else {
+                guard credsClient.loadIgnoringError(role: role) != nil else {
                     await send(.loadFailed(String(localized: "memory.error.unauthorized")))
                     return
                 }
                 do {
-                    let file = try await github.loadFile(loaded.repoConfig, path)
+                    let file = try await github.loadFile(role, path)
                     await send(.contentLoaded(content: file.content, sha: file.sha))
                 } catch let error as GitHubError {
                     await send(.loadFailed(error.localizedMessage))
@@ -95,12 +95,12 @@ nonisolated struct MemoryEditFeature: Reducer {
             let role = state.role
             let message = "Update \(URL(fileURLWithPath: path).lastPathComponent)"
             return .run { send in
-                guard let loaded = credsClient.loadIgnoringError(role: role) else {
+                guard credsClient.loadIgnoringError(role: role) != nil else {
                     await send(.saveFailed(String(localized: "memory.error.unauthorized")))
                     return
                 }
                 do {
-                    let saved = try await github.saveFile(loaded.repoConfig, path, content, sha, message)
+                    let saved = try await github.saveFile(role, path, content, sha, message)
                     await send(.saveSucceeded(saved))
                 } catch let error as GitHubError {
                     await send(.saveFailed(error.localizedMessage))

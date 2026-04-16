@@ -44,7 +44,8 @@ extension MessageEntity {
             roleRaw: message.role.rawValue,
             content: message.content,
             createdAt: message.createdAt,
-            ordinal: ordinal
+            ordinal: ordinal,
+            id: message.id
         )
     }
 
@@ -53,6 +54,7 @@ extension MessageEntity {
             throw PersistenceError.invalidMessageRole(roleRaw)
         }
         return Message(
+            id: id ?? UUID(),
             role: role,
             content: content,
             createdAt: createdAt

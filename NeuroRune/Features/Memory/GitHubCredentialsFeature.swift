@@ -41,6 +41,8 @@ nonisolated struct GitHubCredentialsFeature: Reducer {
         case saveTapped
         case saveSucceeded
         case saveFailed(String)
+        case clearTapped
+        case cleared
         case loadExisting
         case existingLoaded(GitHubCredentials?)
     }
@@ -102,11 +104,26 @@ nonisolated struct GitHubCredentialsFeature: Reducer {
             state.error = message
             return .none
 
+        case .clearTapped:
+            let role = state.role
+            return .run { send in
+                try? client.clear(role)
+                await send(.cleared)
+            }
+
+        case .cleared:
+            state.pat = ""
+            state.owner = ""
+            state.repo = ""
+            state.branch = "main"
+            state.path = ""
+            return .none
+
         case .loadExisting:
             let role = state.role
             return .run { send in
                 let creds = try? client.load(role)
-                await send(.existingLoaded(creds ?? nil))
+                await send(.existingLoaded(creds))
             }
 
         case let .existingLoaded(creds):

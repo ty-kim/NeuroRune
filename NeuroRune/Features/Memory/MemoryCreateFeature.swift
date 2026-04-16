@@ -74,12 +74,12 @@ nonisolated struct MemoryCreateFeature: Reducer {
             let role = state.role
             let message = "Create \(URL(fileURLWithPath: path).lastPathComponent)"
             return .run { send in
-                guard let loaded = credsClient.loadIgnoringError(role: role) else {
+                guard credsClient.loadIgnoringError(role: role) != nil else {
                     await send(.saveFailed(String(localized: "memory.error.unauthorized")))
                     return
                 }
                 do {
-                    let file = try await github.saveFile(loaded.repoConfig, path, content, nil, message)
+                    let file = try await github.saveFile(role, path, content, nil, message)
                     await send(.saveSucceeded(file))
                 } catch let error as GitHubError {
                     await send(.saveFailed(error.localizedMessage))

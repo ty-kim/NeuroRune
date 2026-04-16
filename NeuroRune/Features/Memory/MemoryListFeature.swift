@@ -50,10 +50,9 @@ nonisolated struct MemoryListFeature: Reducer {
                     await send(.credentialsMissing)
                     return
                 }
-                let config = loaded.repoConfig
                 let path = loaded.path
                 do {
-                    let files = try await github.listContents(config, path)
+                    let files = try await github.listContents(role, path)
                     await send(.filesLoaded(files))
                 } catch GitHubError.notFound {
                     // 서브디렉터리 404 = 아직 비어있음으로 해석.
@@ -98,15 +97,14 @@ nonisolated struct MemoryListFeature: Reducer {
 
         case let .deleteTapped(file):
             let role = state.role
-            guard let loaded = creds.loadIgnoringError(role: role) else {
+            guard creds.loadIgnoringError(role: role) != nil else {
                 return .send(.credentialsMissing)
             }
-            let config = loaded.repoConfig
             let path = file.path
             let sha = file.sha
             return .run { send in
                 do {
-                    try await github.deleteFile(config, path, sha, "Delete \(path)")
+                    try await github.deleteFile(role, path, sha, "Delete \(path)")
                     await send(.deleteSucceeded(path))
                 } catch GitHubError.notFound {
                     // 서버에 이미 없음 = 사실상 삭제 상태. 로컬도 정리.
