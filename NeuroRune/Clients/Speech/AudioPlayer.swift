@@ -49,8 +49,8 @@ private actor LiveAudioPlayer {
     private var continuation: CheckedContinuation<Void, Error>?
 
     func play(_ data: Data) async throws {
-        // 기존 재생 중이면 먼저 정리
-        await stop()
+        // 기존 재생 중이면 먼저 정리 (같은 actor — await 불필요)
+        stop()
 
         do {
             let session = AVAudioSession.sharedInstance()

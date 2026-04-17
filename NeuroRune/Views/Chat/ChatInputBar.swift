@@ -23,10 +23,17 @@ struct ChatInputBar: View {
     var onCancelCountdown: (() -> Void)?
     var focus: FocusState<Bool>.Binding
 
+    // MARK: - Layout constants
+
+    /// Min tap target per HIG 44pt. 아이콘은 작고 버튼 hit area로 채움.
+    private static let buttonSize: CGFloat = 40
+    private static let iconFont: Font = .title
+    /// 카운트다운 숫자 배지 원형 크기.
+    private static let countdownSize: CGFloat = 36
+
     var body: some View {
-        HStack(spacing: 8) {
+        HStack(spacing: 10) {
             TextField(String(localized: "chat.inputPlaceholder"), text: $text)
-                .textFieldStyle(.roundedBorder)
                 .submitLabel(.send)
                 .onSubmit {
                     guard !isStreaming else { return }
@@ -34,11 +41,29 @@ struct ChatInputBar: View {
                 }
                 .focused(focus)
                 .onChange(of: focus.wrappedValue) { _, focused in
-                    // 입력창 탭(포커스 진입) = 카운트다운 취소.
                     if focused, autoSendCountdown != nil {
                         onCancelCountdown?()
                     }
                 }
+                .simultaneousGesture(
+                    // 이미 포커스된 상태에서 탭해도 카운트다운 취소.
+                    // onChange(focus)는 false→true만 감지, 이미 true면 발생 안 함.
+                    TapGesture().onEnded {
+                        if autoSendCountdown != nil {
+                            onCancelCountdown?()
+                        }
+                    }
+                )
+                .padding(.horizontal, 14)
+                .padding(.vertical, 12)
+                .background(
+                    RoundedRectangle(cornerRadius: 12)
+                        .fill(Color(uiColor: .secondarySystemBackground))
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12)
+                        .stroke(Color(uiColor: .separator), lineWidth: 0.5)
+                )
 
             if let onMicTapped, !isStreaming {
                 Button(action: {
@@ -46,15 +71,15 @@ struct ChatInputBar: View {
                     onMicTapped()
                 }) {
                     Image(systemName: isRecording ? "mic.fill" : "mic")
-                        .font(.title2)
+                        .font(Self.iconFont)
                         .foregroundStyle(isRecording ? .red : .secondary)
                         .symbolEffect(.pulse, options: isRecording ? .repeating : .nonRepeating,
                                       value: isRecording)
+                        .frame(width: Self.buttonSize, height: Self.buttonSize)
                 }
                 .accessibilityLabel(String(localized: isRecording
                     ? "a11y.chat.stopRecording"
                     : "a11y.chat.startRecording"))
-                .padding(.trailing, 4)
             }
 
             if isStreaming, let onStop {
@@ -63,25 +88,27 @@ struct ChatInputBar: View {
                     onStop()
                 }) {
                     Image(systemName: "stop.circle.fill")
-                        .font(.title2)
+                        .font(Self.iconFont)
                         .foregroundStyle(.red)
+                        .frame(width: Self.buttonSize, height: Self.buttonSize)
                 }
                 .accessibilityLabel(String(localized: "a11y.chat.stopButton"))
             } else if let countdown = autoSendCountdown {
-                // 카운트다운 중: 숫자 표시, 탭 시 취소.
+                // 카운트다운 중: 숫자 표시, 탭 시 즉시 전송 (reducer가 타이머 취소).
                 Button(action: {
                     UIImpactFeedbackGenerator(style: .medium).impactOccurred()
-                    onCancelCountdown?()
+                    onSend()
                 }) {
                     ZStack {
                         Circle()
                             .fill(Color.accentColor)
-                            .frame(width: 28, height: 28)
+                            .frame(width: Self.countdownSize, height: Self.countdownSize)
                         Text("\(countdown)")
-                            .font(.callout.bold())
+                            .font(.title3.bold())
                             .foregroundStyle(.white)
                             .monospacedDigit()
                     }
+                    .frame(width: Self.buttonSize, height: Self.buttonSize)
                 }
                 .accessibilityLabel(String(localized: "a11y.chat.autoSendCountdown"))
                 .accessibilityValue("\(countdown)")
@@ -91,14 +118,15 @@ struct ChatInputBar: View {
                     onSend()
                 }) {
                     Image(systemName: "arrow.up.circle.fill")
-                        .font(.title2)
+                        .font(Self.iconFont)
+                        .frame(width: Self.buttonSize, height: Self.buttonSize)
                 }
                 .disabled(text.isEmpty || isStreaming || isRecording)
                 .accessibilityLabel(String(localized: "a11y.chat.sendButton"))
             }
         }
         .padding(.horizontal)
-        .padding(.vertical, 8)
+        .padding(.vertical, 10)
         .background(Color(.systemBackground))
     }
 }

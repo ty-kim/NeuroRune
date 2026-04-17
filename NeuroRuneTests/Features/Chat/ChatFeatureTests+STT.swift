@@ -318,6 +318,24 @@ extension ChatFeatureTests {
         // recordingStarted 수신 안 함
     }
 
+    @Test("카운트다운 중 sendTapped → countdown=nil + 즉시 전송")
+    func sendTappedDuringCountdownFiresImmediately() async {
+        var state = makeState()
+        state.inputText = "안녕"
+        state.autoSendCountdown = 2
+
+        let store = TestStore(initialState: state) { ChatFeature() } withDependencies: {
+            applyDefaultDependencies(&$0)
+        }
+        store.exhaustivity = .off
+
+        await store.send(.sendTapped) {
+            $0.autoSendCountdown = nil
+            $0.isStreaming = true
+            $0.inputText = ""
+        }
+    }
+
     @Test("카운트다운 중 inputChanged → 카운트다운 취소")
     func inputChangedDuringCountdownCancels() async {
         var state = makeState()

@@ -58,14 +58,24 @@ nonisolated extension LLMClient {
                 case 200..<300:
                     break
                 case 401:
+                    Logger.network.error("anthropic 401 — auth failed")
                     throw LLMError.unauthorized
                 case 429:
+                    Logger.network.error("anthropic 429 — retryAfter=\(retryAfter ?? -1)")
                     throw LLMError.rateLimited(
                         retryAfter: retryAfter,
                         state: rateLimit.isEmpty ? nil : rateLimit
                     )
                 default:
-                    throw LLMError.server(status: http.statusCode, message: "stream request failed")
+                    // 에러 바디 수집. Anthropic은 {"type":"error","error":{"type":...,"message":...}} 포맷.
+                    let body = await collectBody(from: bytes, cap: 8 * 1024)
+                    let parsed = parseAnthropicErrorMessage(body) ?? body
+                    let trimmed = parsed.isEmpty ? "stream request failed" : parsed
+                    Logger.network.error(
+                        // swiftlint:disable:next line_length
+                        "anthropic stream failed: status=\(http.statusCode, privacy: .public), body=\(trimmed, privacy: .public)"
+                    )
+                    throw LLMError.server(status: http.statusCode, message: trimmed)
                 }
 
                 return AsyncThrowingStream<LLMStreamEvent, Error> { continuation in
@@ -84,6 +94,31 @@ nonisolated extension LLMClient {
                 }
             }
         )
+    }
+
+    /// 에러 바디 수집. 상한은 디버그용 임의값.
+    private static func collectBody(from bytes: URLSession.AsyncBytes, cap: Int) async -> String {
+        var buffer = Data()
+        buffer.reserveCapacity(min(cap, 4096))
+        do {
+            for try await byte in bytes {
+                buffer.append(byte)
+                if buffer.count >= cap { break }
+            }
+        } catch {
+            // 파트셜이라도 있으면 문자열화, 없으면 빈 문자열.
+        }
+        return String(data: buffer, encoding: .utf8) ?? ""
+    }
+
+    /// Anthropic 에러 JSON에서 message 필드 추출. 파싱 실패 시 nil.
+    /// 포맷: `{"type":"error","error":{"type":"...","message":"..."}}`
+    private static func parseAnthropicErrorMessage(_ body: String) -> String? {
+        guard let data = body.data(using: .utf8),
+              let obj = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let err = obj["error"] as? [String: Any],
+              let msg = err["message"] as? String else { return nil }
+        return msg
     }
 
     /// Anthropic 응답 헤더에서 rate limit 쿼터와 retry-after(초)를 파싱한다.

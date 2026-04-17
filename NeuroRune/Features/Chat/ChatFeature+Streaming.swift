@@ -42,12 +42,16 @@ nonisolated extension ChatFeature {
             state.isStreaming = true
             state.error = nil
             state.speakTotalChars = 0
+            // 카운트다운 중 Send 누르면 즉시 전송. 타이머 취소.
+            state.autoSendCountdown = nil
 
             // 디스크엔 placeholder 없이 저장. placeholder는 UI 전용 스트리밍 타겟.
             let conversationForDisk = state.conversation.droppingLastMessage()
             let messagesForAPI = conversationForDisk.messages
             let model = LLMModel.resolve(id: state.conversation.modelId)
-            return .run { send in
+            return .merge(
+                .cancel(id: CancelID.autoSend),
+                .run { send in
                 await Self.save(conversationForDisk, using: conversationStore, send: send)
                 do {
                     let system = await Self.loadSystemPrompt(
@@ -100,6 +104,7 @@ nonisolated extension ChatFeature {
                 }
             }
             .cancellable(id: CancelID.streaming, cancelInFlight: true)
+            )
 
         case .stopTapped:
             // 현재 진행 중인 스트리밍 effect를 취소하고 기존 완료 경로로 정리한다.
