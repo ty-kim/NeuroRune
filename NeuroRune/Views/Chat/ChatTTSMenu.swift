@@ -4,7 +4,8 @@
 //
 //  Created by tykim
 //
-//  ChatView 우상단 TTS toolbar Menu. autoSpeak 토글·voice 선택·상세 설정 진입.
+//  ChatView 우상단 TTS toolbar Menu. autoSpeak 토글 + 현재 voice 표시 + 상세 설정 진입.
+//  voice 선택은 상세 설정 sheet에서 (동적 API 호출).
 //
 
 import SwiftUI
@@ -23,17 +24,9 @@ struct ChatTTSMenu: View {
                         send: ChatFeature.Action.autoSpeakToggled
                     )
                 )
-                Section(String(localized: "settings.tts.voice")) {
-                    ForEach(AzureVoice.presets) { voice in
-                        Button {
-                            viewStore.send(.speechVoiceSelected(voice.name))
-                        } label: {
-                            if viewStore.voiceName == voice.name {
-                                Label(voice.displayName, systemImage: "checkmark")
-                            } else {
-                                Text(voice.displayName)
-                            }
-                        }
+                if !viewStore.voiceName.isEmpty {
+                    Section(String(localized: "settings.tts.voice")) {
+                        Label(viewStore.voiceName, systemImage: "person.wave.2")
                     }
                 }
                 Button {

@@ -1,43 +1,40 @@
 //
-//  AzureCredentialsFeature.swift
+//  ElevenLabsCredentialsFeature.swift
 //  NeuroRune
 //
 //  Created by tykim
 //
-//  Phase 22 — Azure Speech Service 자격 증명 입력/저장.
+//  ElevenLabs TTS 자격 증명 입력/저장. 단일 apiKey 필드.
 //
 
 import Foundation
 import ComposableArchitecture
 
-nonisolated struct AzureCredentialsFeature: Reducer {
+nonisolated struct ElevenLabsCredentialsFeature: Reducer {
 
     struct State: Equatable {
         var apiKey: String = ""
-        var region: String = ""
         var isSaving: Bool = false
         var error: String?
 
         var isValid: Bool {
             !apiKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-                && !region.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
         }
     }
 
     enum Action: Equatable {
         case apiKeyChanged(String)
-        case regionChanged(String)
         case saveTapped
         case saveSucceeded
         case saveFailed(String)
         case clearTapped
         case cleared
         case loadExisting
-        case existingLoaded(AzureCredentials?)
+        case existingLoaded(ElevenLabsCredentials?)
     }
 
     func reduce(into state: inout State, action: Action) -> Effect<Action> {
-        @Dependency(\.azureCredentialsClient) var client
+        @Dependency(\.elevenLabsCredentialsClient) var client
 
         switch action {
         case let .apiKeyChanged(v):
@@ -45,18 +42,12 @@ nonisolated struct AzureCredentialsFeature: Reducer {
             state.error = nil
             return .none
 
-        case let .regionChanged(v):
-            state.region = v
-            state.error = nil
-            return .none
-
         case .saveTapped:
             guard state.isValid else { return .none }
             state.isSaving = true
             state.error = nil
-            let creds = AzureCredentials(
-                apiKey: state.apiKey.trimmingCharacters(in: .whitespacesAndNewlines),
-                region: state.region.trimmingCharacters(in: .whitespacesAndNewlines)
+            let creds = ElevenLabsCredentials(
+                apiKey: state.apiKey.trimmingCharacters(in: .whitespacesAndNewlines)
             )
             return .run { send in
                 do {
@@ -85,7 +76,6 @@ nonisolated struct AzureCredentialsFeature: Reducer {
 
         case .cleared:
             state.apiKey = ""
-            state.region = ""
             return .none
 
         case .loadExisting:
@@ -97,7 +87,6 @@ nonisolated struct AzureCredentialsFeature: Reducer {
         case let .existingLoaded(creds):
             if let creds {
                 state.apiKey = creds.apiKey
-                state.region = creds.region
             }
             return .none
         }

@@ -92,11 +92,12 @@ struct LLMModelTests {
         #expect(model.displayName == "Claude Opus 4.6")
     }
 
-    @Test("LLMModel.allSupported는 opus46, sonnet46, haiku45 3개 상수를 포함한다")
-    func llmModelAllSupportedHasThreeModels() {
+    @Test("LLMModel.allSupported는 opus47, opus46, sonnet46, haiku45 4개 상수를 포함한다")
+    func llmModelAllSupportedHasFourModels() {
         let all = LLMModel.allSupported
 
-        #expect(all.count == 3)
+        #expect(all.count == 4)
+        #expect(all.contains(LLMModel.opus47))
         #expect(all.contains(LLMModel.opus46))
         #expect(all.contains(LLMModel.sonnet46))
         #expect(all.contains(LLMModel.haiku45))
@@ -104,6 +105,7 @@ struct LLMModelTests {
 
     @Test("각 상수의 id는 Anthropic API alias 형식이다")
     func llmModelConstantsUseAnthropicAliases() {
+        #expect(LLMModel.opus47.id == "claude-opus-4-7")
         #expect(LLMModel.opus46.id == "claude-opus-4-6")
         #expect(LLMModel.sonnet46.id == "claude-sonnet-4-6")
         #expect(LLMModel.haiku45.id == "claude-haiku-4-5")
@@ -111,6 +113,7 @@ struct LLMModelTests {
 
     @Test("resolve(id:)는 allSupported에 있는 id에 대해 해당 상수를 반환한다")
     func resolveReturnsKnownModel() {
+        #expect(LLMModel.resolve(id: "claude-opus-4-7") == .opus47)
         #expect(LLMModel.resolve(id: "claude-opus-4-6") == .opus46)
         #expect(LLMModel.resolve(id: "claude-sonnet-4-6") == .sonnet46)
         #expect(LLMModel.resolve(id: "claude-haiku-4-5") == .haiku45)
@@ -124,8 +127,9 @@ struct LLMModelTests {
         #expect(result.displayName == "unknown-model")
     }
 
-    @Test("opus46/sonnet46는 supportsEffort == true")
+    @Test("opus47/opus46/sonnet46는 supportsEffort == true")
     func effortSupportedModels() {
+        #expect(LLMModel.opus47.supportsEffort == true)
         #expect(LLMModel.opus46.supportsEffort == true)
         #expect(LLMModel.sonnet46.supportsEffort == true)
     }

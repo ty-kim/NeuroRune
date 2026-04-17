@@ -1,17 +1,17 @@
 //
-//  AzureCredentialsView.swift
+//  ElevenLabsCredentialsView.swift
 //  NeuroRune
 //
 //  Created by tykim
 //
-//  Phase 22 — Azure Speech Service API 키 입력 화면. TTS·향후 다른 Azure 음성 서비스 공용.
+//  ElevenLabs TTS API 키 입력 화면. region 없고 apiKey만.
 //
 
 import SwiftUI
 import ComposableArchitecture
 
-struct AzureCredentialsView: View {
-    let store: StoreOf<AzureCredentialsFeature>
+struct ElevenLabsCredentialsView: View {
+    let store: StoreOf<ElevenLabsCredentialsFeature>
     var onSaved: () -> Void = {}
 
     @Environment(\.dismiss) private var dismiss
@@ -22,30 +22,16 @@ struct AzureCredentialsView: View {
                 Form {
                     Section {
                         SecureFieldWithReveal(
-                            placeholder: String(localized: "azure.apiKey.placeholder"),
+                            placeholder: String(localized: "elevenlabs.apiKey.placeholder"),
                             text: viewStore.binding(
                                 get: \.apiKey,
-                                send: AzureCredentialsFeature.Action.apiKeyChanged
+                                send: ElevenLabsCredentialsFeature.Action.apiKeyChanged
                             )
                         )
                     } header: {
-                        Text(String(localized: "azure.apiKey"))
-                    }
-
-                    Section {
-                        TextField(
-                            String(localized: "azure.region.placeholder"),
-                            text: viewStore.binding(
-                                get: \.region,
-                                send: AzureCredentialsFeature.Action.regionChanged
-                            )
-                        )
-                        .autocorrectionDisabled()
-                        .textInputAutocapitalization(.never)
-                    } header: {
-                        Text(String(localized: "azure.region"))
+                        Text(String(localized: "elevenlabs.apiKey"))
                     } footer: {
-                        Text(String(localized: "azure.footer"))
+                        Text(String(localized: "elevenlabs.footer"))
                     }
 
                     if let error = viewStore.error {
@@ -56,17 +42,17 @@ struct AzureCredentialsView: View {
                         }
                     }
 
-                    if !viewStore.apiKey.isEmpty || !viewStore.region.isEmpty {
+                    if !viewStore.apiKey.isEmpty {
                         Section {
                             Button(role: .destructive) {
                                 viewStore.send(.clearTapped)
                             } label: {
-                                Text(String(localized: "azure.clear"))
+                                Text(String(localized: "elevenlabs.clear"))
                             }
                         }
                     }
                 }
-                .navigationTitle(String(localized: "azure.title"))
+                .navigationTitle(String(localized: "elevenlabs.title"))
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar {
                     ToolbarItem(placement: .cancellationAction) {
@@ -95,9 +81,9 @@ struct AzureCredentialsView: View {
 }
 
 #Preview {
-    AzureCredentialsView(
-        store: Store(initialState: AzureCredentialsFeature.State()) {
-            AzureCredentialsFeature()
+    ElevenLabsCredentialsView(
+        store: Store(initialState: ElevenLabsCredentialsFeature.State()) {
+            ElevenLabsCredentialsFeature()
         }
     )
 }

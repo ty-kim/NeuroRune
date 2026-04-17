@@ -42,64 +42,67 @@ nonisolated extension ChatFeature {
             state.isStreaming = true
             state.error = nil
             state.speakTotalChars = 0
+            // 카운트다운 중 Send 누르면 즉시 전송. 타이머 취소.
+            state.autoSendCountdown = nil
 
             // 디스크엔 placeholder 없이 저장. placeholder는 UI 전용 스트리밍 타겟.
             let conversationForDisk = state.conversation.droppingLastMessage()
             let messagesForAPI = conversationForDisk.messages
             let model = LLMModel.resolve(id: state.conversation.modelId)
-            return .run { send in
-                await Self.save(conversationForDisk, using: conversationStore, send: send)
-                do {
-                    let system = await Self.loadSystemPrompt(
-                        github: githubClient,
-                        creds: githubCredentialsClient
-                    )
-                    var roundMessages: [APIMessage] = messagesForAPI.map {
-                        APIMessage.text(role: $0.role.rawValue, content: $0.content)
-                    }
-                    let tools: [LLMTool] = [.readMemory, .writeMemory]
-                    let maxRounds = 5
-                    for _ in 0..<maxRounds {
-                        var roundText = ""
-                        var roundToolUses: [(id: String, name: String, inputJSON: String)] = []
-                        let stream = try await llmClient.streamMessage(
-                            roundMessages, model, conversationForDisk.effort, system, tools
-                        )
-                        for try await event in stream {
-                            switch event {
-                            case .textDelta(let text):
-                                roundText += text
-                                await send(.streamChunkReceived(text))
-                            case let .toolUseRequest(id, name, inputJSON):
-                                roundToolUses.append((id, name, inputJSON))
-                            case let .rateLimitUpdate(state):
-                                await send(.rateLimitUpdated(state))
-                            }
-                        }
-                        if roundToolUses.isEmpty { break }
-
-                        // 다음 라운드: 이번 round의 assistant content + tool_result blocks
-                        roundMessages.append(Self.buildAssistantTurn(roundText: roundText, toolUses: roundToolUses))
-                        let resultBlocks = await Self.executeTools(
-                            roundToolUses,
-                            send: send,
+            return .merge(
+                .cancel(id: CancelID.autoSend),
+                .run { send in
+                    await Self.save(conversationForDisk, using: conversationStore, send: send)
+                    do {
+                        let system = await Self.loadSystemPrompt(
                             github: githubClient,
-                            creds: githubCredentialsClient,
-                            gate: writeApprovalGate
+                            creds: githubCredentialsClient
                         )
-                        roundMessages.append(APIMessage(role: "user", content: .blocks(resultBlocks)))
+                        var roundMessages: [APIMessage] = messagesForAPI.map {
+                            APIMessage.text(role: $0.role.rawValue, content: $0.content)
+                        }
+                        let tools: [LLMTool] = [.readMemory, .writeMemory]
+                        let maxRounds = 5
+                        for _ in 0..<maxRounds {
+                            var roundText = ""
+                            var roundToolUses: [(id: String, name: String, inputJSON: String)] = []
+                            let stream = try await llmClient.streamMessage(
+                                roundMessages, model, conversationForDisk.effort, system, tools
+                            )
+                            for try await event in stream {
+                                switch event {
+                                case .textDelta(let text):
+                                    roundText += text
+                                    await send(.streamChunkReceived(text))
+                                case let .toolUseRequest(id, name, inputJSON):
+                                    roundToolUses.append((id, name, inputJSON))
+                                case let .rateLimitUpdate(state):
+                                    await send(.rateLimitUpdated(state))
+                                }
+                            }
+                            if roundToolUses.isEmpty { break }
+
+                            roundMessages.append(Self.buildAssistantTurn(roundText: roundText, toolUses: roundToolUses))
+                            let resultBlocks = await Self.executeTools(
+                                roundToolUses,
+                                send: send,
+                                github: githubClient,
+                                creds: githubCredentialsClient,
+                                gate: writeApprovalGate
+                            )
+                            roundMessages.append(APIMessage(role: "user", content: .blocks(resultBlocks)))
+                        }
+                        await send(.streamFinished)
+                    } catch is CancellationError {
+                        // stopTapped가 streamFinished를 명시적으로 보낸다.
+                    } catch let error as LLMError {
+                        await send(.errorOccurred(error))
+                    } catch {
+                        await send(.errorOccurred(.network(error.localizedDescription)))
                     }
-                    await send(.streamFinished)
-                } catch is CancellationError {
-                    // stopTapped가 streamFinished를 명시적으로 보낸다.
-                    // 취소된 effect는 후속 액션을 중복 발행하지 않는다.
-                } catch let error as LLMError {
-                    await send(.errorOccurred(error))
-                } catch {
-                    await send(.errorOccurred(.network(error.localizedDescription)))
                 }
-            }
-            .cancellable(id: CancelID.streaming, cancelInFlight: true)
+                .cancellable(id: CancelID.streaming, cancelInFlight: true)
+            )
 
         case .stopTapped:
             // 현재 진행 중인 스트리밍 effect를 취소하고 기존 완료 경로로 정리한다.

@@ -19,18 +19,33 @@ nonisolated extension SpeechSettingsClient: DependencyKey {
     static let liveValue = SpeechSettingsClient(
         load: {
             let defaults = UserDefaults.standard
-            let voice = defaults.string(forKey: SpeechSettings.DefaultsKey.voice)
-                ?? SpeechSettings().voiceName
-            let rate = (defaults.object(forKey: SpeechSettings.DefaultsKey.rate) as? Double) ?? 1.0
-            let pitch = (defaults.object(forKey: SpeechSettings.DefaultsKey.pitch) as? Double) ?? 1.0
-            let autoSpeak = defaults.bool(forKey: SpeechSettings.DefaultsKey.autoSpeak)
-            return SpeechSettings(voiceName: voice, rate: rate, pitch: pitch, autoSpeak: autoSpeak)
+            let defaultSettings = SpeechSettings()
+            let stability = (defaults.object(forKey: SpeechSettings.DefaultsKey.stability) as? Double)
+                ?? defaultSettings.stability
+            let similarityBoost = (defaults.object(forKey: SpeechSettings.DefaultsKey.similarityBoost) as? Double)
+                ?? defaultSettings.similarityBoost
+            let style = (defaults.object(forKey: SpeechSettings.DefaultsKey.style) as? Double)
+                ?? defaultSettings.style
+            let useSpeakerBoost = (defaults.object(forKey: SpeechSettings.DefaultsKey.useSpeakerBoost) as? Bool)
+                ?? defaultSettings.useSpeakerBoost
+            return SpeechSettings(
+                voiceId: defaults.string(forKey: SpeechSettings.DefaultsKey.voiceId) ?? "",
+                voiceName: defaults.string(forKey: SpeechSettings.DefaultsKey.voiceName) ?? "",
+                stability: stability,
+                similarityBoost: similarityBoost,
+                style: style,
+                useSpeakerBoost: useSpeakerBoost,
+                autoSpeak: defaults.bool(forKey: SpeechSettings.DefaultsKey.autoSpeak)
+            )
         },
         save: { settings in
             let defaults = UserDefaults.standard
-            defaults.set(settings.voiceName, forKey: SpeechSettings.DefaultsKey.voice)
-            defaults.set(settings.rate, forKey: SpeechSettings.DefaultsKey.rate)
-            defaults.set(settings.pitch, forKey: SpeechSettings.DefaultsKey.pitch)
+            defaults.set(settings.voiceId, forKey: SpeechSettings.DefaultsKey.voiceId)
+            defaults.set(settings.voiceName, forKey: SpeechSettings.DefaultsKey.voiceName)
+            defaults.set(settings.stability, forKey: SpeechSettings.DefaultsKey.stability)
+            defaults.set(settings.similarityBoost, forKey: SpeechSettings.DefaultsKey.similarityBoost)
+            defaults.set(settings.style, forKey: SpeechSettings.DefaultsKey.style)
+            defaults.set(settings.useSpeakerBoost, forKey: SpeechSettings.DefaultsKey.useSpeakerBoost)
             defaults.set(settings.autoSpeak, forKey: SpeechSettings.DefaultsKey.autoSpeak)
         }
     )

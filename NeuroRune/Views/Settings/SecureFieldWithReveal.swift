@@ -5,7 +5,7 @@
 //  Created by tykim
 //
 //  API 키·PAT 등 비밀값 입력을 위한 SecureField + eye 토글 조합.
-//  Anthropic / Azure / Groq / GitHub 자격증명 뷰 공통 컴포넌트.
+//  Anthropic / ElevenLabs / Groq / GitHub 자격증명 뷰 공통 컴포넌트.
 //
 
 import SwiftUI
