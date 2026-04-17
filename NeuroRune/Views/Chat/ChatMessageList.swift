@@ -56,6 +56,11 @@ struct ChatMessageList: View {
                 }
             }
             .onChange(of: messages.last?.content) {
+                // 스트리밍 중에만 스크롤. 비스트리밍 상태에서 content 변경은 없음.
+                // animation 없이 조용히 바닥 유지. defaultScrollAnchor(.bottom)과 경쟁하지 않도록
+                // 키보드 열린 상태에서의 safe area 변동과 겹치면 바운싱 발생하므로
+                // isStreaming guard로 불필요한 호출 제거.
+                guard isStreaming else { return }
                 let lastIndex = messages.count - 1
                 if lastIndex >= 0 {
                     proxy.scrollTo(lastIndex, anchor: .bottom)
@@ -80,9 +85,10 @@ struct ChatMessageList: View {
                 guard focused else { return }
                 let lastIndex = messages.count - 1
                 guard lastIndex >= 0 else { return }
+                // 키보드 animation (~300ms) 완료 후 스크롤. 도중에 하면 safe area 변동과 겹쳐 바운싱.
                 Task { @MainActor in
-                    try? await Task.sleep(for: .milliseconds(250))
-                    withAnimation(.easeOut(duration: 0.25)) {
+                    try? await Task.sleep(for: .milliseconds(350))
+                    withAnimation(.easeOut(duration: 0.2)) {
                         proxy.scrollTo(lastIndex, anchor: .bottom)
                     }
                 }
