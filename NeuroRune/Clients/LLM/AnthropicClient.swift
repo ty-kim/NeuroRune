@@ -72,8 +72,7 @@ nonisolated extension LLMClient {
                     let parsed = parseAnthropicErrorMessage(body) ?? body
                     let trimmed = parsed.isEmpty ? "stream request failed" : parsed
                     Logger.network.error(
-                        // swiftlint:disable:next line_length
-                        "anthropic stream failed: status=\(http.statusCode, privacy: .public), body=\(trimmed, privacy: .public)"
+                        "anthropic \(http.statusCode, privacy: .public): \(trimmed, privacy: .public)"
                     )
                     throw LLMError.server(status: http.statusCode, message: trimmed)
                 }

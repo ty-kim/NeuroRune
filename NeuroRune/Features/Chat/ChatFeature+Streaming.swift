@@ -52,58 +52,56 @@ nonisolated extension ChatFeature {
             return .merge(
                 .cancel(id: CancelID.autoSend),
                 .run { send in
-                await Self.save(conversationForDisk, using: conversationStore, send: send)
-                do {
-                    let system = await Self.loadSystemPrompt(
-                        github: githubClient,
-                        creds: githubCredentialsClient
-                    )
-                    var roundMessages: [APIMessage] = messagesForAPI.map {
-                        APIMessage.text(role: $0.role.rawValue, content: $0.content)
-                    }
-                    let tools: [LLMTool] = [.readMemory, .writeMemory]
-                    let maxRounds = 5
-                    for _ in 0..<maxRounds {
-                        var roundText = ""
-                        var roundToolUses: [(id: String, name: String, inputJSON: String)] = []
-                        let stream = try await llmClient.streamMessage(
-                            roundMessages, model, conversationForDisk.effort, system, tools
-                        )
-                        for try await event in stream {
-                            switch event {
-                            case .textDelta(let text):
-                                roundText += text
-                                await send(.streamChunkReceived(text))
-                            case let .toolUseRequest(id, name, inputJSON):
-                                roundToolUses.append((id, name, inputJSON))
-                            case let .rateLimitUpdate(state):
-                                await send(.rateLimitUpdated(state))
-                            }
-                        }
-                        if roundToolUses.isEmpty { break }
-
-                        // 다음 라운드: 이번 round의 assistant content + tool_result blocks
-                        roundMessages.append(Self.buildAssistantTurn(roundText: roundText, toolUses: roundToolUses))
-                        let resultBlocks = await Self.executeTools(
-                            roundToolUses,
-                            send: send,
+                    await Self.save(conversationForDisk, using: conversationStore, send: send)
+                    do {
+                        let system = await Self.loadSystemPrompt(
                             github: githubClient,
-                            creds: githubCredentialsClient,
-                            gate: writeApprovalGate
+                            creds: githubCredentialsClient
                         )
-                        roundMessages.append(APIMessage(role: "user", content: .blocks(resultBlocks)))
+                        var roundMessages: [APIMessage] = messagesForAPI.map {
+                            APIMessage.text(role: $0.role.rawValue, content: $0.content)
+                        }
+                        let tools: [LLMTool] = [.readMemory, .writeMemory]
+                        let maxRounds = 5
+                        for _ in 0..<maxRounds {
+                            var roundText = ""
+                            var roundToolUses: [(id: String, name: String, inputJSON: String)] = []
+                            let stream = try await llmClient.streamMessage(
+                                roundMessages, model, conversationForDisk.effort, system, tools
+                            )
+                            for try await event in stream {
+                                switch event {
+                                case .textDelta(let text):
+                                    roundText += text
+                                    await send(.streamChunkReceived(text))
+                                case let .toolUseRequest(id, name, inputJSON):
+                                    roundToolUses.append((id, name, inputJSON))
+                                case let .rateLimitUpdate(state):
+                                    await send(.rateLimitUpdated(state))
+                                }
+                            }
+                            if roundToolUses.isEmpty { break }
+
+                            roundMessages.append(Self.buildAssistantTurn(roundText: roundText, toolUses: roundToolUses))
+                            let resultBlocks = await Self.executeTools(
+                                roundToolUses,
+                                send: send,
+                                github: githubClient,
+                                creds: githubCredentialsClient,
+                                gate: writeApprovalGate
+                            )
+                            roundMessages.append(APIMessage(role: "user", content: .blocks(resultBlocks)))
+                        }
+                        await send(.streamFinished)
+                    } catch is CancellationError {
+                        // stopTapped가 streamFinished를 명시적으로 보낸다.
+                    } catch let error as LLMError {
+                        await send(.errorOccurred(error))
+                    } catch {
+                        await send(.errorOccurred(.network(error.localizedDescription)))
                     }
-                    await send(.streamFinished)
-                } catch is CancellationError {
-                    // stopTapped가 streamFinished를 명시적으로 보낸다.
-                    // 취소된 effect는 후속 액션을 중복 발행하지 않는다.
-                } catch let error as LLMError {
-                    await send(.errorOccurred(error))
-                } catch {
-                    await send(.errorOccurred(.network(error.localizedDescription)))
                 }
-            }
-            .cancellable(id: CancelID.streaming, cancelInFlight: true)
+                .cancellable(id: CancelID.streaming, cancelInFlight: true)
             )
 
         case .stopTapped:
