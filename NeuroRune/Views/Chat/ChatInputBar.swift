@@ -41,11 +41,19 @@ struct ChatInputBar: View {
                 }
                 .focused(focus)
                 .onChange(of: focus.wrappedValue) { _, focused in
-                    // 입력창 탭(포커스 진입) = 카운트다운 취소.
                     if focused, autoSendCountdown != nil {
                         onCancelCountdown?()
                     }
                 }
+                .simultaneousGesture(
+                    // 이미 포커스된 상태에서 탭해도 카운트다운 취소.
+                    // onChange(focus)는 false→true만 감지, 이미 true면 발생 안 함.
+                    TapGesture().onEnded {
+                        if autoSendCountdown != nil {
+                            onCancelCountdown?()
+                        }
+                    }
+                )
                 .padding(.horizontal, 14)
                 .padding(.vertical, 12)
                 .background(
