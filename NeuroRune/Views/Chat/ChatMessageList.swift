@@ -48,18 +48,16 @@ struct ChatMessageList: View {
                 TapGesture().onEnded { onTap() }
             )
             .onChange(of: messages.count) {
-                withAnimation {
-                    let lastIndex = messages.count - 1
-                    if lastIndex >= 0 {
-                        proxy.scrollTo(lastIndex, anchor: .bottom)
-                    }
+                // animation 없이 즉시 점프. withAnimation은 content height 확정 전에
+                // target offset이 content 범위를 순간 넘어가 배경(DarkNavy) 노출.
+                let lastIndex = messages.count - 1
+                if lastIndex >= 0 {
+                    proxy.scrollTo(lastIndex, anchor: .bottom)
                 }
             }
             .onChange(of: messages.last?.content) {
-                // 스트리밍 중에만 스크롤. 비스트리밍 상태에서 content 변경은 없음.
-                // animation 없이 조용히 바닥 유지. defaultScrollAnchor(.bottom)과 경쟁하지 않도록
-                // 키보드 열린 상태에서의 safe area 변동과 겹치면 바운싱 발생하므로
-                // isStreaming guard로 불필요한 호출 제거.
+                // 스트리밍 중 토큰 유입마다 바닥 유지. animation 없이, count 트리거와 같은
+                // 타이밍으로 맞춰야 jitter 없음.
                 guard isStreaming else { return }
                 let lastIndex = messages.count - 1
                 if lastIndex >= 0 {
