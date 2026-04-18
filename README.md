@@ -41,7 +41,7 @@ each generation passes what it learned to the next.
 - [x] Error UI (banner + shake + 401 alert)
 - [x] App icon (ᛗ Mannaz rune), brand colors (amber + dark navy)
 - [x] Launch screen (DarkNavy + Mannaz rune)
-- [x] 179 unit tests, Swift Testing + TCA TestStore
+- [x] 392 unit tests, Swift Testing + TCA TestStore
 
 ### Sprint 2 — Memory (Apr 13~)
 - [x] GitHub-backed memory sync (.global / .local roles, PAT auth)
@@ -50,9 +50,10 @@ each generation passes what it learned to the next.
 - [x] Tool-call transparency UI (chip showing which file Claude is reading)
 - [x] write_memory tool with confirm modal (role/path/commit/content → user accept)
 
-### Sprint 3 — Voice & Consolidation (Future)
-- [ ] Groq Whisper voice input (multilingual, better Korean accuracy than Clova/SFSpeechRecognizer)
-- [ ] Consolidation (raw chat → distilled memory proposals)
+### Sprint 3 — Voice & Consolidation ✅
+- [x] Groq Whisper STT — initially planned Clova, switched for multilingual + Korean accuracy
+- [x] ElevenLabs TTS — initially planned Azure, switched for voice quality + dynamic voice list
+- [x] Consolidation (collect recent chat + memory → LLM proposal → accept/reject UI)
 
 ## Stack
 
