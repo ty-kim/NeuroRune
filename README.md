@@ -68,7 +68,9 @@ each generation passes what it learned to the next.
 
 - iOS 17+
 - Anthropic API key (BYOK)
-- GitHub Personal Access Token (Sprint 2+)
+- Memory: GitHub Personal Access Token (BYOK)
+- Speech To Text: Groq Whisper API key (BYOK)
+- Text To Speech: ElevenLabs API key (BYOK)
 
 ## Known Limitations
 
