@@ -6,7 +6,6 @@
 //
 
 import SwiftUI
-import UIKit // UIResponder.keyboardDidShowNotification
 
 struct ChatMessageList: View {
     let messages: [Message]
@@ -98,13 +97,13 @@ struct ChatMessageList: View {
                 }
             }
             .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardDidShowNotification)) { _ in
-                 // 키보드 완전히 올라온 시점 = safe area 안정화 완료. 이때 bottom 고정하면
-                 // 공백/덜감 없음. 350ms sleep 같은 매직넘버 제거.
-                 guard isInputFocused else { return }
-                 let lastIndex = messages.count - 1
-                 guard lastIndex >= 0 else { return }
+                // 키보드 완전히 올라온 시점 = safe area 안정화 완료. 이때 bottom 고정하면
+                // 공백/덜감 없음. 350ms sleep 같은 매직넘버 제거.
+                guard isInputFocused else { return }
+                let lastIndex = messages.count - 1
+                guard lastIndex >= 0 else { return }
                 proxy.scrollTo(bottomSentinelID, anchor: .bottom)
-             }
+            }
         }
     }
 
