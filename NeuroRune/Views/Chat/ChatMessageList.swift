@@ -51,7 +51,9 @@ struct ChatMessageList: View {
                 // animation 없이 즉시 점프. withAnimation은 content height 확정 전에
                 // target offset이 content 범위를 순간 넘어가 배경(DarkNavy) 노출.
                 let lastIndex = messages.count - 1
-                if lastIndex >= 0 {
+                guard lastIndex >= 0 else { return }
+                Task { @MainActor in
+                    try? await Task.sleep(for: .milliseconds(50))
                     proxy.scrollTo(lastIndex, anchor: .bottom)
                 }
             }
@@ -60,7 +62,9 @@ struct ChatMessageList: View {
                 // 타이밍으로 맞춰야 jitter 없음.
                 guard isStreaming else { return }
                 let lastIndex = messages.count - 1
-                if lastIndex >= 0 {
+                guard lastIndex >= 0 else { return }
+                Task { @MainActor in
+                    try? await Task.sleep(for: .milliseconds(50))
                     proxy.scrollTo(lastIndex, anchor: .bottom)
                 }
             }
