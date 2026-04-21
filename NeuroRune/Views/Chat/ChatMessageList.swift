@@ -6,7 +6,6 @@
 //
 
 import SwiftUI
-import UIKit // UIResponder.keyboardDidShowNotification
 
 struct ChatMessageList: View {
     let messages: [Message]
