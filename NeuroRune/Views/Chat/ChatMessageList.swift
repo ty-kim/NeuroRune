@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import UIKit // UIResponder.keyboardDidShowNotification
 
 struct ChatMessageList: View {
     let messages: [Message]
@@ -18,6 +19,8 @@ struct ChatMessageList: View {
     /// Phase 22 — 현재 TTS 재생 중인 메시지 id. assistant 버블에 재생/중지 버튼 노출.
     var speakingMessageID: UUID?
     var onSpeakTapped: ((UUID) -> Void)?
+    @State private var autoFollowBottom = true
+    private let bottomSentinelID = "chat.bottomSentinel"
 
     var body: some View {
         ScrollViewReader { proxy in
@@ -37,6 +40,10 @@ struct ChatMessageList: View {
                         )
                         .id(index)
                     }
+                    Color.clear
+                        .frame(height: 1)
+                        .id(bottomSentinelID)
+                        .onAppear { autoFollowBottom = true }
                 }
                 .padding()
             }
@@ -47,25 +54,36 @@ struct ChatMessageList: View {
             .simultaneousGesture(
                 TapGesture().onEnded { onTap() }
             )
+            .simultaneousGesture(
+                DragGesture(minimumDistance: 10)
+                    .onChanged { value in
+                        // 아래로 드래그 = 위 content 보려는 의도 = auto-follow 해제
+                        if value.translation.height > 0 {
+                            autoFollowBottom = false
+                        }
+                    }
+            )
             .onChange(of: messages.count) {
                 // animation 없이 즉시 점프. withAnimation은 content height 확정 전에
                 // target offset이 content 범위를 순간 넘어가 배경(DarkNavy) 노출.
+                // 새 메시지 = 사용자 의도, 무조건 bottom
+                autoFollowBottom = true
                 let lastIndex = messages.count - 1
                 guard lastIndex >= 0 else { return }
                 Task { @MainActor in
                     try? await Task.sleep(for: .milliseconds(50))
-                    proxy.scrollTo(lastIndex, anchor: .bottom)
+                    proxy.scrollTo(bottomSentinelID, anchor: .bottom)
                 }
             }
             .onChange(of: messages.last?.content) {
                 // 스트리밍 중 토큰 유입마다 바닥 유지. animation 없이, count 트리거와 같은
                 // 타이밍으로 맞춰야 jitter 없음.
-                guard isStreaming else { return }
+                guard isStreaming, autoFollowBottom else { return }
                 let lastIndex = messages.count - 1
                 guard lastIndex >= 0 else { return }
                 Task { @MainActor in
                     try? await Task.sleep(for: .milliseconds(50))
-                    proxy.scrollTo(lastIndex, anchor: .bottom)
+                    proxy.scrollTo(bottomSentinelID, anchor: .bottom)
                 }
             }
             .onAppear {
@@ -76,25 +94,17 @@ struct ChatMessageList: View {
                 guard lastIndex >= 0 else { return }
                 Task { @MainActor in
                     try? await Task.sleep(for: .milliseconds(50))
-                    proxy.scrollTo(lastIndex, anchor: .bottom)
+                    proxy.scrollTo(bottomSentinelID, anchor: .bottom)
                 }
             }
-            .onChange(of: isInputFocused) { _, focused in
-                // 키보드가 올라올 때 마지막 메시지가 입력바 뒤로 가려지지 않도록
-                // 바닥으로 스크롤. 포커스 해제 시에는 유지(사용자 의도 존중).
-                // 첫 포커스 시 SwiftUI가 키보드 높이 반영 전이라 즉시 scrollTo는
-                // 무효화되는 경우가 있다. 짧은 지연 후 다시 시도.
-                guard focused else { return }
-                let lastIndex = messages.count - 1
-                guard lastIndex >= 0 else { return }
-                // 키보드 animation (~300ms) 완료 후 스크롤. 도중에 하면 safe area 변동과 겹쳐 바운싱.
-                Task { @MainActor in
-                    try? await Task.sleep(for: .milliseconds(350))
-                    withAnimation(.easeOut(duration: 0.2)) {
-                        proxy.scrollTo(lastIndex, anchor: .bottom)
-                    }
-                }
-            }
+            .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardDidShowNotification)) { _ in
+                 // 키보드 완전히 올라온 시점 = safe area 안정화 완료. 이때 bottom 고정하면
+                 // 공백/덜감 없음. 350ms sleep 같은 매직넘버 제거.
+                 guard isInputFocused else { return }
+                 let lastIndex = messages.count - 1
+                 guard lastIndex >= 0 else { return }
+                proxy.scrollTo(bottomSentinelID, anchor: .bottom)
+             }
         }
     }
 
