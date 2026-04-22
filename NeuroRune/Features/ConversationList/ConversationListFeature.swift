@@ -125,7 +125,11 @@ nonisolated struct ConversationListFeature: Reducer {
 
         case let .modelSelected(model):
             state.showModelPicker = false
-            let effort = model.supportsEffort ? state.selectedEffort : nil
+            let effort: EffortLevel? = {
+                guard let selected = state.selectedEffort,
+                      model.supportedEffortLevels.contains(selected) else { return nil }
+                return selected
+            }()
             state.selectedConversation = Conversation.empty(
                 modelId: model.id,
                 effort: effort

@@ -279,7 +279,7 @@ struct ConversationListView: View {
                                 Text(model.displayName)
                                     .foregroundStyle(Color("BrandTitle"))
                                 Spacer()
-                                if model.supportsEffort {
+                                if !model.supportedEffortLevels.isEmpty {
                                     Image(systemName: "gauge.with.dots.needle.67percent")
                                         .foregroundStyle(.purple.opacity(0.7))
                                         .accessibilityHidden(true)
@@ -288,7 +288,7 @@ struct ConversationListView: View {
                             .contentShape(Rectangle())
                             .accessibilityElement(children: .combine)
                             .accessibilityLabel(
-                                model.supportsEffort
+                                !model.supportedEffortLevels.isEmpty
                                     ? "\(model.displayName), \(String(localized: "a11y.modelPicker.effortSupported"))"
                                     : model.displayName
                             )

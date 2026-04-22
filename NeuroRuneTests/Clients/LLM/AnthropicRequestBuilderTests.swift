@@ -54,6 +54,7 @@ struct AnthropicRequestBuilderTests {
         let body = try decodeBody(request)
         let thinking = body["thinking"] as? [String: Any]
         #expect(thinking?["type"] as? String == "adaptive")
+        #expect(thinking?["display"] as? String == "omitted")
         let outputConfig = body["output_config"] as? [String: Any]
         #expect(outputConfig?["effort"] as? String == "medium")
     }
