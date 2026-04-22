@@ -60,6 +60,9 @@ nonisolated enum AnthropicRequestBuilder {
 private nonisolated struct AnthropicRequestBody: Encodable {
     struct Thinking: Encodable {
         let type: String
+        /// Thinking 토큰 스트리밍을 생략해 first text token latency를 줄인다.
+        /// NeuroRune UI는 thinking 블록을 표시하지 않으므로 "omitted" 고정.
+        let display: String = "omitted"
     }
     struct OutputConfig: Encodable {
         let effort: String
