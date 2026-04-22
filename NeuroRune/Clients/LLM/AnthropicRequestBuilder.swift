@@ -37,7 +37,7 @@ nonisolated enum AnthropicRequestBuilder {
         let resolvedMessages: [APIMessage] = apiMessages
             ?? messages.map { APIMessage.text(role: $0.role.rawValue, content: $0.content) }
         let effortConfig: AnthropicRequestBody.OutputConfig? = {
-            guard model.supportsEffort, let effort else { return nil }
+            guard let effort, model.supportedEffortLevels.contains(effort) else { return nil }
             return AnthropicRequestBody.OutputConfig(effort: effort.rawValue)
         }()
         let body = AnthropicRequestBody(
