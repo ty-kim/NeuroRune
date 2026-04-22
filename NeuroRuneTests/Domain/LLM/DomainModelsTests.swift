@@ -127,15 +127,26 @@ struct LLMModelTests {
         #expect(result.displayName == "unknown-model")
     }
 
-    @Test("opus47/opus46/sonnet46는 supportsEffort == true")
-    func effortSupportedModels() {
-        #expect(LLMModel.opus47.supportsEffort == true)
-        #expect(LLMModel.opus46.supportsEffort == true)
-        #expect(LLMModel.sonnet46.supportsEffort == true)
+    @Test("opus47/opus46/sonnet46는 effort 지원, haiku45는 미지원")
+    func supportedEffortLevelsPresence() {
+        #expect(LLMModel.opus47.supportedEffortLevels.isEmpty == false)
+        #expect(LLMModel.opus46.supportedEffortLevels.isEmpty == false)
+        #expect(LLMModel.sonnet46.supportedEffortLevels.isEmpty == false)
+        #expect(LLMModel.haiku45.supportedEffortLevels.isEmpty == true)
     }
 
-    @Test("haiku45는 supportsEffort == false")
-    func haiku45DoesNotSupportEffort() {
-        #expect(LLMModel.haiku45.supportsEffort == false)
+    @Test("xhigh는 Opus 4.7 전용")
+    func xhighIsOpus47Only() {
+        #expect(LLMModel.opus47.supportedEffortLevels.contains(.xhigh) == true)
+        #expect(LLMModel.opus46.supportedEffortLevels.contains(.xhigh) == false)
+        #expect(LLMModel.sonnet46.supportedEffortLevels.contains(.xhigh) == false)
+        #expect(LLMModel.haiku45.supportedEffortLevels.contains(.xhigh) == false)
+    }
+
+    @Test("Opus 4.6 / Sonnet 4.6는 low/medium/high/max 지원")
+    func opus46Sonnet46SupportStandardLevels() {
+        let standard: [EffortLevel] = [.low, .medium, .high, .max]
+        #expect(LLMModel.opus46.supportedEffortLevels == standard)
+        #expect(LLMModel.sonnet46.supportedEffortLevels == standard)
     }
 }

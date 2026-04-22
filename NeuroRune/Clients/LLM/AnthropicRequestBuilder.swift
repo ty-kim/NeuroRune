@@ -32,12 +32,12 @@ nonisolated enum AnthropicRequestBuilder {
         request.setValue(AnthropicAPI.apiVersion, forHTTPHeaderField: "anthropic-version")
         request.setValue("application/json", forHTTPHeaderField: "content-type")
 
-        // 4.6 모델은 adaptive thinking + output_config.effort 사용 (manual budget_tokens deprecated).
-        // 모델이 effort 미지원이면 둘 다 omit.
+        // Opus 4.7은 adaptive thinking only, Opus/Sonnet 4.6은 adaptive + output_config.effort 권장.
+        // manual budget_tokens는 deprecated. 모델이 effort 미지원이면 둘 다 omit.
         let resolvedMessages: [APIMessage] = apiMessages
             ?? messages.map { APIMessage.text(role: $0.role.rawValue, content: $0.content) }
         let effortConfig: AnthropicRequestBody.OutputConfig? = {
-            guard model.supportsEffort, let effort else { return nil }
+            guard let effort, model.supportedEffortLevels.contains(effort) else { return nil }
             return AnthropicRequestBody.OutputConfig(effort: effort.rawValue)
         }()
         let body = AnthropicRequestBody(
@@ -60,6 +60,9 @@ nonisolated enum AnthropicRequestBuilder {
 private nonisolated struct AnthropicRequestBody: Encodable {
     struct Thinking: Encodable {
         let type: String
+        /// Thinking 토큰 스트리밍을 생략해 first text token latency를 줄인다.
+        /// NeuroRune UI는 thinking 블록을 표시하지 않으므로 "omitted" 고정.
+        let display: String = "omitted"
     }
     struct OutputConfig: Encodable {
         let effort: String
