@@ -39,12 +39,13 @@ struct ChatMessageList: View {
                         )
                         .id(index)
                     }
-                    Color.clear
-                        .frame(height: 1)
-                        .id(bottomSentinelID)
-                        .onAppear { autoFollowBottom = true }
                 }
                 .padding()
+
+                Color.clear
+                    .frame(height: 1)
+                    .id(bottomSentinelID)
+                    .onAppear { autoFollowBottom = true }
             }
             // 바닥을 기준으로 레이아웃 → 키보드로 뷰포트 축소 시에도 마지막 메시지가 자동 유지.
             // onChange scrollTo가 "이미 바닥"이라 무시되는 문제 해결.
