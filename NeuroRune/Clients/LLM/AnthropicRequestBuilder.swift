@@ -32,8 +32,8 @@ nonisolated enum AnthropicRequestBuilder {
         request.setValue(AnthropicAPI.apiVersion, forHTTPHeaderField: "anthropic-version")
         request.setValue("application/json", forHTTPHeaderField: "content-type")
 
-        // 4.6 모델은 adaptive thinking + output_config.effort 사용 (manual budget_tokens deprecated).
-        // 모델이 effort 미지원이면 둘 다 omit.
+        // Opus 4.7은 adaptive thinking only, Opus/Sonnet 4.6은 adaptive + output_config.effort 권장.
+        // manual budget_tokens는 deprecated. 모델이 effort 미지원이면 둘 다 omit.
         let resolvedMessages: [APIMessage] = apiMessages
             ?? messages.map { APIMessage.text(role: $0.role.rawValue, content: $0.content) }
         let effortConfig: AnthropicRequestBody.OutputConfig? = {

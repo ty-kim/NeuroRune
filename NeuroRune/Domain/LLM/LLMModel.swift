@@ -9,7 +9,7 @@ nonisolated struct LLMModel: Equatable, Sendable, Identifiable {
     let id: String
     let displayName: String
     /// Anthropic `output_config.effort` 파라미터를 지원하는지 여부.
-    /// 4.5/4.6 모델만 true. haiku는 미지원.
+    /// Opus 4.7 / Opus 4.6 / Sonnet 4.6 지원. Haiku 4.5 미지원.
     let supportsEffort: Bool
 
     init(id: String, displayName: String, supportsEffort: Bool = false) {
