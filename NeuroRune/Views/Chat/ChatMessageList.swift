@@ -19,6 +19,7 @@ struct ChatMessageList: View {
     var speakingMessageID: UUID?
     var onSpeakTapped: ((UUID) -> Void)?
     @State private var autoFollowBottom = true
+    @State private var pendingBottomScrollTask: Task<Void, Never>?
     private let bottomSentinelID = "chat.bottomSentinel"
 
     var body: some View {
@@ -68,43 +69,43 @@ struct ChatMessageList: View {
                 // target offset이 content 범위를 순간 넘어가 배경(DarkNavy) 노출.
                 // 새 메시지 = 사용자 의도, 무조건 bottom
                 autoFollowBottom = true
-                let lastIndex = messages.count - 1
-                guard lastIndex >= 0 else { return }
-                Task { @MainActor in
-                    try? await Task.sleep(for: .milliseconds(50))
-                    proxy.scrollTo(bottomSentinelID, anchor: .bottom)
-                }
+                scheduleBottomScroll(using: proxy)
             }
             .onChange(of: messages.last?.content) {
                 // 스트리밍 중 토큰 유입마다 바닥 유지. animation 없이, count 트리거와 같은
                 // 타이밍으로 맞춰야 jitter 없음.
                 guard isStreaming, autoFollowBottom else { return }
-                let lastIndex = messages.count - 1
-                guard lastIndex >= 0 else { return }
-                Task { @MainActor in
-                    try? await Task.sleep(for: .milliseconds(50))
-                    proxy.scrollTo(bottomSentinelID, anchor: .bottom)
-                }
+                scheduleBottomScroll(using: proxy)
             }
             .onAppear {
                 // 기존 대화 재진입 시 최하단(최신 메시지)으로 자동 스크롤.
                 // LazyVStack이 첫 프레임에 아직 content 높이를 확정 못 해서
                 // 즉시 scrollTo는 no-op이 된다. 짧은 지연 후 시도.
-                let lastIndex = messages.count - 1
-                guard lastIndex >= 0 else { return }
-                Task { @MainActor in
-                    try? await Task.sleep(for: .milliseconds(50))
-                    proxy.scrollTo(bottomSentinelID, anchor: .bottom)
-                }
+                scheduleBottomScroll(using: proxy, delay: .milliseconds(50))
             }
             .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardDidShowNotification)) { _ in
                 // 키보드 완전히 올라온 시점 = safe area 안정화 완료. 이때 bottom 고정하면
                 // 공백/덜감 없음. 350ms sleep 같은 매직넘버 제거.
                 guard isInputFocused else { return }
-                let lastIndex = messages.count - 1
-                guard lastIndex >= 0 else { return }
-                proxy.scrollTo(bottomSentinelID, anchor: .bottom)
+                scheduleBottomScroll(using: proxy)
             }
+            .onDisappear { pendingBottomScrollTask?.cancel() }
+        }
+    }
+
+    /// 중복 scrollTo를 하나로 합쳐 stale jump를 막는다.
+    /// sentinel이 항상 mount되어 있으므로 일반 변경 경로는 1 frame 양보만으로 충분하다.
+    private func scheduleBottomScroll(using proxy: ScrollViewProxy, delay: Duration? = nil) {
+        pendingBottomScrollTask?.cancel()
+        pendingBottomScrollTask = Task { @MainActor in
+            if let delay {
+                try? await Task.sleep(for: delay)
+            } else {
+                await Task.yield()
+                await Task.yield()
+            }
+            guard !Task.isCancelled else { return }
+            proxy.scrollTo(bottomSentinelID, anchor: .bottom)
         }
     }
 
