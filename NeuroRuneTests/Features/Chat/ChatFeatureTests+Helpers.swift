@@ -40,6 +40,7 @@ extension ChatFeatureTests {
     /// ```
     func applyDefaultDependencies(_ deps: inout DependencyValues) {
         deps.date = .constant(Self.fixedDate)
+        deps.continuousClock = ImmediateClock()
         deps.llmClient.streamMessage = { @Sendable _, _, _, _, _ in
             AsyncThrowingStream { $0.finish() }
         }
