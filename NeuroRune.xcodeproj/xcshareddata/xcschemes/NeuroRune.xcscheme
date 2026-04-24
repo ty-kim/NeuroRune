@@ -46,7 +46,7 @@
             parallelizable = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "FC48E70F2F896D4D00BDAF8F"
+               BlueprintIdentifier = "FC17A9382F9B7C9400E43BCD"
                BuildableName = "NeuroRuneUITests.xctest"
                BlueprintName = "NeuroRuneUITests"
                ReferencedContainer = "container:NeuroRune.xcodeproj">
