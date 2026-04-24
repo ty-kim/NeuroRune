@@ -59,30 +59,32 @@ struct ChatView: View {
     var body: some View {
         WithViewStore(store, observe: { $0 }) { viewStore in
             NavigationStack {
-                VStack(spacing: 0) {
-                    ChatMessageList(
-                        messages: viewStore.conversation.messages,
-                        isStreaming: viewStore.isStreaming,
-                        isInputFocused: isInputFocused,
-                        onTap: { isInputFocused = false },
-                        speakingMessageID: viewStore.speakingMessageID,
-                        onSpeakTapped: { id in viewStore.send(.speakTapped(id)) }
-                    )
-                    overlays(viewStore)
-                    ChatInputBar(
-                        text: viewStore.binding(
-                            get: \.inputText,
-                            send: ChatFeature.Action.inputChanged
-                        ),
-                        isStreaming: viewStore.isStreaming,
-                        onSend: { viewStore.send(.sendTapped) },
-                        onStop: { viewStore.send(.stopTapped) },
-                        isRecording: viewStore.isRecording,
-                        onMicTapped: { viewStore.send(.micTapped) },
-                        autoSendCountdown: viewStore.autoSendCountdown,
-                        onCancelCountdown: { viewStore.send(.autoSendCancelled) },
-                        focus: $isInputFocused
-                    )
+                ChatMessageList(
+                    messages: viewStore.conversation.messages,
+                    isStreaming: viewStore.isStreaming,
+                    isInputFocused: isInputFocused,
+                    onTap: { isInputFocused = false },
+                    speakingMessageID: viewStore.speakingMessageID,
+                    onSpeakTapped: { id in viewStore.send(.speakTapped(id)) }
+                )
+                .safeAreaInset(edge: .bottom, spacing: 0) {
+                    VStack(spacing: 0) {
+                        overlays(viewStore)
+                        ChatInputBar(
+                            text: viewStore.binding(
+                                get: \.inputText,
+                                send: ChatFeature.Action.inputChanged
+                            ),
+                            isStreaming: viewStore.isStreaming,
+                            onSend: { viewStore.send(.sendTapped) },
+                            onStop: { viewStore.send(.stopTapped) },
+                            isRecording: viewStore.isRecording,
+                            onMicTapped: { viewStore.send(.micTapped) },
+                            autoSendCountdown: viewStore.autoSendCountdown,
+                            onCancelCountdown: { viewStore.send(.autoSendCancelled) },
+                            focus: $isInputFocused
+                        )
+                    }
                 }
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar {
