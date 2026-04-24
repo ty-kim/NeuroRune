@@ -62,7 +62,6 @@ struct ChatView: View {
                 ChatMessageList(
                     messages: viewStore.conversation.messages,
                     isStreaming: viewStore.isStreaming,
-                    isInputFocused: isInputFocused,
                     onTap: { isInputFocused = false },
                     speakingMessageID: viewStore.speakingMessageID,
                     onSpeakTapped: { id in viewStore.send(.speakTapped(id)) }
