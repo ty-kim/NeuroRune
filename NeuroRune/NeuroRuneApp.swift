@@ -34,6 +34,9 @@ struct NeuroRuneApp: App {
         prepareDependencies { deps in
             // Keychain은 UI test mode 전체에 기본 교체 — Anthropic 키 pre-seed로 onboarding 우회.
             deps.keychainClient = .uiTestMock
+            // ConversationStore도 기본 in-memory 교체 — 실행마다 empty 상태로 시작해
+            // conversation list 오염 방지.
+            deps.conversationStore = .uiTestMock
             if args.contains("--ui-test-mock-llm-tool-use") {
                 deps.llmClient = .uiTestToolUseMock
             } else if args.contains("--ui-test-mock-llm") {
