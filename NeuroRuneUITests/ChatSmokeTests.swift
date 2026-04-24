@@ -49,4 +49,33 @@ final class ChatSmokeTests: XCTestCase {
         ).firstMatch
         XCTAssertTrue(assistantMessage.waitForExistence(timeout: 3), "assistant 응답 'hi' 미노출")
     }
+
+    @MainActor
+    func test_STT_마이크_자동전송_어시스턴트_응답() throws {
+        let app = XCUIApplication()
+        app.launchArguments += ["--ui-test-mode", "--ui-test-mock-llm", "--ui-test-mock-stt"]
+        app.launch()
+
+        // ChatView 진입
+        app.buttons.matching(identifier: "list.newChatButton").firstMatch.tap()
+        app.buttons.matching(identifier: "modelPicker.modelButton").firstMatch.tap()
+
+        // mic 탭 → recording 시작 → 다시 탭 → stop + transcribe → autoSend countdown
+        let micButton = app.buttons["chat.micButton"]
+        XCTAssertTrue(micButton.waitForExistence(timeout: 5), "chat.micButton 미노출")
+        micButton.tap()
+        micButton.tap()
+
+        // STT stub "voice input" → 2초 countdown 후 자동 전송 → mock LLM "hi there".
+        // timeout은 countdown(2s) + margin 고려해 8s.
+        let userMessage = app.descendants(matching: .any).matching(
+            NSPredicate(format: "label CONTAINS %@", "voice input")
+        ).firstMatch
+        XCTAssertTrue(userMessage.waitForExistence(timeout: 8), "user 메시지 'voice input' 미노출")
+
+        let assistantMessage = app.descendants(matching: .any).matching(
+            NSPredicate(format: "label CONTAINS %@", "hi")
+        ).firstMatch
+        XCTAssertTrue(assistantMessage.waitForExistence(timeout: 5), "assistant 응답 미노출")
+    }
 }

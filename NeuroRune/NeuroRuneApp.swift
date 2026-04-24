@@ -37,7 +37,10 @@ struct NeuroRuneApp: App {
             if args.contains("--ui-test-mock-llm") {
                 deps.llmClient = .uiTestMock
             }
-            // TODO: --ui-test-mock-stt → STTClient 교체
+            if args.contains("--ui-test-mock-stt") {
+                deps.sttClient = .uiTestMock
+                deps.audioRecorder = .uiTestMock
+            }
             // TODO: --ui-test-mock-github → GitHubClient 교체
         }
         #endif
