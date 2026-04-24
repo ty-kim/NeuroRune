@@ -39,6 +39,7 @@ struct ChatInputBar: View {
                     guard !isStreaming else { return }
                     onSend()
                 }
+                .accessibilityIdentifier("chat.inputField")
                 .focused(focus)
                 .onChange(of: focus.wrappedValue) { _, focused in
                     if focused, autoSendCountdown != nil {
@@ -80,6 +81,7 @@ struct ChatInputBar: View {
                 .accessibilityLabel(String(localized: isRecording
                     ? "a11y.chat.stopRecording"
                     : "a11y.chat.startRecording"))
+                .accessibilityIdentifier("chat.micButton")
             }
 
             if isStreaming, let onStop {
@@ -93,6 +95,7 @@ struct ChatInputBar: View {
                         .frame(width: Self.buttonSize, height: Self.buttonSize)
                 }
                 .accessibilityLabel(String(localized: "a11y.chat.stopButton"))
+                .accessibilityIdentifier("chat.stopButton")
             } else if let countdown = autoSendCountdown {
                 // 카운트다운 중: 숫자 표시, 탭 시 즉시 전송 (reducer가 타이머 취소).
                 Button(action: {
@@ -112,6 +115,7 @@ struct ChatInputBar: View {
                 }
                 .accessibilityLabel(String(localized: "a11y.chat.autoSendCountdown"))
                 .accessibilityValue("\(countdown)")
+                .accessibilityIdentifier("chat.countdownButton")
             } else {
                 Button(action: {
                     UIImpactFeedbackGenerator(style: .light).impactOccurred()
@@ -123,6 +127,7 @@ struct ChatInputBar: View {
                 }
                 .disabled(text.isEmpty || isStreaming || isRecording)
                 .accessibilityLabel(String(localized: "a11y.chat.sendButton"))
+                .accessibilityIdentifier("chat.sendButton")
             }
         }
         .padding(.horizontal)

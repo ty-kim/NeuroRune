@@ -45,11 +45,13 @@ struct WriteApprovalModal: View {
                     Button(String(localized: "writeApproval.cancel"), role: .cancel) {
                         onReject()
                     }
+                    .accessibilityIdentifier("writeApproval.reject")
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button(String(localized: "writeApproval.save")) {
                         onApprove()
                     }
+                    .accessibilityIdentifier("writeApproval.approve")
                 }
             }
         }

@@ -83,6 +83,7 @@ struct ConversationListView: View {
                                 .font(.title3)
                         }
                         .accessibilityLabel(String(localized: "a11y.list.newChat"))
+                        .accessibilityIdentifier("list.newChatButton")
                     }
                 }
                 .sheet(
@@ -214,6 +215,7 @@ struct ConversationListView: View {
                 viewStore.send(.newConversationTapped)
             }
             .buttonStyle(.borderedProminent)
+            .accessibilityIdentifier("list.newChatButton")
         }
     }
 
@@ -293,6 +295,7 @@ struct ConversationListView: View {
                                     : model.displayName
                             )
                         }
+                        .accessibilityIdentifier("modelPicker.modelButton")
                     }
                 }
             }

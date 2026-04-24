@@ -2,7 +2,8 @@
 
 [![CI](https://github.com/ty-kim/NeuroRune/actions/workflows/ci.yml/badge.svg)](https://github.com/ty-kim/NeuroRune/actions/workflows/ci.yml)
 
-iOS client for Claude. Sessions die, memory carries on.
+AI-native iOS app for streaming conversations, persistent memory, and voice.
+Sessions die, memory carries on.
 
 ## Overview
 
@@ -15,22 +16,42 @@ Think of it as memory consolidation — the same process your brain runs
 during sleep, moving short-term experience into long-term knowledge.
 NeuroRune does this for your AI sessions.
 
-Built as a BYOK (Bring Your Own Key) app: you provide your own Anthropic
-API key, GitHub Personal Access Token, and optionally a Groq API key (Whisper STT).
-No API keys are bundled with the app.
+Built as a BYOK (Bring Your Own Key) app: you provide your own API keys,
+the app keeps them in Keychain, and nothing is bundled with the binary.
+
+The interesting problems here are not vendor-specific. NeuroRune is built
+around streaming LLM responses, persistent memory, tool use, STT, and TTS,
+with those integrations kept behind client boundaries so providers can be
+swapped without rewriting the whole app. The current live setup uses
+Anthropic for LLM, Groq Whisper for STT, and ElevenLabs for TTS.
+
+## Highlights
+
+- Streaming chat UX with session-based model selection, persistence, and
+  failure handling
+- User-owned memory on GitHub, with `read_memory` / `write_memory` flows
+  and explicit approval before writes
+- Voice input and output through STT / TTS clients, kept separate from
+  product logic
+- Consolidation flow that turns recent chats into reviewable memory
+  proposals
+- Provider boundaries (`LLMClient`, `STTClient`, `SpeakerClient`) so the
+  app layer is not tied to a single model or speech vendor
 
 ## Inspired by
 
-Gibson's cyberspace is a space for data. Cogspace is a space for thought —
-human and AI, thinking together. NeuroRune connects you to it.
+Gibson's cyberspace is a space for data. Cogspace is a space for thought:
+human and AI reasoning across time instead of starting over every session.
+NeuroRune turns that idea into an AI-native mobile product.
 
-Memory inheritance is borrowed from *Infinity Blade* (Epic Games, 2010):
-each generation passes what it learned to the next.
+Its memory model borrows from *Infinity Blade* (Epic Games, 2010): each
+generation inherits what the previous one learned. Here, the "generation"
+is the next model session, and the inheritance is user-owned memory.
 
 ## Roadmap
 
 ### Sprint 1 — Chat (Apr 11-15) ✅
-- [x] Claude API integration (AnthropicClient, error parsing)
+- [x] Streaming LLM integration (current live provider: Anthropic)
 - [x] Keychain-secured credentials (save/load/delete + reset UI)
 - [x] Persistent chat sessions (SwiftData, conversation list, delete)
 - [x] Markdown rendering (swift-markdown-ui, code block horizontal scroll)
@@ -47,30 +68,56 @@ each generation passes what it learned to the next.
 - [x] GitHub-backed memory sync (.global / .local roles, PAT auth)
 - [x] User-driven memory editing + commit (MemoryEditView / MemoryCreateView)
 - [x] Memory context injection (MEMORY.md auto + read_memory tool for dynamic load)
-- [x] Tool-call transparency UI (chip showing which file Claude is reading)
+- [x] Tool-call transparency UI (chip showing which memory file the model is reading)
 - [x] write_memory tool with confirm modal (role/path/commit/content → user accept)
 
 ### Sprint 3 — Voice & Consolidation ✅
-- [x] Groq Whisper STT — initially planned Clova, switched for multilingual + Korean accuracy
-- [x] ElevenLabs TTS — initially planned Azure, switched for voice quality + dynamic voice list
+- [x] STT integration — current live provider: Groq Whisper
+- [x] TTS integration — current live provider: ElevenLabs
 - [x] Consolidation (collect recent chat + memory → LLM proposal → accept/reject UI)
 
 ## Stack
 
 - Swift 6 Strict Concurrency
 - SwiftUI
+- SwiftData
 - TCA (The Composable Architecture)
 - URLSession (first-party networking)
+- AVFoundation
 - swift-markdown-ui
 - Keychain Services
+
+## Architecture
+
+```text
+SwiftUI Views
+    ↕
+TCA Reducers / State
+    ↕
+Client Boundaries
+    ├─ LLMClient
+    ├─ STTClient
+    ├─ SpeakerClient
+    ├─ GitHubClient
+    └─ KeychainClient
+    ↕
+Provider-specific integrations
+```
+
+Current live integrations:
+
+- LLM: Anthropic
+- STT: Groq Whisper
+- TTS: ElevenLabs
+- Memory sync: GitHub REST API
 
 ## Requirements
 
 - iOS 17+
-- Anthropic API key (BYOK)
+- LLM API key (current live provider: Anthropic)
 - Memory: GitHub Personal Access Token (BYOK)
-- Speech To Text: Groq Whisper API key (BYOK)
-- Text To Speech: ElevenLabs API key (BYOK)
+- Speech To Text API key (current live provider: Groq Whisper)
+- Text To Speech API key (current live provider: ElevenLabs)
 
 ## Known Limitations
 
