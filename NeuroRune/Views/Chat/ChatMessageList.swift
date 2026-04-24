@@ -15,32 +15,62 @@ struct ChatMessageList: View {
     /// Phase 22 — 현재 TTS 재생 중인 메시지 id. assistant 버블에 재생/중지 버튼 노출.
     var speakingMessageID: UUID?
     var onSpeakTapped: ((UUID) -> Void)?
+    /// user 전송 후 content 확장 완료 시점에 scroll할 target index.
+    /// onGeometryChange로 LazyVStack 실제 height 변화를 감지해서 layout 완료 후 처리.
+    @State private var pendingScrollTarget: Int?
 
     var body: some View {
-        ScrollView {
-            LazyVStack(spacing: 12) {
-                ForEach(
-                    Array(messages.enumerated()),
-                    id: \.offset
-                ) { index, message in
-                    MessageView(
-                        message: message,
-                        isStreaming: shouldShowIndicator(at: index, message: message),
-                        isSpeaking: speakingMessageID == message.id,
-                        onSpeakTapped: onSpeakTapped.map { handler in
-                            { handler(message.id) }
-                        }
-                    )
-                    .id(index)
+        ScrollViewReader { proxy in
+            ScrollView {
+                LazyVStack(spacing: 12) {
+                    ForEach(
+                        Array(messages.enumerated()),
+                        id: \.offset
+                    ) { index, message in
+                        MessageView(
+                            message: message,
+                            isStreaming: shouldShowIndicator(at: index, message: message),
+                            isSpeaking: speakingMessageID == message.id,
+                            onSpeakTapped: onSpeakTapped.map { handler in
+                                { handler(message.id) }
+                            }
+                        )
+                        .id(index)
+                    }
+                }
+                .padding()
+                .background(
+                    GeometryReader { geo in
+                        Color.clear
+                            .preference(
+                                key: LazyVStackHeightKey.self,
+                                value: geo.size.height
+                            )
+                    }
+                )
+            }
+            .defaultScrollAnchor(.bottom)
+            .scrollDismissesKeyboard(.immediately)
+            .simultaneousGesture(
+                TapGesture().onEnded { onTap() }
+            )
+            // LazyVStack 실제 height 변화 후 pending scroll 처리.
+            // 키보드 떠 있어도 measure 완료 보장 → Task.yield 추측 제거.
+            // onPreferenceChange는 @Sendable·non-MainActor closure라 Task hop 필요.
+            .onPreferenceChange(LazyVStackHeightKey.self) { _ in
+                Task { @MainActor in
+                    guard let target = pendingScrollTarget else { return }
+                    proxy.scrollTo(target, anchor: .bottom)
+                    pendingScrollTarget = nil
                 }
             }
-            .padding()
+            // user 전송만 강제 bottom (iMessage 패턴).
+            // assistant 스트리밍·도착은 defaultScrollAnchor의 near-bottom 판정에 위임.
+            .onChange(of: messages.count) {
+                guard messages.last?.role == .user else { return }
+                pendingScrollTarget = messages.count - 1
+            }
         }
-        .defaultScrollAnchor(.bottom)
-        .scrollDismissesKeyboard(.immediately)
-        .simultaneousGesture(
-            TapGesture().onEnded { onTap() }
-        )
     }
 
     /// 마지막 assistant 메시지 + `isStreaming == true`일 때만 인디케이터 표시.
@@ -48,6 +78,13 @@ struct ChatMessageList: View {
         guard isStreaming else { return false }
         guard index == messages.count - 1 else { return false }
         return message.role == .assistant
+    }
+}
+
+private struct LazyVStackHeightKey: PreferenceKey {
+    static let defaultValue: CGFloat = 0
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = nextValue()
     }
 }
 
