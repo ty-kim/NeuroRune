@@ -34,14 +34,18 @@ struct NeuroRuneApp: App {
         prepareDependencies { deps in
             // Keychain은 UI test mode 전체에 기본 교체 — Anthropic 키 pre-seed로 onboarding 우회.
             deps.keychainClient = .uiTestMock
-            if args.contains("--ui-test-mock-llm") {
+            if args.contains("--ui-test-mock-llm-tool-use") {
+                deps.llmClient = .uiTestToolUseMock
+            } else if args.contains("--ui-test-mock-llm") {
                 deps.llmClient = .uiTestMock
             }
             if args.contains("--ui-test-mock-stt") {
                 deps.sttClient = .uiTestMock
                 deps.audioRecorder = .uiTestMock
             }
-            // TODO: --ui-test-mock-github → GitHubClient 교체
+            if args.contains("--ui-test-mock-github") {
+                deps.githubClient = .uiTestMock
+            }
         }
         #endif
     }

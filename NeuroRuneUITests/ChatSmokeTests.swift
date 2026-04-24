@@ -78,4 +78,36 @@ final class ChatSmokeTests: XCTestCase {
         ).firstMatch
         XCTAssertTrue(assistantMessage.waitForExistence(timeout: 5), "assistant 응답 미노출")
     }
+
+    @MainActor
+    func test_Memory_Write_승인_모달_Accept_이어지는_응답() throws {
+        let app = XCUIApplication()
+        app.launchArguments += [
+            "--ui-test-mode",
+            "--ui-test-mock-llm-tool-use",
+            "--ui-test-mock-github"
+        ]
+        app.launch()
+
+        // ChatView 진입
+        app.buttons.matching(identifier: "list.newChatButton").firstMatch.tap()
+        app.buttons.matching(identifier: "modelPicker.modelButton").firstMatch.tap()
+
+        // 메시지 전송 → mock LLM이 write_memory tool_use 요청 → 승인 모달 노출
+        let input = app.textFields["chat.inputField"]
+        XCTAssertTrue(input.waitForExistence(timeout: 5))
+        input.tap()
+        input.typeText("write something")
+        app.buttons["chat.sendButton"].tap()
+
+        let approveButton = app.buttons["writeApproval.approve"]
+        XCTAssertTrue(approveButton.waitForExistence(timeout: 5), "writeApproval.approve 미노출")
+        approveButton.tap()
+
+        // 다음 turn에서 mock LLM이 textDelta "saved" emit → assistant 버블에 노출
+        let assistantMessage = app.descendants(matching: .any).matching(
+            NSPredicate(format: "label CONTAINS %@", "saved")
+        ).firstMatch
+        XCTAssertTrue(assistantMessage.waitForExistence(timeout: 5), "assistant 응답 'saved' 미노출")
+    }
 }
