@@ -5,6 +5,12 @@
 AI-native iOS app for streaming conversations, persistent memory, and voice.
 Sessions die, memory carries on.
 
+## Screenshots
+
+| <img src="Screenshots/Screenshot03.png" alt="Reviewable memory write flow with explicit user approval" width="320" /> | <img src="Screenshots/Screenshot02.png" alt="Streaming chat UI with long-form responses and voice playback" width="320" /> |
+| --- | --- |
+| Reviewable memory write flow with explicit user approval | Streaming chat UI with long-form responses and voice playback |
+
 ## Overview
 
 Every LLM session starts from zero. Context resets, decisions evaporate,
@@ -35,22 +41,15 @@ Anthropic for LLM, Groq Whisper for STT, and ElevenLabs for TTS.
   product logic
 - Consolidation flow that turns recent chats into reviewable memory
   proposals
+- Engineering quality signals: Swift 6 strict concurrency, strict CI
+  (SwiftLint + build/test), 393 unit tests, 3 UI smoke tests,
+  localization, and accessibility support
 - Provider boundaries (`LLMClient`, `STTClient`, `SpeakerClient`) so the
   app layer is not tied to a single model or speech vendor
 
-## Inspired by
+## Implemented
 
-Gibson's cyberspace is a space for data. Cogspace is a space for thought:
-human and AI reasoning across time instead of starting over every session.
-NeuroRune turns that idea into an AI-native mobile product.
-
-Its memory model borrows from *Infinity Blade* (Epic Games, 2010): each
-generation inherits what the previous one learned. Here, the "generation"
-is the next model session, and the inheritance is user-owned memory.
-
-## Roadmap
-
-### Sprint 1 — Chat (Apr 11-15) ✅
+### Chat ✅
 - [x] Streaming LLM integration (current live provider: Anthropic)
 - [x] Keychain-secured credentials (save/load/delete + reset UI)
 - [x] Persistent chat sessions (SwiftData, conversation list, delete)
@@ -62,16 +61,17 @@ is the next model session, and the inheritance is user-owned memory.
 - [x] Error UI (banner + shake + 401 alert)
 - [x] App icon (ᛗ Mannaz rune), brand colors (amber + dark navy)
 - [x] Launch screen (DarkNavy + Mannaz rune)
-- [x] 392 unit tests, Swift Testing + TCA TestStore
+- [x] 393 unit tests, Swift Testing + TCA TestStore
+- [x] 3 UI smoke tests
 
-### Sprint 2 — Memory (Apr 13~)
+### Memory ✅
 - [x] GitHub-backed memory sync (.global / .local roles, PAT auth)
 - [x] User-driven memory editing + commit (MemoryEditView / MemoryCreateView)
 - [x] Memory context injection (MEMORY.md auto + read_memory tool for dynamic load)
 - [x] Tool-call transparency UI (chip showing which memory file the model is reading)
 - [x] write_memory tool with confirm modal (role/path/commit/content → user accept)
 
-### Sprint 3 — Voice & Consolidation ✅
+### Voice & Consolidation ✅
 - [x] STT integration — current live provider: Groq Whisper
 - [x] TTS integration — current live provider: ElevenLabs
 - [x] Consolidation (collect recent chat + memory → LLM proposal → accept/reject UI)
@@ -127,6 +127,16 @@ Current live integrations:
   reply on your own device), but a pathological response can still hang
   the UI. Use lower `effort` levels to keep responses bounded, and watch
   swift-cmark for parser CVEs.
+
+## Inspired by
+
+Gibson's cyberspace is a space for data. Cogspace is a space for thought:
+human and AI reasoning across time instead of starting over every session.
+NeuroRune turns that idea into an AI-native mobile product.
+
+Its memory model borrows from *Infinity Blade* (Epic Games, 2010): each
+generation inherits what the previous one learned. Here, the "generation"
+is the next model session, and the inheritance is user-owned memory.
 
 ## License
 
