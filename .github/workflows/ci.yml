@@ -75,6 +75,13 @@ jobs:
         env:
           NSUnbufferedIO: YES
 
+      # 콜드 스타트 시 첫 UI 테스트가 background assertion 타임아웃으로 실패.
+      # bootstatus -b로 부팅 완료까지 블록해서 시뮬레이터 비용을 테스트 밖으로 빼낸다.
+      - name: Boot simulator
+        run: |
+          xcrun simctl boot "${{ steps.sim.outputs.device }}" || true
+          xcrun simctl bootstatus "${{ steps.sim.outputs.device }}" -b
+
       - name: Run UI Smoke Tests
         run: |
           set -o pipefail
