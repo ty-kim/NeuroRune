@@ -12,23 +12,46 @@ final class ChatSmokeTests: XCTestCase {
         continueAfterFailure = false
     }
 
+    // MARK: - Helpers
+
+    /// ChatView 진입: ConversationList → 새 대화 → 첫 모델.
+    /// 각 탭 전에 `waitForExistence`로 출현 보장 (flaky 방지).
+    /// `list.newChatButton`은 emptyState + toolbar 둘 다 노출되므로 `.firstMatch`.
+    @MainActor
+    private func enterChatView(_ app: XCUIApplication) {
+        let newChatButton = app.buttons["list.newChatButton"].firstMatch
+        XCTAssertTrue(newChatButton.waitForExistence(timeout: 5), "list.newChatButton 미노출")
+        newChatButton.tap()
+
+        let modelButton = app.buttons["modelPicker.modelButton"].firstMatch
+        XCTAssertTrue(modelButton.waitForExistence(timeout: 3), "modelPicker.modelButton 미노출")
+        modelButton.tap()
+    }
+
+    /// role 기반 message bubble 검색 (identifier + label CONTAINS 교집합).
+    /// `.descendants(.any)` 광범위 + `matching(identifier:)`로 타입 무관하게 좁힘.
+    @MainActor
+    private func firstMessage(
+        in app: XCUIApplication,
+        identifier: String,
+        containing text: String
+    ) -> XCUIElement {
+        app.descendants(matching: .any)
+            .matching(identifier: identifier)
+            .matching(NSPredicate(format: "label CONTAINS %@", text))
+            .firstMatch
+    }
+
+    // MARK: - Smoke 1
+
     @MainActor
     func test_채팅_기본_플로우_전송_후_응답_버블_노출() throws {
         let app = XCUIApplication()
         app.launchArguments += ["--ui-test-mode", "--ui-test-mock-llm"]
         app.launch()
 
-        // ConversationList 진입 → 새 대화 시작 (empty/list 상태 둘 다 커버)
-        let newChatButton = app.buttons.matching(identifier: "list.newChatButton").firstMatch
-        XCTAssertTrue(newChatButton.waitForExistence(timeout: 5), "list.newChatButton 미노출")
-        newChatButton.tap()
+        enterChatView(app)
 
-        // modelPicker에서 첫 모델 탭 → ChatView 진입
-        let modelButton = app.buttons.matching(identifier: "modelPicker.modelButton").firstMatch
-        XCTAssertTrue(modelButton.waitForExistence(timeout: 3), "modelPicker.modelButton 미노출")
-        modelButton.tap()
-
-        // 채팅 플로우
         let input = app.textFields["chat.inputField"]
         XCTAssertTrue(input.waitForExistence(timeout: 5), "chat.inputField 미노출")
         input.tap()
@@ -38,17 +61,14 @@ final class ChatSmokeTests: XCTestCase {
         XCTAssertTrue(sendButton.isEnabled, "sendButton 비활성")
         sendButton.tap()
 
-        // 모든 element type 포괄 검색 (.accessibilityElement combine 때문에 type 불확정).
-        let userMessage = app.descendants(matching: .any).matching(
-            NSPredicate(format: "label CONTAINS %@", "hello")
-        ).firstMatch
-        XCTAssertTrue(userMessage.waitForExistence(timeout: 3), "user 메시지 'hello' 미노출")
+        let userMessage = firstMessage(in: app, identifier: "message.bubble.user", containing: "hello")
+        XCTAssertTrue(userMessage.waitForExistence(timeout: 3), "user 버블 'hello' 미노출")
 
-        let assistantMessage = app.descendants(matching: .any).matching(
-            NSPredicate(format: "label CONTAINS %@", "hi")
-        ).firstMatch
-        XCTAssertTrue(assistantMessage.waitForExistence(timeout: 3), "assistant 응답 'hi' 미노출")
+        let assistantMessage = firstMessage(in: app, identifier: "message.bubble.assistant", containing: "from ui test")
+        XCTAssertTrue(assistantMessage.waitForExistence(timeout: 3), "assistant 버블 미노출")
     }
+
+    // MARK: - Smoke 2
 
     @MainActor
     func test_STT_마이크_자동전송_어시스턴트_응답() throws {
@@ -56,28 +76,22 @@ final class ChatSmokeTests: XCTestCase {
         app.launchArguments += ["--ui-test-mode", "--ui-test-mock-llm", "--ui-test-mock-stt"]
         app.launch()
 
-        // ChatView 진입
-        app.buttons.matching(identifier: "list.newChatButton").firstMatch.tap()
-        app.buttons.matching(identifier: "modelPicker.modelButton").firstMatch.tap()
+        enterChatView(app)
 
-        // mic 탭 → recording 시작 → 다시 탭 → stop + transcribe → autoSend countdown
         let micButton = app.buttons["chat.micButton"]
         XCTAssertTrue(micButton.waitForExistence(timeout: 5), "chat.micButton 미노출")
         micButton.tap()
         micButton.tap()
 
-        // STT stub "voice input" → 2초 countdown 후 자동 전송 → mock LLM "hi there".
-        // timeout은 countdown(2s) + margin 고려해 8s.
-        let userMessage = app.descendants(matching: .any).matching(
-            NSPredicate(format: "label CONTAINS %@", "voice input")
-        ).firstMatch
-        XCTAssertTrue(userMessage.waitForExistence(timeout: 8), "user 메시지 'voice input' 미노출")
+        // STT stub "voice input" 주입 → countdown(ImmediateClock) 후 자동 전송 → mock LLM 응답.
+        let userMessage = firstMessage(in: app, identifier: "message.bubble.user", containing: "voice input")
+        XCTAssertTrue(userMessage.waitForExistence(timeout: 5), "user 버블 'voice input' 미노출")
 
-        let assistantMessage = app.descendants(matching: .any).matching(
-            NSPredicate(format: "label CONTAINS %@", "hi")
-        ).firstMatch
-        XCTAssertTrue(assistantMessage.waitForExistence(timeout: 5), "assistant 응답 미노출")
+        let assistantMessage = firstMessage(in: app, identifier: "message.bubble.assistant", containing: "from ui test")
+        XCTAssertTrue(assistantMessage.waitForExistence(timeout: 5), "assistant 버블 미노출")
     }
+
+    // MARK: - Smoke 3
 
     @MainActor
     func test_Memory_Write_승인_모달_Accept_이어지는_응답() throws {
@@ -89,11 +103,8 @@ final class ChatSmokeTests: XCTestCase {
         ]
         app.launch()
 
-        // ChatView 진입
-        app.buttons.matching(identifier: "list.newChatButton").firstMatch.tap()
-        app.buttons.matching(identifier: "modelPicker.modelButton").firstMatch.tap()
+        enterChatView(app)
 
-        // 메시지 전송 → mock LLM이 write_memory tool_use 요청 → 승인 모달 노출
         let input = app.textFields["chat.inputField"]
         XCTAssertTrue(input.waitForExistence(timeout: 5))
         input.tap()
@@ -104,10 +115,7 @@ final class ChatSmokeTests: XCTestCase {
         XCTAssertTrue(approveButton.waitForExistence(timeout: 5), "writeApproval.approve 미노출")
         approveButton.tap()
 
-        // 다음 turn에서 mock LLM이 textDelta "saved" emit → assistant 버블에 노출
-        let assistantMessage = app.descendants(matching: .any).matching(
-            NSPredicate(format: "label CONTAINS %@", "saved")
-        ).firstMatch
-        XCTAssertTrue(assistantMessage.waitForExistence(timeout: 5), "assistant 응답 'saved' 미노출")
+        let assistantMessage = firstMessage(in: app, identifier: "message.bubble.assistant", containing: "saved")
+        XCTAssertTrue(assistantMessage.waitForExistence(timeout: 5), "assistant 버블 'saved' 미노출")
     }
 }
