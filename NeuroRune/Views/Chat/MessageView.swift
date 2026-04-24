@@ -74,6 +74,15 @@ struct MessageView: View {
                 }
             }
         }
+        // streaming + 빈 content placeholder에 min height 확보.
+        // 낮은 placeholder는 scrollTo bottom anchor가 near-bottom 판정을 벗어나
+        // defaultScrollAnchor auto-follow가 꺼지는 원인.
+        // placeholder 상태는 .leading(vertical center) — 3-dot 수직 가운데.
+        // content 들어오면 .topLeading — 일반 메시지 동작.
+        .frame(
+            minHeight: (isStreaming && message.content.isEmpty) ? 40 : nil,
+            alignment: (isStreaming && message.content.isEmpty) ? .leading : .topLeading
+        )
         .padding(12)
         .background(bubbleBackground)
         .clipShape(RoundedRectangle(cornerRadius: 16))
