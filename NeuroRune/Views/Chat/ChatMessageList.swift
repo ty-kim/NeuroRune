@@ -15,10 +15,6 @@ struct ChatMessageList: View {
     /// Phase 22 — 현재 TTS 재생 중인 메시지 id. assistant 버블에 재생/중지 버튼 노출.
     var speakingMessageID: UUID?
     var onSpeakTapped: ((UUID) -> Void)?
-    /// user 전송 후 content 확장 완료 시점에 scroll할 target index.
-    /// onGeometryChange로 LazyVStack 실제 height 변화를 감지해서 layout 완료 후 처리.
-    @State private var pendingScrollTarget: Int?
-
     var body: some View {
         ScrollViewReader { proxy in
             ScrollView {
@@ -39,36 +35,26 @@ struct ChatMessageList: View {
                     }
                 }
                 .padding()
-                .background(
-                    GeometryReader { geo in
-                        Color.clear
-                            .preference(
-                                key: LazyVStackHeightKey.self,
-                                value: geo.size.height
-                            )
-                    }
-                )
             }
             .defaultScrollAnchor(.bottom)
             .scrollDismissesKeyboard(.immediately)
             .simultaneousGesture(
                 TapGesture().onEnded { onTap() }
             )
-            // LazyVStack 실제 height 변화 후 pending scroll 처리.
-            // 키보드 떠 있어도 measure 완료 보장 → Task.yield 추측 제거.
-            // onPreferenceChange는 @Sendable·non-MainActor closure라 Task hop 필요.
-            .onPreferenceChange(LazyVStackHeightKey.self) { _ in
-                Task { @MainActor in
-                    guard let target = pendingScrollTarget else { return }
-                    proxy.scrollTo(target, anchor: .bottom)
-                    pendingScrollTarget = nil
-                }
-            }
             // user 전송만 강제 bottom (iMessage 패턴).
             // assistant 스트리밍·도착은 defaultScrollAnchor의 near-bottom 판정에 위임.
-            .onChange(of: messages.count) {
-                guard messages.last?.role == .user else { return }
-                pendingScrollTarget = messages.count - 1
+            // sendTapped는 user + assistant placeholder 동시 append → delta == 2.
+            // 단독 user append(retry 등)는 delta == 1 + lastRole == user.
+            // 200ms 대기 = LazyVStack이 새 cell measure 완료까지 (markdown-ui 렌더 포함).
+            // 즉시 scrollTo는 placeholder estimate 기반이라 오버슈트로 공백 flash.
+            .onChange(of: messages.count) { oldCount, newCount in
+                let delta = newCount - oldCount
+                let isUserSend = delta >= 2 || (delta == 1 && messages.last?.role == .user)
+                guard isUserSend else { return }
+                Task { @MainActor in
+                    try? await Task.sleep(for: .milliseconds(200))
+                    proxy.scrollTo(newCount - 1, anchor: .bottom)
+                }
             }
         }
     }
@@ -78,13 +64,6 @@ struct ChatMessageList: View {
         guard isStreaming else { return false }
         guard index == messages.count - 1 else { return false }
         return message.role == .assistant
-    }
-}
-
-private struct LazyVStackHeightKey: PreferenceKey {
-    static let defaultValue: CGFloat = 0
-    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
-        value = nextValue()
     }
 }
 
