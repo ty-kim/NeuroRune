@@ -78,10 +78,14 @@ final class ChatSmokeTests: XCTestCase {
 
         enterChatView(app)
 
-        let micButton = app.buttons["chat.micButton"]
-        XCTAssertTrue(micButton.waitForExistence(timeout: 5), "chat.micButton 미노출")
-        micButton.tap()
-        micButton.tap()
+        let idleMic = app.buttons["chat.micButton.idle"]
+        XCTAssertTrue(idleMic.waitForExistence(timeout: 5), "chat.micButton.idle 미노출")
+        idleMic.tap()
+
+        // 녹음 상태 전환 대기 — .recordingStarted 디스패치 전 두 번째 탭 들어가는 레이스 방지.
+        let recordingMic = app.buttons["chat.micButton.recording"]
+        XCTAssertTrue(recordingMic.waitForExistence(timeout: 3), "chat.micButton.recording 미전환")
+        recordingMic.tap()
 
         // STT stub "voice input" 주입 → countdown(ImmediateClock) 후 자동 전송 → mock LLM 응답.
         let userMessage = firstMessage(in: app, identifier: "message.bubble.user", containing: "voice input")
