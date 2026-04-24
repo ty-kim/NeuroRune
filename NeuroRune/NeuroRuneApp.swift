@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import Clocks
 import Dependencies
 
 @main
@@ -37,6 +38,8 @@ struct NeuroRuneApp: App {
             // ConversationStore도 기본 in-memory 교체 — 실행마다 empty 상태로 시작해
             // conversation list 오염 방지.
             deps.conversationStore = .uiTestMock
+            // continuousClock ImmediateClock 교체 — STT countdown 등 wall-clock 대기 제거.
+            deps.continuousClock = ImmediateClock()
             if args.contains("--ui-test-mock-llm-tool-use") {
                 deps.llmClient = .uiTestToolUseMock
             } else if args.contains("--ui-test-mock-llm") {

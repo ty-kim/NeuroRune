@@ -12,11 +12,12 @@ extension LLMClient {
     /// UI 테스트 전용 스트리밍 stub.
     /// `--ui-test-mock-llm` 플래그로 활성화.
     /// 즉시 고정 delta 2개 yield + finish. wall-clock 대기 없음.
+    /// 고유 문구 "from ui test"로 다른 UI 텍스트와 우연 겹침 방지.
     static let uiTestMock = LLMClient(
         streamMessage: { _, _, _, _, _ in
             AsyncThrowingStream { continuation in
-                continuation.yield(.textDelta("hi"))
-                continuation.yield(.textDelta(" there"))
+                continuation.yield(.textDelta("hi there"))
+                continuation.yield(.textDelta(" from ui test"))
                 continuation.finish()
             }
         }
