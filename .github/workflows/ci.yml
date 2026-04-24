@@ -60,7 +60,7 @@ jobs:
           echo "Chosen: $NAME"
           echo "device=$NAME" >> "$GITHUB_OUTPUT"
 
-      - name: Build & Test
+      - name: Run Unit Tests
         run: |
           set -o pipefail
           xcodebuild \
@@ -68,6 +68,21 @@ jobs:
             -scheme NeuroRune \
             -destination "platform=iOS Simulator,name=${{ steps.sim.outputs.device }}" \
             -only-testing:NeuroRuneTests \
+            -parallel-testing-enabled NO \
+            -skipMacroValidation \
+            test \
+            | xcbeautify --renderer github-actions
+        env:
+          NSUnbufferedIO: YES
+
+      - name: Run UI Smoke Tests
+        run: |
+          set -o pipefail
+          xcodebuild \
+            -project NeuroRune.xcodeproj \
+            -scheme NeuroRune \
+            -destination "platform=iOS Simulator,name=${{ steps.sim.outputs.device }}" \
+            -only-testing:NeuroRuneUITests \
             -parallel-testing-enabled NO \
             -skipMacroValidation \
             test \
