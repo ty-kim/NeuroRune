@@ -30,6 +30,7 @@ struct MessageView: View {
         }
         .accessibilityElement(children: .combine)
         .accessibilityLabel(accessibilityRolePrefix + message.content)
+        .accessibilityIdentifier(message.role == .user ? "message.bubble.user" : "message.bubble.assistant")
     }
 
     private var accessibilityRolePrefix: String {

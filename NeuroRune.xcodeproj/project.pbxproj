@@ -12,6 +12,13 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
+		FC17A93F2F9B7C9400E43BCD /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = FC48E6F12F896D4C00BDAF8F /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = FC48E6F82F896D4C00BDAF8F;
+			remoteInfo = NeuroRune;
+		};
 		FC48E7072F896D4D00BDAF8F /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = FC48E6F12F896D4C00BDAF8F /* Project object */;
@@ -22,11 +29,17 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		FC17A9392F9B7C9400E43BCD /* NeuroRuneUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = NeuroRuneUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		FC48E6F92F896D4C00BDAF8F /* NeuroRune.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = NeuroRune.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		FC48E7062F896D4D00BDAF8F /* NeuroRuneTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = NeuroRuneTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
+		FC17A93A2F9B7C9400E43BCD /* NeuroRuneUITests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = NeuroRuneUITests;
+			sourceTree = "<group>";
+		};
 		FC48E6FB2F896D4C00BDAF8F /* NeuroRune */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = NeuroRune;
@@ -40,6 +53,13 @@
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		FC17A9362F9B7C9400E43BCD /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		FC48E6F62F896D4C00BDAF8F /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -64,6 +84,7 @@
 			children = (
 				FC48E6FB2F896D4C00BDAF8F /* NeuroRune */,
 				FC48E7092F896D4D00BDAF8F /* NeuroRuneTests */,
+				FC17A93A2F9B7C9400E43BCD /* NeuroRuneUITests */,
 				FC48E6FA2F896D4C00BDAF8F /* Products */,
 			);
 			sourceTree = "<group>";
@@ -73,6 +94,7 @@
 			children = (
 				FC48E6F92F896D4C00BDAF8F /* NeuroRune.app */,
 				FC48E7062F896D4D00BDAF8F /* NeuroRuneTests.xctest */,
+				FC17A9392F9B7C9400E43BCD /* NeuroRuneUITests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -80,6 +102,29 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		FC17A9382F9B7C9400E43BCD /* NeuroRuneUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = FC17A9412F9B7C9400E43BCD /* Build configuration list for PBXNativeTarget "NeuroRuneUITests" */;
+			buildPhases = (
+				FC17A9352F9B7C9400E43BCD /* Sources */,
+				FC17A9362F9B7C9400E43BCD /* Frameworks */,
+				FC17A9372F9B7C9400E43BCD /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				FC17A9402F9B7C9400E43BCD /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				FC17A93A2F9B7C9400E43BCD /* NeuroRuneUITests */,
+			);
+			name = NeuroRuneUITests;
+			packageProductDependencies = (
+			);
+			productName = NeuroRuneUITests;
+			productReference = FC17A9392F9B7C9400E43BCD /* NeuroRuneUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
 		FC48E6F82F896D4C00BDAF8F /* NeuroRune */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = FC48E71A2F896D4D00BDAF8F /* Build configuration list for PBXNativeTarget "NeuroRune" */;
@@ -137,6 +182,10 @@
 				LastSwiftUpdateCheck = 2630;
 				LastUpgradeCheck = 2630;
 				TargetAttributes = {
+					FC17A9382F9B7C9400E43BCD = {
+						CreatedOnToolsVersion = 26.3;
+						TestTargetID = FC48E6F82F896D4C00BDAF8F;
+					};
 					FC48E6F82F896D4C00BDAF8F = {
 						CreatedOnToolsVersion = 26.3;
 					};
@@ -170,11 +219,19 @@
 			targets = (
 				FC48E6F82F896D4C00BDAF8F /* NeuroRune */,
 				FC48E7052F896D4D00BDAF8F /* NeuroRuneTests */,
+				FC17A9382F9B7C9400E43BCD /* NeuroRuneUITests */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
+		FC17A9372F9B7C9400E43BCD /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		FC48E6F72F896D4C00BDAF8F /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -192,6 +249,13 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		FC17A9352F9B7C9400E43BCD /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		FC48E6F52F896D4C00BDAF8F /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -209,6 +273,11 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
+		FC17A9402F9B7C9400E43BCD /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = FC48E6F82F896D4C00BDAF8F /* NeuroRune */;
+			targetProxy = FC17A93F2F9B7C9400E43BCD /* PBXContainerItemProxy */;
+		};
 		FC48E7082F896D4D00BDAF8F /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = FC48E6F82F896D4C00BDAF8F /* NeuroRune */;
@@ -217,6 +286,46 @@
 /* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
+		FC17A9422F9B7C9400E43BCD /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.start.NeuroRuneUITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = NeuroRune;
+			};
+			name = Debug;
+		};
+		FC17A9432F9B7C9400E43BCD /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.start.NeuroRuneUITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = NeuroRune;
+			};
+			name = Release;
+		};
 		FC48E7182F896D4D00BDAF8F /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -457,6 +566,15 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		FC17A9412F9B7C9400E43BCD /* Build configuration list for PBXNativeTarget "NeuroRuneUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				FC17A9422F9B7C9400E43BCD /* Debug */,
+				FC17A9432F9B7C9400E43BCD /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 		FC48E6F42F896D4C00BDAF8F /* Build configuration list for PBXProject "NeuroRune" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
