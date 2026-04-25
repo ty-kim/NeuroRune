@@ -10,6 +10,13 @@ import XCTest
 final class ChatSmokeTests: XCTestCase {
     override func setUpWithError() throws {
         continueAfterFailure = false
+        // 테스트 간 격리: 직전 테스트의 앱 프로세스/키보드/포커스 잔재가
+        // 다음 테스트로 새는 것을 차단. 새 XCUIApplication만으론 시뮬레이터
+        // 상태 cleanup이 100% 보장되지 않음.
+        let app = XCUIApplication()
+        if app.state != .notRunning {
+            app.terminate()
+        }
     }
 
     // MARK: - Helpers
