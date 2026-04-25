@@ -50,7 +50,7 @@ Anthropic for LLM, Groq Whisper for STT, and ElevenLabs for TTS.
 ## Implemented
 
 ### Chat ✅
-- [x] Streaming LLM integration (current live provider: Anthropic)
+- [x] Streaming LLM integration (Anthropic)
 - [x] Keychain-secured credentials (save/load/delete + reset UI)
 - [x] Persistent chat sessions (SwiftData, conversation list, delete)
 - [x] Markdown rendering (swift-markdown-ui, code block horizontal scroll)
@@ -72,8 +72,8 @@ Anthropic for LLM, Groq Whisper for STT, and ElevenLabs for TTS.
 - [x] write_memory tool with confirm modal (role/path/commit/content → user accept)
 
 ### Voice & Consolidation ✅
-- [x] STT integration — current live provider: Groq Whisper
-- [x] TTS integration — current live provider: ElevenLabs
+- [x] STT integration (Groq Whisper)
+- [x] TTS integration (ElevenLabs)
 - [x] Consolidation (collect recent chat + memory → LLM proposal → accept/reject UI)
 
 ## Stack
@@ -104,7 +104,7 @@ Client Boundaries
 Provider-specific integrations
 ```
 
-Current live integrations:
+Current bindings:
 
 - LLM: Anthropic
 - STT: Groq Whisper
@@ -114,10 +114,10 @@ Current live integrations:
 ## Requirements
 
 - iOS 17+
-- LLM API key (current live provider: Anthropic)
-- Memory: GitHub Personal Access Token (BYOK)
-- Speech To Text API key (current live provider: Groq Whisper)
-- Text To Speech API key (current live provider: ElevenLabs)
+- LLM API key (Anthropic)
+- GitHub Personal Access Token (memory sync)
+- STT API key (Groq Whisper)
+- TTS API key (ElevenLabs)
 
 ## Known Limitations
 
