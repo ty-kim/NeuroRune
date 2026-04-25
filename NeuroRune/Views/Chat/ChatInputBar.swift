@@ -81,7 +81,7 @@ struct ChatInputBar: View {
                 .accessibilityLabel(String(localized: isRecording
                     ? "a11y.chat.stopRecording"
                     : "a11y.chat.startRecording"))
-                .accessibilityIdentifier("chat.micButton")
+                .accessibilityIdentifier(isRecording ? "chat.micButton.recording" : "chat.micButton.idle")
             }
 
             if isStreaming, let onStop {
