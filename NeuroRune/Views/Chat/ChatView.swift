@@ -155,6 +155,13 @@ struct ChatView: View {
                 }
                 .task {
                     await viewStore.send(.loadSpeechSettings).finish()
+                    #if DEBUG
+                    // UI 테스트에서 mic 탭 두 번 race를 우회: launch arg가 있으면
+                    // ChatView 진입 직후 .transcribed 직접 디스패치 → autoSend 흐름.
+                    if ProcessInfo.processInfo.arguments.contains("--ui-test-stt-prefill") {
+                        viewStore.send(.transcribed(STTResult(text: "voice input")))
+                    }
+                    #endif
                 }
                 .alert(
                     String(localized: "error.unauthorized"),

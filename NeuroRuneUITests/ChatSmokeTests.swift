@@ -10,6 +10,13 @@ import XCTest
 final class ChatSmokeTests: XCTestCase {
     override func setUpWithError() throws {
         continueAfterFailure = false
+        // 테스트 간 격리: 직전 테스트의 앱 프로세스/키보드/포커스 잔재가
+        // 다음 테스트로 새는 것을 차단. 새 XCUIApplication만으론 시뮬레이터
+        // 상태 cleanup이 100% 보장되지 않음.
+        let app = XCUIApplication()
+        if app.state != .notRunning {
+            app.terminate()
+        }
     }
 
     // MARK: - Helpers
@@ -71,23 +78,21 @@ final class ChatSmokeTests: XCTestCase {
     // MARK: - Smoke 2
 
     @MainActor
-    func test_STT_마이크_자동전송_어시스턴트_응답() throws {
+    func test_STT_전사결과_자동전송_어시스턴트_응답() throws {
+        // mic 두 번 탭 race를 우회 — `--ui-test-stt-prefill`은 ChatView mount 직후
+        // `.transcribed` 액션을 직접 디스패치한다. 마이크/녹음/전사 자체는 unit test가 커버.
         let app = XCUIApplication()
-        app.launchArguments += ["--ui-test-mode", "--ui-test-mock-llm", "--ui-test-mock-stt"]
+        app.launchArguments += [
+            "--ui-test-mode",
+            "--ui-test-mock-llm",
+            "--ui-test-mock-stt",
+            "--ui-test-stt-prefill"
+        ]
         app.launch()
 
         enterChatView(app)
 
-        let idleMic = app.buttons["chat.micButton.idle"]
-        XCTAssertTrue(idleMic.waitForExistence(timeout: 5), "chat.micButton.idle 미노출")
-        idleMic.tap()
-
-        // 녹음 상태 전환 대기 — .recordingStarted 디스패치 전 두 번째 탭 들어가는 레이스 방지.
-        let recordingMic = app.buttons["chat.micButton.recording"]
-        XCTAssertTrue(recordingMic.waitForExistence(timeout: 3), "chat.micButton.recording 미전환")
-        recordingMic.tap()
-
-        // STT stub "voice input" 주입 → countdown(ImmediateClock) 후 자동 전송 → mock LLM 응답.
+        // ChatView mount → 자동 .transcribed("voice input") → ImmediateClock countdown → sendTapped → mock LLM.
         let userMessage = firstMessage(in: app, identifier: "message.bubble.user", containing: "voice input")
         XCTAssertTrue(userMessage.waitForExistence(timeout: 5), "user 버블 'voice input' 미노출")
 
