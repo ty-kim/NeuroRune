@@ -2,8 +2,10 @@
 
 [![CI](https://github.com/ty-kim/NeuroRune/actions/workflows/ci.yml/badge.svg)](https://github.com/ty-kim/NeuroRune/actions/workflows/ci.yml)
 
-AI-native iOS app for streaming conversations, persistent memory, and voice.
 Sessions die, memory carries on.
+
+An AI-native iOS app that turns your LLM conversations — voice or text —
+into GitHub-synced personal memory.
 
 ## Screenshots
 
