@@ -58,7 +58,7 @@ Anthropic for LLM, Groq Whisper for STT, and ElevenLabs for TTS.
 - [x] Markdown rendering (swift-markdown-ui, code block horizontal scroll)
 - [x] Session-based model selection (model picker sheet)
 - [x] OSLog logging (network, keychain, llm, persistence)
-- [x] Localization (ko, en, zh-Hans, ja)
+- [x] Localization (ko, en, zh-Hans, zh-Hant, ja)
 - [x] Accessibility (VoiceOver labels, Reduce Motion)
 - [x] Error UI (banner + shake + 401 alert)
 - [x] App icon (ᛗ Mannaz rune), brand colors (amber + dark navy)
