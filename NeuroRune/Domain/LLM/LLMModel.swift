@@ -21,7 +21,7 @@ nonisolated struct LLMModel: Equatable, Sendable, Identifiable {
     static let opus47 = LLMModel(
         id: "claude-opus-4-7",
         displayName: "Claude Opus 4.7",
-        supportedEffortLevels: [.low, .medium, .high, .max, .xhigh]
+        supportedEffortLevels: [.low, .medium, .high, .xhigh, .max]
     )
     static let opus46 = LLMModel(
         id: "claude-opus-4-6",
