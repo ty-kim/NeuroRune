@@ -437,6 +437,15 @@ nonisolated struct ChatFeature: Reducer {
         return sections.isEmpty ? nil : sections.joined(separator: "\n\n")
     }
 
+    /// 모델 정체성 preamble + 메모리 컨텍스트 합성.
+    /// 새 모델은 학습 데이터에 자기 자신이 없어 cutoff 직전 모델로 자칭하는 환각이 있음.
+    /// system 첫 줄에 정체성을 박아 대화 중 자칭/메타 인지가 정확하도록 보정.
+    static func composeSystemPrompt(model: LLMModel, memory: String?) -> String {
+        let identity = "You are \(model.displayName) (model id: \(model.id))."
+        guard let memory else { return identity }
+        return "\(identity)\n\n\(memory)"
+    }
+
     /// 저장 실패 시 `.persistenceFailed(String)` 액션을 디스패치한다.
     /// sendTapped/streamFinished/errorOccurred의 공통 save 패턴 추출.
     static func save(

@@ -44,7 +44,7 @@ Anthropic for LLM, Groq Whisper for STT, and ElevenLabs for TTS.
 - Consolidation flow that turns recent chats into reviewable memory
   proposals
 - Engineering quality signals: Swift 6 strict concurrency, strict CI
-  (SwiftLint + build/test), 393 unit tests, 3 UI smoke tests,
+  (SwiftLint + build/test), 397 unit tests, 3 UI smoke tests,
   localization, and accessibility support
 - Provider boundaries (`LLMClient`, `STTClient`, `SpeakerClient`) so the
   app layer is not tied to a single model or speech vendor
@@ -63,7 +63,7 @@ Anthropic for LLM, Groq Whisper for STT, and ElevenLabs for TTS.
 - [x] Error UI (banner + shake + 401 alert)
 - [x] App icon (ᛗ Mannaz rune), brand colors (amber + dark navy)
 - [x] Launch screen (DarkNavy + Mannaz rune)
-- [x] 393 unit tests, Swift Testing + TCA TestStore
+- [x] 397 unit tests, Swift Testing + TCA TestStore
 - [x] 3 UI smoke tests
 
 ### Memory ✅
