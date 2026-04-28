@@ -54,10 +54,11 @@ nonisolated extension ChatFeature {
                 .run { send in
                     await Self.save(conversationForDisk, using: conversationStore, send: send)
                     do {
-                        let system = await Self.loadSystemPrompt(
+                        let memory = await Self.loadSystemPrompt(
                             github: githubClient,
                             creds: githubCredentialsClient
                         )
+                        let system = Self.composeSystemPrompt(model: model, memory: memory)
                         var roundMessages: [APIMessage] = messagesForAPI.map {
                             APIMessage.text(role: $0.role.rawValue, content: $0.content)
                         }
