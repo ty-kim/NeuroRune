@@ -92,9 +92,27 @@ struct AnthropicSSEParserTests {
         #expect(event == .error(message: "Service overloaded"))
     }
 
-    @Test("message_start 등 기타 이벤트는 ignored")
-    func ignoresUnknownEvents() {
+    @Test("message_start는 message.model 값을 messageStart로 파싱한다")
+    func parsesMessageStart() {
+        let json = #"{"type":"message_start","message":{"id":"msg_01","model":"claude-opus-4-7-20251211","role":"assistant"}}"#
+
+        let event = AnthropicSSEParser.parseDataLine(json)
+
+        #expect(event == .messageStart(model: "claude-opus-4-7-20251211"))
+    }
+
+    @Test("message_start에 model 필드가 없으면 ignored")
+    func ignoresMessageStartWithoutModel() {
         let json = #"{"type":"message_start","message":{"id":"msg_01"}}"#
+
+        let event = AnthropicSSEParser.parseDataLine(json)
+
+        #expect(event == .ignored)
+    }
+
+    @Test("알 수 없는 이벤트 타입은 ignored")
+    func ignoresUnknownEvents() {
+        let json = #"{"type":"ping"}"#
 
         let event = AnthropicSSEParser.parseDataLine(json)
 
