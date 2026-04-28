@@ -14,9 +14,10 @@ nonisolated enum EffortLevel: String, Codable, Sendable, CaseIterable, Identifia
     case low
     case medium
     case high
-    case max
     /// Opus 4.7 전용. 다른 모델에서 선택되면 무시(effort=nil) 처리.
+    /// 단계: high < xhigh < max.
     case xhigh
+    case max
 
     var id: String { rawValue }
 
