@@ -145,6 +145,9 @@ nonisolated extension LLMClient {
                 guard line.hasPrefix("data:") else { continue }
                 let payload = String(line.dropFirst("data:".count))
                 switch AnthropicSSEParser.parseDataLine(payload) {
+                case .messageStart(let model):
+                    // 응답 헤더의 모델 ID. 보낸 model.id와 비교해 라우팅 검증.
+                    Logger.network.info("response model: \(model, privacy: .public)")
                 case .textDelta(let text):
                     continuation.yield(.textDelta(text))
                 case let .toolUseStart(index, id, name):

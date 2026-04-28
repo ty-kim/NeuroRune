@@ -12,6 +12,7 @@ nonisolated enum AnthropicSSEEvent: Equatable {
     case toolUseStart(index: Int, id: String, name: String)
     case toolUseInputDelta(index: Int, partialJSON: String)
     case contentBlockStop(index: Int)
+    case messageStart(model: String)
     case messageDelta(stopReason: String?)
     case stop
     case error(message: String)
@@ -46,6 +47,9 @@ nonisolated enum AnthropicSSEParser {
                 let id: String?
                 let name: String?
             }
+            struct MessageInfo: Decodable {
+                let model: String?
+            }
             struct ErrorDetail: Decodable {
                 let message: String?
             }
@@ -53,10 +57,11 @@ nonisolated enum AnthropicSSEParser {
             let index: Int?
             let delta: Delta?
             let contentBlock: ContentBlock?
+            let message: MessageInfo?
             let error: ErrorDetail?
 
             enum CodingKeys: String, CodingKey {
-                case type, index, delta, error
+                case type, index, delta, error, message
                 case contentBlock = "content_block"
             }
         }
@@ -66,6 +71,9 @@ nonisolated enum AnthropicSSEParser {
         }
 
         switch env.type {
+        case "message_start":
+            guard let model = env.message?.model else { return .ignored }
+            return .messageStart(model: model)
         case "content_block_start":
             guard env.contentBlock?.type == "tool_use",
                   let index = env.index,

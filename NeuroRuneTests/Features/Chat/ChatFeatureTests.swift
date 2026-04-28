@@ -149,8 +149,8 @@ struct ChatFeatureTests {
         #expect(loadedPaths.value.sorted() == ["memory/MEMORY.md", "memory/MEMORY.md"])
     }
 
-    @Test("sendTapped는 credentials가 없으면 system도 nil")
-    func sendTappedPassesNilSystemWhenNoCredentials() async {
+    @Test("sendTapped는 credentials가 없으면 system에 정체성만 포함하고 메모리 섹션은 제외")
+    func sendTappedPassesIdentityOnlySystemWhenNoCredentials() async {
         let receivedSystem = LockIsolated<String?>("not-set")
 
         let store = TestStore(initialState: makeState(inputText: "hi")) {
@@ -178,7 +178,11 @@ struct ChatFeatureTests {
         }
 
         await store.finish()
-        #expect(receivedSystem.value == nil)
+        let system = receivedSystem.value ?? ""
+        #expect(system.contains("model id:"))
+        #expect(system.contains(LLMModel.opus46.id))
+        #expect(system.contains("## Global Memory") == false)
+        #expect(system.contains("## Local Memory") == false)
     }
 
     @Test("sendTapped는 한쪽 role의 MEMORY.md fetch가 notFound이면 그 섹션 제외")
@@ -534,6 +538,25 @@ struct ChatFeatureTests {
         await store.finish()
 
         #expect(llmCalled.value == true)
+    }
+
+    @Test("composeSystemPrompt는 memory가 nil이어도 모델 정체성을 포함한다")
+    func composeSystemPromptIncludesIdentityWhenMemoryNil() {
+        let result = ChatFeature.composeSystemPrompt(model: .opus47, memory: nil)
+
+        #expect(result.contains("Claude Opus 4.7"))
+        #expect(result.contains("claude-opus-4-7"))
+    }
+
+    @Test("composeSystemPrompt는 memory가 있으면 정체성과 메모리를 모두 포함한다")
+    func composeSystemPromptIncludesIdentityAndMemory() {
+        let memory = "## Global Memory\n\nuser is iOS dev"
+
+        let result = ChatFeature.composeSystemPrompt(model: .opus47, memory: memory)
+
+        #expect(result.contains("Claude Opus 4.7"))
+        #expect(result.contains("claude-opus-4-7"))
+        #expect(result.contains("user is iOS dev"))
     }
 
 }
