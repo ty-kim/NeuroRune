@@ -47,94 +47,96 @@ nonisolated struct GitHubCredentialsFeature: Reducer {
         case existingLoaded(GitHubCredentials?)
     }
 
-    func reduce(into state: inout State, action: Action) -> Effect<Action> {
-        @Dependency(\.githubCredentialsClient) var client
+    var body: some ReducerOf<Self> {
+        Reduce { state, action in
+            @Dependency(\.githubCredentialsClient) var client
 
-        switch action {
-        case let .patChanged(v):
-            state.pat = v
-            state.error = nil
-            return .none
-        case let .ownerChanged(v):
-            state.owner = v
-            state.error = nil
-            return .none
-        case let .repoChanged(v):
-            state.repo = v
-            state.error = nil
-            return .none
-        case let .branchChanged(v):
-            state.branch = v
-            state.error = nil
-            return .none
+            switch action {
+            case let .patChanged(v):
+                state.pat = v
+                state.error = nil
+                return .none
+            case let .ownerChanged(v):
+                state.owner = v
+                state.error = nil
+                return .none
+            case let .repoChanged(v):
+                state.repo = v
+                state.error = nil
+                return .none
+            case let .branchChanged(v):
+                state.branch = v
+                state.error = nil
+                return .none
 
-        case let .pathChanged(v):
-            state.path = v
-            state.error = nil
-            return .none
+            case let .pathChanged(v):
+                state.path = v
+                state.error = nil
+                return .none
 
-        case .saveTapped:
-            guard state.isValid else { return .none }
-            state.isSaving = true
-            state.error = nil
-            let creds = GitHubCredentials(
-                role: state.role,
-                pat: state.pat.trimmingCharacters(in: .whitespacesAndNewlines),
-                owner: state.owner.trimmingCharacters(in: .whitespacesAndNewlines),
-                repo: state.repo.trimmingCharacters(in: .whitespacesAndNewlines),
-                branch: state.branch.trimmingCharacters(in: .whitespacesAndNewlines),
-                path: state.path.trimmingCharacters(in: .whitespacesAndNewlines)
-            )
-            return .run { send in
-                do {
-                    try client.save(creds)
-                    await send(.saveSucceeded)
-                } catch {
-                    await send(.saveFailed(error.localizedDescription))
+            case .saveTapped:
+                guard state.isValid else { return .none }
+                state.isSaving = true
+                state.error = nil
+                let creds = GitHubCredentials(
+                    role: state.role,
+                    pat: state.pat.trimmingCharacters(in: .whitespacesAndNewlines),
+                    owner: state.owner.trimmingCharacters(in: .whitespacesAndNewlines),
+                    repo: state.repo.trimmingCharacters(in: .whitespacesAndNewlines),
+                    branch: state.branch.trimmingCharacters(in: .whitespacesAndNewlines),
+                    path: state.path.trimmingCharacters(in: .whitespacesAndNewlines)
+                )
+                return .run { send in
+                    do {
+                        try client.save(creds)
+                        await send(.saveSucceeded)
+                    } catch {
+                        await send(.saveFailed(error.localizedDescription))
+                    }
                 }
+
+            case .saveSucceeded:
+                state.isSaving = false
+                state.pat = ""
+                return .none
+
+            case let .saveFailed(message):
+                state.isSaving = false
+                state.error = message
+                return .none
+
+            case .clearTapped:
+                let role = state.role
+                return .run { send in
+                    try? client.clear(role)
+                    await send(.cleared)
+                }
+
+            case .cleared:
+                state.pat = ""
+                state.owner = ""
+                state.repo = ""
+                state.branch = "main"
+                state.path = ""
+                return .none
+
+            case .loadExisting:
+                let role = state.role
+                return .run { send in
+                    let creds = try? client.load(role)
+                    await send(.existingLoaded(creds))
+                }
+
+            case let .existingLoaded(creds):
+                if let creds {
+                    state.pat = creds.pat
+                    state.owner = creds.owner
+                    state.repo = creds.repo
+                    state.branch = creds.branch
+                    state.path = creds.path
+                }
+                return .none
             }
-
-        case .saveSucceeded:
-            state.isSaving = false
-            state.pat = ""
-            return .none
-
-        case let .saveFailed(message):
-            state.isSaving = false
-            state.error = message
-            return .none
-
-        case .clearTapped:
-            let role = state.role
-            return .run { send in
-                try? client.clear(role)
-                await send(.cleared)
-            }
-
-        case .cleared:
-            state.pat = ""
-            state.owner = ""
-            state.repo = ""
-            state.branch = "main"
-            state.path = ""
-            return .none
-
-        case .loadExisting:
-            let role = state.role
-            return .run { send in
-                let creds = try? client.load(role)
-                await send(.existingLoaded(creds))
-            }
-
-        case let .existingLoaded(creds):
-            if let creds {
-                state.pat = creds.pat
-                state.owner = creds.owner
-                state.repo = creds.repo
-                state.branch = creds.branch
-                state.path = creds.path
-            }
-            return .none
         }
     }
 }

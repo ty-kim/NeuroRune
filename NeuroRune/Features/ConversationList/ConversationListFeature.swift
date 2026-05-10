@@ -49,55 +49,13 @@ nonisolated struct ConversationListFeature: Reducer {
         case errorDismissed
     }
 
-    func reduce(into state: inout State, action: Action) -> Effect<Action> {
-        @Dependency(\.conversationStore) var store
-        @Dependency(\.keychainClient) var keychain
+    var body: some ReducerOf<Self> {
+        Reduce { state, action in
+            @Dependency(\.conversationStore) var store
+            @Dependency(\.keychainClient) var keychain
 
-        switch action {
-        case .task:
-            return .run { send in
-                do {
-                    let loaded = try await store.loadAll()
-                    await send(.conversationsLoaded(loaded))
-                } catch {
-                    await send(.loadFailed)
-                }
-            }
-
-        case let .conversationsLoaded(conversations):
-            state.conversations = conversations
-            state.isLoading = false
-            return .none
-
-        case .loadFailed:
-            state.isLoading = false
-            state.listError = String(localized: "list.loadFailed")
-            return .none
-
-        case let .deleteTapped(conversation):
-            let id = conversation.id
-            return .run { send in
-                do {
-                    try await store.delete(id)
-                    await send(.deleteSucceeded(id))
-                } catch {
-                    await send(.deleteFailed)
-                }
-            }
-
-        case let .deleteSucceeded(id):
-            state.conversations.removeAll { $0.id == id }
-            return .none
-
-        case .deleteFailed:
-            state.listError = String(localized: "list.deleteFailed")
-            return .none
-
-        case let .conversationSelected(conversation):
-            state.selectedConversation = conversation
-            // ChatView에서 pop으로 돌아오면 (nil) 목록을 다시 로드.
-            // 그 사이 새 메시지가 저장됐을 수 있음.
-            if conversation == nil {
+            switch action {
+            case .task:
                 return .run { send in
                     do {
                         let loaded = try await store.loadAll()
@@ -106,83 +64,127 @@ nonisolated struct ConversationListFeature: Reducer {
                         await send(.loadFailed)
                     }
                 }
-            }
-            return .none
 
-        case .newConversationTapped:
-            // Anthropic 키 없으면 Onboarding sheet, 있으면 모델 피커.
-            let hasKey = (try? keychain.load(AnthropicCredentialsFeature.anthropicKeyName)) != nil
-            if hasKey {
-                state.showModelPicker = true
-            } else {
+            case let .conversationsLoaded(conversations):
+                state.conversations = conversations
+                state.isLoading = false
+                return .none
+
+            case .loadFailed:
+                state.isLoading = false
+                state.listError = String(localized: "list.loadFailed")
+                return .none
+
+            case let .deleteTapped(conversation):
+                let id = conversation.id
+                return .run { send in
+                    do {
+                        try await store.delete(id)
+                        await send(.deleteSucceeded(id))
+                    } catch {
+                        await send(.deleteFailed)
+                    }
+                }
+
+            case let .deleteSucceeded(id):
+                state.conversations.removeAll { $0.id == id }
+                return .none
+
+            case .deleteFailed:
+                state.listError = String(localized: "list.deleteFailed")
+                return .none
+
+            case let .conversationSelected(conversation):
+                state.selectedConversation = conversation
+                // ChatView에서 pop으로 돌아오면 (nil) 목록을 다시 로드.
+                // 그 사이 새 메시지가 저장됐을 수 있음.
+                if conversation == nil {
+                    return .run { send in
+                        do {
+                            let loaded = try await store.loadAll()
+                            await send(.conversationsLoaded(loaded))
+                        } catch {
+                            await send(.loadFailed)
+                        }
+                    }
+                }
+                return .none
+
+            case .newConversationTapped:
+                // Anthropic 키 없으면 Onboarding sheet, 있으면 모델 피커.
+                let hasKey = (try? keychain.load(AnthropicCredentialsFeature.anthropicKeyName)) != nil
+                if hasKey {
+                    state.showModelPicker = true
+                } else {
+                    state.showOnboarding = true
+                }
+                return .none
+
+            case .modelPickerDismissed:
+                state.showModelPicker = false
+                return .none
+
+            case let .modelSelected(model):
+                state.showModelPicker = false
+                let effort: EffortLevel? = {
+                    guard let selected = state.selectedEffort,
+                          model.supportedEffortLevels.contains(selected) else { return nil }
+                    return selected
+                }()
+                state.selectedConversation = Conversation.empty(
+                    modelId: model.id,
+                    effort: effort
+                )
+                return .none
+
+            case let .effortSelected(effort):
+                state.selectedEffort = effort
+                return .none
+
+            case .memoryListTapped:
+                state.showMemoryList = true
+                return .none
+
+            case .memoryListDismissed:
+                state.showMemoryList = false
+                return .none
+
+            case .onboardingTapped:
                 state.showOnboarding = true
+                return .none
+
+            case .onboardingDismissed:
+                state.showOnboarding = false
+                return .none
+
+            case .groqCredentialsTapped:
+                state.showGroqCredentials = true
+                return .none
+
+            case .groqCredentialsDismissed:
+                state.showGroqCredentials = false
+                return .none
+
+            case .elevenLabsCredentialsTapped:
+                state.showElevenLabsCredentials = true
+                return .none
+
+            case .elevenLabsCredentialsDismissed:
+                state.showElevenLabsCredentials = false
+                return .none
+
+            case .consolidationTapped:
+                state.showConsolidation = true
+                return .none
+
+            case .consolidationDismissed:
+                state.showConsolidation = false
+                return .none
+
+            case .errorDismissed:
+                state.listError = nil
+                return .none
             }
-            return .none
-
-        case .modelPickerDismissed:
-            state.showModelPicker = false
-            return .none
-
-        case let .modelSelected(model):
-            state.showModelPicker = false
-            let effort: EffortLevel? = {
-                guard let selected = state.selectedEffort,
-                      model.supportedEffortLevels.contains(selected) else { return nil }
-                return selected
-            }()
-            state.selectedConversation = Conversation.empty(
-                modelId: model.id,
-                effort: effort
-            )
-            return .none
-
-        case let .effortSelected(effort):
-            state.selectedEffort = effort
-            return .none
-
-        case .memoryListTapped:
-            state.showMemoryList = true
-            return .none
-
-        case .memoryListDismissed:
-            state.showMemoryList = false
-            return .none
-
-        case .onboardingTapped:
-            state.showOnboarding = true
-            return .none
-
-        case .onboardingDismissed:
-            state.showOnboarding = false
-            return .none
-
-        case .groqCredentialsTapped:
-            state.showGroqCredentials = true
-            return .none
-
-        case .groqCredentialsDismissed:
-            state.showGroqCredentials = false
-            return .none
-
-        case .elevenLabsCredentialsTapped:
-            state.showElevenLabsCredentials = true
-            return .none
-
-        case .elevenLabsCredentialsDismissed:
-            state.showElevenLabsCredentials = false
-            return .none
-
-        case .consolidationTapped:
-            state.showConsolidation = true
-            return .none
-
-        case .consolidationDismissed:
-            state.showConsolidation = false
-            return .none
-
-        case .errorDismissed:
-            state.listError = nil
-            return .none
         }
     }
 }
