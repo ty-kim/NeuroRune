@@ -39,91 +39,93 @@ nonisolated struct MemoryEditFeature: Reducer {
         case errorDismissed
     }
 
-    func reduce(into state: inout State, action: Action) -> Effect<Action> {
-        @Dependency(\.githubClient) var github
-        @Dependency(\.githubCredentialsClient) var credsClient
+    var body: some ReducerOf<Self> {
+        Reduce { state, action in
+            @Dependency(\.githubClient) var github
+            @Dependency(\.githubCredentialsClient) var credsClient
 
-        switch action {
-        case .task:
-            state.isLoading = true
-            let path = state.file.path
-            let role = state.role
-            return .run { send in
-                guard credsClient.loadIgnoringError(role: role) != nil else {
-                    await send(.loadFailed(String(localized: "memory.error.unauthorized")))
-                    return
+            switch action {
+            case .task:
+                state.isLoading = true
+                let path = state.file.path
+                let role = state.role
+                return .run { send in
+                    guard credsClient.loadIgnoringError(role: role) != nil else {
+                        await send(.loadFailed(String(localized: "memory.error.unauthorized")))
+                        return
+                    }
+                    do {
+                        let file = try await github.loadFile(role, path)
+                        await send(.contentLoaded(content: file.content, sha: file.sha))
+                    } catch let error as GitHubError {
+                        await send(.loadFailed(error.localizedMessage))
+                    } catch {
+                        await send(.loadFailed(error.localizedDescription))
+                    }
                 }
-                do {
-                    let file = try await github.loadFile(role, path)
-                    await send(.contentLoaded(content: file.content, sha: file.sha))
-                } catch let error as GitHubError {
-                    await send(.loadFailed(error.localizedMessage))
-                } catch {
-                    await send(.loadFailed(error.localizedDescription))
+
+            case let .contentLoaded(content, sha):
+                state.content = content
+                state.file = GitHubFile(
+                    path: state.file.path,
+                    sha: sha,
+                    content: content,
+                    isDirectory: false
+                )
+                state.isLoading = false
+                state.hasUnsavedChanges = false
+                return .none
+
+            case let .loadFailed(message):
+                state.isLoading = false
+                state.error = message
+                return .none
+
+            case let .contentChanged(content):
+                state.content = content
+                state.hasUnsavedChanges = content != state.file.content
+                return .none
+
+            case .saveTapped:
+                guard state.hasUnsavedChanges, !state.isSaving else { return .none }
+                state.isSaving = true
+                state.error = nil
+                let path = state.file.path
+                let sha = state.file.sha
+                let content = state.content
+                let role = state.role
+                let message = "Update \(URL(fileURLWithPath: path).lastPathComponent)"
+                return .run { send in
+                    guard credsClient.loadIgnoringError(role: role) != nil else {
+                        await send(.saveFailed(String(localized: "memory.error.unauthorized")))
+                        return
+                    }
+                    do {
+                        let saved = try await github.saveFile(role, path, content, sha, message)
+                        await send(.saveSucceeded(saved))
+                    } catch let error as GitHubError {
+                        await send(.saveFailed(error.localizedMessage))
+                    } catch {
+                        await send(.saveFailed(error.localizedDescription))
+                    }
                 }
+
+            case let .saveSucceeded(file):
+                state.isSaving = false
+                state.file = file
+                state.hasUnsavedChanges = false
+                state.saveCount += 1
+                return .none
+
+            case let .saveFailed(message):
+                state.isSaving = false
+                state.error = message
+                return .none
+
+            case .errorDismissed:
+                state.error = nil
+                return .none
             }
-
-        case let .contentLoaded(content, sha):
-            state.content = content
-            state.file = GitHubFile(
-                path: state.file.path,
-                sha: sha,
-                content: content,
-                isDirectory: false
-            )
-            state.isLoading = false
-            state.hasUnsavedChanges = false
-            return .none
-
-        case let .loadFailed(message):
-            state.isLoading = false
-            state.error = message
-            return .none
-
-        case let .contentChanged(content):
-            state.content = content
-            state.hasUnsavedChanges = content != state.file.content
-            return .none
-
-        case .saveTapped:
-            guard state.hasUnsavedChanges, !state.isSaving else { return .none }
-            state.isSaving = true
-            state.error = nil
-            let path = state.file.path
-            let sha = state.file.sha
-            let content = state.content
-            let role = state.role
-            let message = "Update \(URL(fileURLWithPath: path).lastPathComponent)"
-            return .run { send in
-                guard credsClient.loadIgnoringError(role: role) != nil else {
-                    await send(.saveFailed(String(localized: "memory.error.unauthorized")))
-                    return
-                }
-                do {
-                    let saved = try await github.saveFile(role, path, content, sha, message)
-                    await send(.saveSucceeded(saved))
-                } catch let error as GitHubError {
-                    await send(.saveFailed(error.localizedMessage))
-                } catch {
-                    await send(.saveFailed(error.localizedDescription))
-                }
-            }
-
-        case let .saveSucceeded(file):
-            state.isSaving = false
-            state.file = file
-            state.hasUnsavedChanges = false
-            state.saveCount += 1
-            return .none
-
-        case let .saveFailed(message):
-            state.isSaving = false
-            state.error = message
-            return .none
-
-        case .errorDismissed:
-            state.error = nil
-            return .none
         }
     }
 
