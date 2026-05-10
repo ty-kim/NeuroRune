@@ -160,112 +160,114 @@ nonisolated struct ChatFeature: Reducer {
         case speechSettingsDismissed
     }
 
-    func reduce(into state: inout State, action: Action) -> Effect<Action> {
-        @Dependency(\.date) var date
-        @Dependency(\.uuid) var uuid
-        @Dependency(\.llmClient) var llmClient
-        @Dependency(\.conversationStore) var conversationStore
-        @Dependency(\.githubClient) var githubClient
-        @Dependency(\.githubCredentialsClient) var githubCredentialsClient
-        @Dependency(\.writeApprovalGate) var writeApprovalGate
+    var body: some ReducerOf<Self> {
+        Reduce { state, action in
+            @Dependency(\.date) var date
+            @Dependency(\.uuid) var uuid
+            @Dependency(\.llmClient) var llmClient
+            @Dependency(\.conversationStore) var conversationStore
+            @Dependency(\.githubClient) var githubClient
+            @Dependency(\.githubCredentialsClient) var githubCredentialsClient
+            @Dependency(\.writeApprovalGate) var writeApprovalGate
 
-        switch action {
-        case let .inputChanged(text):
-            state.inputText = text
-            // 카운트다운 중 입력 변경 = 사용자가 개입. 자동 전송 취소.
-            if state.autoSendCountdown != nil {
-                state.autoSendCountdown = nil
-                return .cancel(id: CancelID.autoSend)
-            }
-            return .none
-
-        case let .newConversationStarted(modelId):
-            state.conversation = Conversation(
-                id: uuid(),
-                title: "",
-                messages: [],
-                modelId: modelId,
-                createdAt: date.now
-            )
-            state.inputText = ""
-            state.isStreaming = false
-            state.error = nil
-            return .none
-
-        // MARK: - Streaming (ChatFeature+Streaming.swift로 위임)
-
-        case .sendTapped, .stopTapped, .streamChunkReceived, .streamFinished, .retryTapped:
-            return reduceStreaming(into: &state, action: action)
-
-        case let .errorOccurred(llmError):
-            state.error = llmError
-            state.isStreaming = false
-            // 에러 시 진행 중이던 tool 칩/modal도 정리. stream 도중 실패면
-            // 미해결 continuation은 effect cancel로 함께 사라짐.
-            state.activeToolCalls = []
-            state.pendingWrite = nil
-            // 429 응답에 담긴 rate limit 쿼터를 state로 끌어올려 배지에 반영.
-            if case let .rateLimited(_, rateLimit?) = llmError {
-                state.rateLimit = rateLimit
-            }
-            // 스트리밍 중 실패면 trailing assistant(placeholder/부분응답) 제거 + 재저장.
-            // 부분 응답 보존 X — "이게 진짜 답인가" 혼란 방지, 사용자는 재시도.
-            let hadTrailingAssistant = state.conversation.messages.last?.role == .assistant
-            if hadTrailingAssistant {
-                state.conversation = state.conversation.droppingLastMessage()
-                let conversation = state.conversation
-                return .run { send in
-                    await Self.save(conversation, using: conversationStore, send: send)
+            switch action {
+            case let .inputChanged(text):
+                state.inputText = text
+                // 카운트다운 중 입력 변경 = 사용자가 개입. 자동 전송 취소.
+                if state.autoSendCountdown != nil {
+                    state.autoSendCountdown = nil
+                    return .cancel(id: CancelID.autoSend)
                 }
+                return .none
+
+            case let .newConversationStarted(modelId):
+                state.conversation = Conversation(
+                    id: uuid(),
+                    title: "",
+                    messages: [],
+                    modelId: modelId,
+                    createdAt: date.now
+                )
+                state.inputText = ""
+                state.isStreaming = false
+                state.error = nil
+                return .none
+
+            // MARK: - Streaming (ChatFeature+Streaming.swift로 위임)
+
+            case .sendTapped, .stopTapped, .streamChunkReceived, .streamFinished, .retryTapped:
+                return reduceStreaming(into: &state, action: action)
+
+            case let .errorOccurred(llmError):
+                state.error = llmError
+                state.isStreaming = false
+                // 에러 시 진행 중이던 tool 칩/modal도 정리. stream 도중 실패면
+                // 미해결 continuation은 effect cancel로 함께 사라짐.
+                state.activeToolCalls = []
+                state.pendingWrite = nil
+                // 429 응답에 담긴 rate limit 쿼터를 state로 끌어올려 배지에 반영.
+                if case let .rateLimited(_, rateLimit?) = llmError {
+                    state.rateLimit = rateLimit
+                }
+                // 스트리밍 중 실패면 trailing assistant(placeholder/부분응답) 제거 + 재저장.
+                // 부분 응답 보존 X — "이게 진짜 답인가" 혼란 방지, 사용자는 재시도.
+                let hadTrailingAssistant = state.conversation.messages.last?.role == .assistant
+                if hadTrailingAssistant {
+                    state.conversation = state.conversation.droppingLastMessage()
+                    let conversation = state.conversation
+                    return .run { send in
+                        await Self.save(conversation, using: conversationStore, send: send)
+                    }
+                }
+                return .none
+
+            case let .persistenceFailed(message):
+                state.persistenceError = message
+                return .none
+
+            case .persistenceErrorDismissed:
+                state.persistenceError = nil
+                return .none
+
+            case let .toolUseRequested(id, name, input):
+                state.activeToolCalls.append(ToolCallStatus(id: id, name: name, input: input))
+                return .none
+
+            case let .toolUseCompleted(id):
+                state.activeToolCalls.removeAll { $0.id == id }
+                return .none
+
+            // MARK: - Write approval (ChatFeature+WriteApproval.swift로 위임)
+
+            case .writeApprovalRequested, .writeApproved, .writeRejected:
+                return reduceWriteApproval(into: &state, action: action)
+
+            case let .rateLimitUpdated(rateLimit):
+                state.rateLimit = rateLimit
+                return .none
+
+            case .errorDismissed:
+                state.error = nil
+                return .none
+
+            // MARK: - STT (ChatFeature+STT.swift로 위임)
+
+            case .micTapped, .recordingStarted, .recordingStopped, .transcribed,
+                 .sttErrorOccurred, .sttErrorDismissed, .autoSendTick, .autoSendCancelled:
+                return reduceSTT(into: &state, action: action)
+
+            // MARK: - TTS (ChatFeature+Speak.swift로 위임)
+
+            case .speakTapped, .speakingStarted, .speakingFinished,
+                 .stopSpeakTapped, .speakErrorOccurred, .speakErrorDismissed,
+                 .speakSentenceEnqueued, .processSpeakQueue, .sentencePlaybackCompleted,
+                 .loadSpeechSettings, .speechSettingsLoaded,
+                 .speechVoiceSelected, .autoSpeakToggled,
+                 .speechStabilityChanged, .speechSimilarityChanged,
+                 .speechStyleChanged, .speechSpeakerBoostToggled,
+                 .speechSettingsTapped, .speechSettingsDismissed:
+                return reduceSpeak(into: &state, action: action)
             }
-            return .none
-
-        case let .persistenceFailed(message):
-            state.persistenceError = message
-            return .none
-
-        case .persistenceErrorDismissed:
-            state.persistenceError = nil
-            return .none
-
-        case let .toolUseRequested(id, name, input):
-            state.activeToolCalls.append(ToolCallStatus(id: id, name: name, input: input))
-            return .none
-
-        case let .toolUseCompleted(id):
-            state.activeToolCalls.removeAll { $0.id == id }
-            return .none
-
-        // MARK: - Write approval (ChatFeature+WriteApproval.swift로 위임)
-
-        case .writeApprovalRequested, .writeApproved, .writeRejected:
-            return reduceWriteApproval(into: &state, action: action)
-
-        case let .rateLimitUpdated(rateLimit):
-            state.rateLimit = rateLimit
-            return .none
-
-        case .errorDismissed:
-            state.error = nil
-            return .none
-
-        // MARK: - STT (ChatFeature+STT.swift로 위임)
-
-        case .micTapped, .recordingStarted, .recordingStopped, .transcribed,
-             .sttErrorOccurred, .sttErrorDismissed, .autoSendTick, .autoSendCancelled:
-            return reduceSTT(into: &state, action: action)
-
-        // MARK: - TTS (ChatFeature+Speak.swift로 위임)
-
-        case .speakTapped, .speakingStarted, .speakingFinished,
-             .stopSpeakTapped, .speakErrorOccurred, .speakErrorDismissed,
-             .speakSentenceEnqueued, .processSpeakQueue, .sentencePlaybackCompleted,
-             .loadSpeechSettings, .speechSettingsLoaded,
-             .speechVoiceSelected, .autoSpeakToggled,
-             .speechStabilityChanged, .speechSimilarityChanged,
-             .speechStyleChanged, .speechSpeakerBoostToggled,
-             .speechSettingsTapped, .speechSettingsDismissed:
-            return reduceSpeak(into: &state, action: action)
         }
     }
 
