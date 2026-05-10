@@ -50,57 +50,59 @@ nonisolated struct MemoryCreateFeature: Reducer {
         case errorDismissed
     }
 
-    func reduce(into state: inout State, action: Action) -> Effect<Action> {
-        @Dependency(\.githubClient) var github
-        @Dependency(\.githubCredentialsClient) var credsClient
+    var body: some ReducerOf<Self> {
+        Reduce { state, action in
+            @Dependency(\.githubClient) var github
+            @Dependency(\.githubCredentialsClient) var credsClient
 
-        switch action {
-        case let .filenameChanged(v):
-            state.filename = v
-            state.error = nil
-            return .none
+            switch action {
+            case let .filenameChanged(v):
+                state.filename = v
+                state.error = nil
+                return .none
 
-        case let .contentChanged(v):
-            state.content = v
-            state.error = nil
-            return .none
+            case let .contentChanged(v):
+                state.content = v
+                state.error = nil
+                return .none
 
-        case .saveTapped:
-            guard state.isValid, !state.isSaving else { return .none }
-            state.isSaving = true
-            state.error = nil
-            let path = state.fullPath
-            let content = state.content
-            let role = state.role
-            let message = "Create \(URL(fileURLWithPath: path).lastPathComponent)"
-            return .run { send in
-                guard credsClient.loadIgnoringError(role: role) != nil else {
-                    await send(.saveFailed(String(localized: "memory.error.unauthorized")))
-                    return
+            case .saveTapped:
+                guard state.isValid, !state.isSaving else { return .none }
+                state.isSaving = true
+                state.error = nil
+                let path = state.fullPath
+                let content = state.content
+                let role = state.role
+                let message = "Create \(URL(fileURLWithPath: path).lastPathComponent)"
+                return .run { send in
+                    guard credsClient.loadIgnoringError(role: role) != nil else {
+                        await send(.saveFailed(String(localized: "memory.error.unauthorized")))
+                        return
+                    }
+                    do {
+                        let file = try await github.saveFile(role, path, content, nil, message)
+                        await send(.saveSucceeded(file))
+                    } catch let error as GitHubError {
+                        await send(.saveFailed(error.localizedMessage))
+                    } catch {
+                        await send(.saveFailed(error.localizedDescription))
+                    }
                 }
-                do {
-                    let file = try await github.saveFile(role, path, content, nil, message)
-                    await send(.saveSucceeded(file))
-                } catch let error as GitHubError {
-                    await send(.saveFailed(error.localizedMessage))
-                } catch {
-                    await send(.saveFailed(error.localizedDescription))
-                }
+
+            case let .saveSucceeded(file):
+                state.isSaving = false
+                state.createdFile = file
+                return .none
+
+            case let .saveFailed(message):
+                state.isSaving = false
+                state.error = message
+                return .none
+
+            case .errorDismissed:
+                state.error = nil
+                return .none
             }
-
-        case let .saveSucceeded(file):
-            state.isSaving = false
-            state.createdFile = file
-            return .none
-
-        case let .saveFailed(message):
-            state.isSaving = false
-            state.error = message
-            return .none
-
-        case .errorDismissed:
-            state.error = nil
-            return .none
         }
     }
 

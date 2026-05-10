@@ -32,74 +32,76 @@ nonisolated struct ConsolidationFeature: Reducer {
         case errorDismissed
     }
 
-    func reduce(into state: inout State, action: Action) -> Effect<Action> {
-        @Dependency(\.consolidationCollector) var collector
-        @Dependency(\.consolidationClient) var client
-        @Dependency(\.githubClient) var github
-        @Dependency(\.date) var date
+    var body: some ReducerOf<Self> {
+        Reduce { state, action in
+            @Dependency(\.consolidationCollector) var collector
+            @Dependency(\.consolidationClient) var client
+            @Dependency(\.githubClient) var github
+            @Dependency(\.date) var date
 
-        switch action {
-        case .consolidateTapped:
-            guard !state.isLoading else { return .none }
-            state.isLoading = true
-            state.error = nil
-            return .run { send in
-                do {
-                    let input = try await collector.collect()
-                    let result = try await client.generate(input)
-                    await send(.generateFinished(result))
-                } catch let e as ConsolidationError {
-                    await send(.generateFailed(e))
-                } catch {
-                    await send(.generateFailed(.llmFailed(error.localizedDescription)))
+            switch action {
+            case .consolidateTapped:
+                guard !state.isLoading else { return .none }
+                state.isLoading = true
+                state.error = nil
+                return .run { send in
+                    do {
+                        let input = try await collector.collect()
+                        let result = try await client.generate(input)
+                        await send(.generateFinished(result))
+                    } catch let e as ConsolidationError {
+                        await send(.generateFailed(e))
+                    } catch {
+                        await send(.generateFailed(.llmFailed(error.localizedDescription)))
+                    }
                 }
-            }
 
-        case let .generateFinished(result):
-            state.isLoading = false
-            state.proposals = result.proposals
-            state.resultAt = date.now
-            return .none
+            case let .generateFinished(result):
+                state.isLoading = false
+                state.proposals = result.proposals
+                state.resultAt = date.now
+                return .none
 
-        case let .generateFailed(error):
-            state.isLoading = false
-            state.error = error
-            return .none
+            case let .generateFailed(error):
+                state.isLoading = false
+                state.error = error
+                return .none
 
-        case let .proposalAccepted(id):
-            guard state.acceptingId == nil,
-                  let proposal = state.proposals.first(where: { $0.id == id }) else {
+            case let .proposalAccepted(id):
+                guard state.acceptingId == nil,
+                      let proposal = state.proposals.first(where: { $0.id == id }) else {
+                    return .none
+                }
+                state.acceptingId = id
+                return .run { send in
+                    do {
+                        try await applyProposal(proposal, github: github)
+                        await send(.proposalAcceptCompleted(id))
+                    } catch let e as ConsolidationError {
+                        await send(.proposalAcceptFailed(id, e))
+                    } catch {
+                        await send(.proposalAcceptFailed(id, .llmFailed(error.localizedDescription)))
+                    }
+                }
+
+            case let .proposalAcceptCompleted(id):
+                state.acceptingId = nil
+                state.proposals.removeAll { $0.id == id }
+                return .none
+
+            case let .proposalAcceptFailed(_, error):
+                state.acceptingId = nil
+                state.error = error
+                return .none
+
+            case let .proposalRejected(id):
+                state.proposals.removeAll { $0.id == id }
+                return .none
+
+            case .errorDismissed:
+                state.error = nil
                 return .none
             }
-            state.acceptingId = id
-            return .run { send in
-                do {
-                    try await applyProposal(proposal, github: github)
-                    await send(.proposalAcceptCompleted(id))
-                } catch let e as ConsolidationError {
-                    await send(.proposalAcceptFailed(id, e))
-                } catch {
-                    await send(.proposalAcceptFailed(id, .llmFailed(error.localizedDescription)))
-                }
-            }
-
-        case let .proposalAcceptCompleted(id):
-            state.acceptingId = nil
-            state.proposals.removeAll { $0.id == id }
-            return .none
-
-        case let .proposalAcceptFailed(_, error):
-            state.acceptingId = nil
-            state.error = error
-            return .none
-
-        case let .proposalRejected(id):
-            state.proposals.removeAll { $0.id == id }
-            return .none
-
-        case .errorDismissed:
-            state.error = nil
-            return .none
         }
     }
 
