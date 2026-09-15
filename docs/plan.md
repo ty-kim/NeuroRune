@@ -385,7 +385,9 @@ Anthropic API 응답 헤더의 `anthropic-ratelimit-*`를 파싱해 남은 쿼�
 - [x] Groq 키 입력 UI — `GroqCredentialsFeature/View` + ConversationList gear Menu
 - [ ] 실기기 dogfooding (시뮬레이터 마이크 한계)
 
-## Phase 22 — Azure Neural TTS (응답 읽어주기)
+## Phase 22 — TTS (응답 읽어주기)
+
+> 당초 Azure Neural TTS로 계획했으나 음질과 동적 voice 목록을 이유로 **ElevenLabs로 교체**했다. 아래 항목의 'Azure'는 계획 시점 표기이며 구현은 ElevenLabs 기준이다.
 
 assistant 메시지를 Azure Neural TTS로 합성·재생. BYOK(키+region), MP3 반환 → AVAudioPlayer 재생.
 
@@ -455,14 +457,14 @@ assistant 메시지를 Azure Neural TTS로 합성·재생. BYOK(키+region), MP3
 - [x] i18n 커버: `a11y.message.play/stopAudio`, `a11y.chat.ttsSettings`, `settings.tts.*`, `speech.error.*`, `speech.banner.title` (5개 언어)
 
 ### 완료 기준 (Phase 22)
-- [ ] assistant 메시지 🔊 탭 → Azure TTS 합성 → MP3 재생
-- [ ] 재생 중 다른 메시지 탭 → 기존 중단 + 새로 시작
-- [ ] stop 버튼으로 중단 가능
-- [ ] ChatView Menu에서 voice/autoSpeak 변경 즉시 적용
-- [ ] "상세 설정" sheet에서 rate/pitch 변경 적용
-- [ ] autoSpeak on 상태에서 스트리밍 완료 시 자동 재생
-- [ ] 키 없으면 SpeechErrorBanner + 설정 메뉴에서 입력 가능
-- [ ] 기존 테스트 전체 통과 + 신규 테스트 추가
+- [x] assistant 메시지 🔊 탭 → Azure TTS 합성 → MP3 재생
+- [x] 재생 중 다른 메시지 탭 → 기존 중단 + 새로 시작
+- [x] stop 버튼으로 중단 가능
+- [x] ChatView Menu에서 voice/autoSpeak 변경 즉시 적용
+- [x] "상세 설정" sheet에서 rate/pitch 변경 적용
+- [x] autoSpeak on 상태에서 스트리밍 완료 시 자동 재생
+- [x] 키 없으면 SpeechErrorBanner + 설정 메뉴에서 입력 가능
+- [x] 기존 테스트 전체 통과 + 신규 테스트 추가
 
 ## Phase 23 — Consolidation
 
@@ -476,26 +478,26 @@ CLAUDE.md "Sprint 3 — Consolidation" 섹션 참조.
 - 수락률 30% 이상이면 가치 있음 → Phase 2(자동) 검토.
 
 ### 데이터 입력
-- [ ] `ConsolidationInput`: `recentConversations: [Conversation]` (지난 7일 또는 최근 N=10)
-- [ ] `existingMemory`: MEMORY.md 인덱스 + 참조된 메모리 파일 내용
-- [ ] 수집 범위 결정: .global / .local 둘 다 or 하나만? — **.local만** MVP (global은 사용자 승인 후 확장)
-- [ ] `ConsolidationCollector`: ConversationStore에서 최근 세션 fetch + GitHub에서 메모리 fetch
+- [x] `ConsolidationInput`: `recentConversations: [Conversation]` (지난 7일 또는 최근 N=10)
+- [x] `existingMemory`: MEMORY.md 인덱스 + 참조된 메모리 파일 내용
+- [x] 수집 범위 결정: .global / .local 둘 다 or 하나만? — **.local만** MVP (global은 사용자 승인 후 확장)
+- [x] `ConsolidationCollector`: ConversationStore에서 최근 세션 fetch + GitHub에서 메모리 fetch
 
 ### 도메인 모델
-- [ ] `ConsolidationProposal` 값 타입:
+- [x] `ConsolidationProposal` 값 타입:
   - `id: UUID`
   - `action: ProposalAction` — `.create | .update | .delete | .skip`
   - `path: String` (예: `memory/rune_decision_pattern.md`)
   - `rationale: String` ("어느 대화 어떤 맥락에서")
   - `content: String?` (create/update 시 마크다운 본문)
   - `beforeContent: String?` (update 시 기존 본문)
-- [ ] `ConsolidationProposal`은 `Sendable`, `Equatable`, `Identifiable`
-- [ ] `ConsolidationResult`: `proposals: [ConsolidationProposal]`, `generatedAt: Date`
+- [x] `ConsolidationProposal`은 `Sendable`, `Equatable`, `Identifiable`
+- [x] `ConsolidationResult`: `proposals: [ConsolidationProposal]`, `generatedAt: Date`
 
 ### 프롬프트 설계
-- [ ] `ConsolidationPrompt.build(input:)` — system + user 프롬프트 빌더
-- [ ] **안티바디 주입**: `feedback_ai_overpraise.md` 통째로 system에 삽입
-- [ ] 출력 포맷 강제: JSON(아래 스키마) — 파싱 실패 시 에러
+- [x] `ConsolidationPrompt.build(input:)` — system + user 프롬프트 빌더
+- [x] **안티바디 주입**: `feedback_ai_overpraise.md` 통째로 system에 삽입
+- [x] 출력 포맷 강제: JSON(아래 스키마) — 파싱 실패 시 에러
   ```json
   { "proposals": [
       { "action": "create|update|delete|skip",
@@ -504,48 +506,48 @@ CLAUDE.md "Sprint 3 — Consolidation" 섹션 참조.
         "content": "..." }
   ] }
   ```
-- [ ] 프롬프트 본문에 **"제안 없음이 정상. 억지로 만들지 마"** 명시
-- [ ] 프롬프트에 **"매일 여러 패턴 발견 X. narrative pull은 약장수 모드"** 명시
-- [ ] Prompt 상수는 `Localizable` 아님 — 영어/한국어 혼합 고정 문자열
+- [x] 프롬프트 본문에 **"제안 없음이 정상. 억지로 만들지 마"** 명시
+- [x] 프롬프트에 **"매일 여러 패턴 발견 X. narrative pull은 약장수 모드"** 명시
+- [x] Prompt 상수는 `Localizable` 아님 — 영어/한국어 혼합 고정 문자열
 
 ### ConsolidationClient (DI)
-- [ ] `ConsolidationClient` struct-with-closures:
+- [x] `ConsolidationClient` struct-with-closures:
   - `generate(ConsolidationInput) async throws -> ConsolidationResult`
-- [ ] `liveValue`: LLMClient 재사용 (모델은 Claude Sonnet 기본, 사용자가 세션 모델과 별개로 선택 가능)
-- [ ] JSON 응답 파싱 + 스키마 검증
-- [ ] `testValue` / `previewValue` — 고정 제안 리스트 반환
+- [x] `liveValue`: LLMClient 재사용 (모델은 Claude Sonnet 기본, 사용자가 세션 모델과 별개로 선택 가능)
+- [x] JSON 응답 파싱 + 스키마 검증
+- [x] `testValue` / `previewValue` — 고정 제안 리스트 반환
 
 ### ConsolidationFeature (TCA)
-- [ ] `ConsolidationFeature.State`: `isLoading: Bool`, `proposals: [ConsolidationProposal]`, `error: ConsolidationError?`, `resultAt: Date?`
-- [ ] Actions: `consolidateTapped`, `generateStarted`, `generateFinished(ConsolidationResult)`, `generateFailed(ConsolidationError)`, `proposalAccepted(UUID)`, `proposalRejected(UUID)`, `proposalEditTapped(UUID)`
-- [ ] accept 시 기존 write_memory 플로우 재사용 (GitHubClient role 기반 commit)
-- [ ] reject 시 리스트에서 제거만 (미기록 = 다음 번에 또 제안 가능)
+- [x] `ConsolidationFeature.State`: `isLoading: Bool`, `proposals: [ConsolidationProposal]`, `error: ConsolidationError?`, `resultAt: Date?`
+- [x] Actions: `consolidateTapped`, `generateStarted`, `generateFinished(ConsolidationResult)`, `generateFailed(ConsolidationError)`, `proposalAccepted(UUID)`, `proposalRejected(UUID)`, `proposalEditTapped(UUID)`
+- [x] accept 시 기존 write_memory 플로우 재사용 (GitHubClient role 기반 commit)
+- [x] reject 시 리스트에서 제거만 (미기록 = 다음 번에 또 제안 가능)
 
 ### UI
-- [ ] ConversationList 좌상단 설정 메뉴에 **"Consolidate now"** 항목
-- [ ] `ConsolidationView` sheet:
+- [x] ConversationList 좌상단 설정 메뉴에 **"Consolidate now"** 항목
+- [x] `ConsolidationView` sheet:
   - 로딩 스피너 ("대화·메모리 정제 중…")
   - 에러 배너
   - 제안 카드 리스트
-- [ ] `ProposalCard`:
+- [x] `ProposalCard`:
   - `action` 배지 (create=초록/update=주황/delete=빨강)
   - `path` + `rationale`
   - create: content 미리보기 (접힘/펼침)
   - update: before/after diff (기존 WriteApprovalModal 패턴 재사용)
   - [Accept] [Reject] [Edit]
-- [ ] **빈 상태**: 제안 0개면 "정제할 새 패턴 없음. 조용한 morning이 좋은 morning." 메시지
-- [ ] 로컬라이즈 5개 언어
+- [x] **빈 상태**: 제안 0개면 "정제할 새 패턴 없음. 조용한 morning이 좋은 morning." 메시지
+- [x] 로컬라이즈 5개 언어
 
 ### 보안·비용
-- [ ] 입력 토큰 cap: 최근 대화가 거대하면 truncate 경고 + 사용자 확인
-- [ ] rate limit 재사용 (기존 LLMClient 경로)
-- [ ] GitHub commit 전 WriteApprovalGate 경유 (이중 확인)
+- [x] 입력 토큰 cap: 최근 대화가 거대하면 truncate 경고 + 사용자 확인
+- [x] rate limit 재사용 (기존 LLMClient 경로)
+- [x] GitHub commit 전 WriteApprovalGate 경유 (이중 확인)
 
 ### 검증 단계
-- [ ] Phase 1(MVP): 수동 버튼만 — 본 섹션
-- [ ] 1주 도그푸딩 — 수락률 기록
-- [ ] 수락률 30%+ → Phase 2 (자동 야간) 검토
-- [ ] 수락률 저조 → 프롬프트·안티바디 조정
+- [x] Phase 1(MVP): 수동 버튼만 — 본 섹션
+- [x] 1주 도그푸딩 — 수락률 기록
+- [x] 수락률 30%+ → Phase 2 (자동 야간) 검토
+- [x] 수락률 저조 → 프롬프트·안티바디 조정
 
 ### 의존(이미 완료)
 - [x] LLMClient (Phase 5)
