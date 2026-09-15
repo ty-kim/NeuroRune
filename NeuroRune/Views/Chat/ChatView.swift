@@ -157,12 +157,12 @@ struct ChatView: View {
                     await viewStore.send(.loadSpeechSettings).finish()
                     #if DEBUG
                     // UI 테스트에서 mic 탭 두 번 race를 우회: launch arg가 있으면
-                    // ChatView 진입 직후 inputText 채우고 sendTapped 직접 디스패치.
-                    // continuousClock 2초 대기를 거치는 autoSendCountdown 경로는
-                    // unit test가 커버. UI smoke는 STT→응답 통합 흐름만 검증.
+                    // ChatView 진입 직후 `.transcribed` 를 직접 디스패치한다.
+                    // 전사 이후 경로(inputText 삽입 → autoSendCountdown → sendTapped)를 그대로 타며,
+                    // UI 테스트 모드는 continuousClock 이 ImmediateClock 이라 대기 없이 진행된다.
+                    // 마이크·녹음·전사 자체는 unit test 가 커버.
                     if ProcessInfo.processInfo.arguments.contains("--ui-test-stt-prefill") {
-                        viewStore.send(.inputChanged("voice input"))
-                        viewStore.send(.sendTapped)
+                        viewStore.send(.transcribed(STTResult(text: "voice input")))
                     }
                     #endif
                 }
