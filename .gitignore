@@ -77,7 +77,5 @@ fastlane/test_output
 *.swp
 *~
 
-CLAUDE.md
-AGENTS.md
 TODO.md
-plan.md
+!todo.md
