@@ -17,7 +17,12 @@ struct ConsolidationView: View {
     var body: some View {
         WithViewStore(store, observe: { $0 }) { viewStore in
             NavigationStack {
-                content(viewStore)
+                VStack(spacing: 0) {
+                    if let warning = viewStore.memoryWarning {
+                        memoryWarningBanner(warning)
+                    }
+                    content(viewStore)
+                }
                     .navigationTitle(String(localized: "consolidation.title"))
                     .navigationBarTitleDisplayMode(.inline)
                     .toolbar {
@@ -55,6 +60,25 @@ struct ConsolidationView: View {
                     }
             }
         }
+    }
+
+    /// 메모리를 읽지 못했을 때의 안내. 제안이 대화만 보고 만들어졌음을 알린다.
+    @ViewBuilder
+    private func memoryWarningBanner(_ message: String) -> some View {
+        HStack(alignment: .top, spacing: 8) {
+            Image(systemName: "exclamationmark.triangle.fill")
+                .foregroundStyle(.orange)
+            Text(message)
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal)
+        .padding(.vertical, 8)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color.orange.opacity(0.12))
+        .accessibilityElement(children: .combine)
     }
 
     @ViewBuilder

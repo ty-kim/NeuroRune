@@ -74,20 +74,40 @@ nonisolated extension ConsolidationCollector: DependencyKey {
 
             var memoryIndex = ""
             var files: [ConsolidationInput.MemoryFile] = []
-            if let index = try? await github.loadFile(.local, "MEMORY.md") {
+            var memoryWarning: String?
+
+            do {
+                let index = try await github.loadFile(.local, "MEMORY.md")
                 memoryIndex = index.content
                 let refs = parseMemoryReferences(memoryIndex)
+                var missing: [String] = []
                 for path in refs {
-                    if let file = try? await github.loadFile(.local, path) {
+                    do {
+                        let file = try await github.loadFile(.local, path)
                         files.append(.init(path: path, content: file.content))
+                    } catch {
+                        // 인덱스에 적혀 있으나 읽지 못한 파일. 어떤 것이 빠졌는지 알려 준다.
+                        missing.append(path)
                     }
                 }
+                if !missing.isEmpty {
+                    memoryWarning = String(localized: "consolidation.memoryWarning.partial")
+                        + " (" + missing.joined(separator: ", ") + ")"
+                }
+            } catch GitHubError.notFound {
+                // MEMORY.md 가 아직 없는 상태. 첫 사용이므로 정상이다.
+            } catch {
+                // 인증·네트워크·레이트리밋 등 실제 실패. 조용히 넘기면 사용자는
+                // 메모리가 반영된 줄 알게 되므로 반드시 알린다.
+                let detail = (error as? GitHubError)?.localizedMessage ?? error.localizedDescription
+                memoryWarning = String(localized: "consolidation.memoryWarning.failed") + " (" + detail + ")"
             }
 
             return ConsolidationInput(
                 conversations: transcripts,
                 memoryIndex: memoryIndex,
-                memoryFiles: files
+                memoryFiles: files,
+                memoryWarning: memoryWarning
             )
         }
     )
