@@ -107,7 +107,7 @@ Client 경계
 
 ## 알려진 제약
 
-- **Reducer와 Client 전반이 `nonisolated`다.** Swift 6의 MainActor 기본 격리 아래에서 이 프로젝트는 TCA 1.7+ 프로토콜 경로(`Reducer` + `var body` + `WithViewStore`)를 쓰고 `@Reducer` / `@ObservableState` 매크로 경로는 채택하지 않았다. 대가는 Client·Reducer 계층에 `nonisolated`를 명시해야 하고 Observation API를 못 쓴다는 것이고, 얻은 것은 격리를 푸는 예외 없이 strict concurrency를 켠 채로 간다는 것이다. CI에는 `-skipMacroValidation`이 필요하다 — 없으면 SwiftPM이 매크로 신뢰 프롬프트에서 멈춘다. TCA 2.0 시점에 다시 판단한다.
+- **Reducer와 Client 전반이 `nonisolated`다.** Swift 6의 MainActor 기본 격리 아래에서 이 프로젝트는 TCA 1.7+ 프로토콜 경로(`Reducer` + `var body` + `WithViewStore`)를 쓰고 `@Reducer` / `@ObservableState` 매크로 경로는 채택하지 않았다. 대가는 Client·Reducer 계층에 `nonisolated`를 명시해야 하고, Observation API를 못 쓰며, `WithViewStore`/`ViewStore` 계열 deprecation 경고 40건이 빌드에 남는다는 것이고, 얻은 것은 격리를 푸는 예외 없이 strict concurrency를 켠 채로 간다는 것이다. CI에는 `-skipMacroValidation`이 필요하다 — 없으면 SwiftPM이 매크로 신뢰 프롬프트에서 멈춘다. TCA 2.0 시점에 다시 판단한다.
 
 - **마크다운 렌더링에 상한이 없다.** 응답을 길이·깊이 제한이나 렌더 타임아웃 없이 MarkdownUI에 그대로 넘긴다. 1인용 BYOK 앱이라 위협 모델은 좁지만(본인 기기에서 본인이 부른 응답), 병적으로 긴 응답은 UI를 멈출 수 있다. `effort`를 낮춰 응답 길이를 제한하고, swift-cmark 파서 CVE를 지켜보는 것으로 다룬다.
 
