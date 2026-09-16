@@ -28,7 +28,7 @@ BYOK(Bring Your Own Key) 앱이다. API 키는 사용자가 직접 넣고 Keycha
 - GitHub에 두는 사용자 소유 메모리 — `read_memory` / `write_memory`, 쓰기 전 명시적 승인
 - 제품 로직과 분리한 STT / TTS 클라이언트 기반 음성 입출력
 - 최근 대화를 검토 가능한 메모리 제안으로 바꾸는 정제(consolidation) 플로우
-- 품질 장치: Swift 6 strict concurrency, strict CI(SwiftLint + 빌드·테스트, 위 배지), 단위·UI 스모크 테스트, 다국어, 접근성
+- 품질 장치: Swift 6 strict concurrency, strict CI(SwiftLint + 빌드·단위 테스트, 위 배지), UI 스모크 테스트, 다국어, 접근성
 - 제공자 경계(`LLMClient`, `STTClient`, `SpeakerClient`)로 특정 모델·음성 벤더에 앱이 묶이지 않게 함
 
 ## 구현 현황
@@ -46,7 +46,7 @@ BYOK(Bring Your Own Key) 앱이다. API 키는 사용자가 직접 넣고 Keycha
 - [x] 앱 아이콘 (ᛗ Mannaz rune), 브랜드 컬러 (amber + dark navy)
 - [x] 런치 스크린 (DarkNavy + Mannaz rune)
 - [x] 단위 테스트 395개, Swift Testing + TCA TestStore
-- [x] UI 스모크 테스트 3개 (총 398개)
+- [x] UI 스모크 테스트 3개 (총 398개) — CI는 단위 플랜만 돌리고, UI는 `AllTests` 플랜으로 로컬에서 돌린다
 
 ### 메모리 ✅
 - [x] GitHub 기반 메모리 동기화 (.global / .local role, PAT 인증)

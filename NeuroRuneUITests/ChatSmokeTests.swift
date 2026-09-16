@@ -8,6 +8,11 @@
 import XCTest
 
 final class ChatSmokeTests: XCTestCase {
+
+    /// XCUITest 대기 한도. CI 러너 부하에서 시뮬레이터 부팅·SwiftUI 렌더·쿼리가 늦어져
+    /// 5초로는 간헐 실패가 났다. waitForExistence는 조건 충족 즉시 반환하므로
+    /// 통과 경로의 실행 시간은 늘지 않는다.
+    private let uiTimeout: TimeInterval = 15
     override func setUpWithError() throws {
         continueAfterFailure = false
         // 테스트 간 격리: 직전 테스트의 앱 프로세스/키보드/포커스 잔재가
@@ -27,11 +32,11 @@ final class ChatSmokeTests: XCTestCase {
     @MainActor
     private func enterChatView(_ app: XCUIApplication) {
         let newChatButton = app.buttons["list.newChatButton"].firstMatch
-        XCTAssertTrue(newChatButton.waitForExistence(timeout: 5), "list.newChatButton 미노출")
+        XCTAssertTrue(newChatButton.waitForExistence(timeout: uiTimeout), "list.newChatButton 미노출")
         newChatButton.tap()
 
         let modelButton = app.buttons["modelPicker.modelButton"].firstMatch
-        XCTAssertTrue(modelButton.waitForExistence(timeout: 3), "modelPicker.modelButton 미노출")
+        XCTAssertTrue(modelButton.waitForExistence(timeout: uiTimeout), "modelPicker.modelButton 미노출")
         modelButton.tap()
     }
 
@@ -60,7 +65,7 @@ final class ChatSmokeTests: XCTestCase {
         enterChatView(app)
 
         let input = app.textFields["chat.inputField"]
-        XCTAssertTrue(input.waitForExistence(timeout: 5), "chat.inputField 미노출")
+        XCTAssertTrue(input.waitForExistence(timeout: uiTimeout), "chat.inputField 미노출")
         input.tap()
         input.typeText("hello")
 
@@ -69,10 +74,10 @@ final class ChatSmokeTests: XCTestCase {
         sendButton.tap()
 
         let userMessage = firstMessage(in: app, identifier: "message.bubble.user", containing: "hello")
-        XCTAssertTrue(userMessage.waitForExistence(timeout: 3), "user 버블 'hello' 미노출")
+        XCTAssertTrue(userMessage.waitForExistence(timeout: uiTimeout), "user 버블 'hello' 미노출")
 
         let assistantMessage = firstMessage(in: app, identifier: "message.bubble.assistant", containing: "from ui test")
-        XCTAssertTrue(assistantMessage.waitForExistence(timeout: 3), "assistant 버블 미노출")
+        XCTAssertTrue(assistantMessage.waitForExistence(timeout: uiTimeout), "assistant 버블 미노출")
     }
 
     // MARK: - Smoke 2
@@ -94,10 +99,10 @@ final class ChatSmokeTests: XCTestCase {
 
         // ChatView mount → 자동 .transcribed("voice input") → ImmediateClock countdown → sendTapped → mock LLM.
         let userMessage = firstMessage(in: app, identifier: "message.bubble.user", containing: "voice input")
-        XCTAssertTrue(userMessage.waitForExistence(timeout: 5), "user 버블 'voice input' 미노출")
+        XCTAssertTrue(userMessage.waitForExistence(timeout: uiTimeout), "user 버블 'voice input' 미노출")
 
         let assistantMessage = firstMessage(in: app, identifier: "message.bubble.assistant", containing: "from ui test")
-        XCTAssertTrue(assistantMessage.waitForExistence(timeout: 5), "assistant 버블 미노출")
+        XCTAssertTrue(assistantMessage.waitForExistence(timeout: uiTimeout), "assistant 버블 미노출")
     }
 
     // MARK: - Smoke 3
@@ -115,16 +120,16 @@ final class ChatSmokeTests: XCTestCase {
         enterChatView(app)
 
         let input = app.textFields["chat.inputField"]
-        XCTAssertTrue(input.waitForExistence(timeout: 5))
+        XCTAssertTrue(input.waitForExistence(timeout: uiTimeout))
         input.tap()
         input.typeText("write something")
         app.buttons["chat.sendButton"].tap()
 
         let approveButton = app.buttons["writeApproval.approve"]
-        XCTAssertTrue(approveButton.waitForExistence(timeout: 5), "writeApproval.approve 미노출")
+        XCTAssertTrue(approveButton.waitForExistence(timeout: uiTimeout), "writeApproval.approve 미노출")
         approveButton.tap()
 
         let assistantMessage = firstMessage(in: app, identifier: "message.bubble.assistant", containing: "saved")
-        XCTAssertTrue(assistantMessage.waitForExistence(timeout: 5), "assistant 버블 'saved' 미노출")
+        XCTAssertTrue(assistantMessage.waitForExistence(timeout: uiTimeout), "assistant 버블 'saved' 미노출")
     }
 }
