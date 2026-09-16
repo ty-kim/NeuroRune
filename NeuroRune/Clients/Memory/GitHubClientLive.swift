@@ -106,8 +106,11 @@ private nonisolated func makeRequest(
         components.queryItems = [URLQueryItem(name: "ref", value: config.branch)]
     }
 
-    // swiftlint:disable:next force_unwrapping
-    var request = URLRequest(url: components.url!)
+    // scheme·host·path 를 모두 채웠으므로 실패할 수 없지만, 억제 대신 실패를 드러낸다.
+    guard let url = components.url else {
+        preconditionFailure("GitHub Contents API URL 구성 실패: \(path)")
+    }
+    var request = URLRequest(url: url)
     request.httpMethod = method
     request.setValue("Bearer \(pat)", forHTTPHeaderField: "Authorization")
     request.setValue("application/vnd.github+json", forHTTPHeaderField: "Accept")

@@ -45,8 +45,8 @@ BYOK(Bring Your Own Key) 앱이다. API 키는 사용자가 직접 넣고 Keycha
 - [x] 에러 UI (배너 + shake + 401 알럿)
 - [x] 앱 아이콘 (ᛗ Mannaz rune), 브랜드 컬러 (amber + dark navy)
 - [x] 런치 스크린 (DarkNavy + Mannaz rune)
-- [x] 단위 테스트 395개 + UI 스모크 3개(총 398개), Swift Testing + TCA TestStore
-- [x] UI 스모크 테스트 3개
+- [x] 단위 테스트 395개, Swift Testing + TCA TestStore
+- [x] UI 스모크 테스트 3개 (총 398개)
 
 ### 메모리 ✅
 - [x] GitHub 기반 메모리 동기화 (.global / .local role, PAT 인증)

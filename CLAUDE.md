@@ -78,7 +78,7 @@ Kent Beck의 TDD와 Tidy First를 따르는 시니어 엔지니어로서 개발�
 # 테스트도 Tidy First (Phase 단위 솎아내기)
 
 **테스트도 Tidy First 대상.** AI 생성 테스트에는 tautology/change detection/flaky가 섞인다.
-개인 프로젝트 두 개(579개)를 5유형 체크리스트로 훑었을 때 11개(약 2%)가 걸렸다.
+개인 프로젝트 두 개의 단위 테스트 579개를 5유형 체크리스트로 훑었을 때 11개(약 2%)가 걸렸다.
 표본이 작고 한 사람이 같은 방식으로 만든 코드라 일반화할 수치는 아니지만, 0은 아니다.
 
 **테스트 개수는 README.md 한 곳에만 둔다.** 여러 문서에 흩어두면 반드시 어긋난다.
@@ -142,7 +142,7 @@ time xcodebuild -scheme NeuroRune -destination '...' -parallel-testing-enabled N
 xcodebuild의 **병렬 모드**(기본값)에서는 Swift Testing → 레거시 `Test case ... (N.NNN seconds)` 포맷 변환 시 duration 전달에 실패하면 **`1.000 seconds`를 기본값으로 찍음**. 실제 테스트는 ms 단위인데도 1초로 보여서 **원인을 오판하기 쉬움**.
 
 → **해결**: `-parallel-testing-enabled NO` 추가
-- NeuroRune 규모(테스트 수백 개, UI 테스트 없음)에서는 병렬 모드가 시뮬 clone 부팅 오버헤드로 오히려 느림
+- NeuroRune 규모(대부분 단위 테스트, UI 스모크는 3개)에서는 병렬 모드가 시뮬 clone 부팅 오버헤드로 오히려 느림
 - 순차 모드는 Swift Testing 네이티브 포맷(`✔ Suite ... passed after X.XXX seconds`)으로 정확한 duration 표시
 
 ### 진단 순서

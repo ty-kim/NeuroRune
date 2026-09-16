@@ -9,7 +9,7 @@ Sprint 1 범위: Anthropic API 클라이언트 + Keychain 키 저장 + 채팅 �
 - "go"라고 하면 다음 unmarked 테스트 하나를 구현 → 해당 테스트만 통과하는 최소 코드 작성 → 전체 테스트 재실행
 - 구조 변경(Tidy First)과 동작 변경은 별도 커밋
 - 테스트는 Swift Testing, 외부 I/O는 `URLProtocol` 기반 stub 사용
-- 테스트 통과 + 경고 0 상태에서만 커밋 제안
+- 테스트 통과 + 경고 0 상태에서만 커밋 제안 (알려진 예외: TCA deprecation 경고 — CLAUDE.md 참고)
 
 ## 아키텍처 레이어 (의존성 순서)
 
