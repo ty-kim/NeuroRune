@@ -9,6 +9,7 @@
 
 import Foundation
 import Testing
+import Dependencies
 @testable import NeuroRune
 
 struct ConsolidationCollectorTests {
@@ -85,5 +86,68 @@ struct ConsolidationCollectorTests {
         let kept = ConsolidationCollector.filterRecent([old, fresh], now: now, days: 7)
         #expect(kept.count == 1)
         #expect(kept.first?.title == "f")
+    }
+
+    // MARK: - collect: 메모리 로드 실패 알림
+
+    nonisolated private static let fixedNow = Date(timeIntervalSince1970: 1_700_000_000)
+
+    nonisolated private static func file(_ path: String, _ content: String) -> GitHubFile {
+        GitHubFile(path: path, sha: "sha", content: content, isDirectory: false)
+    }
+
+    @Test("collect: MEMORY.md 가 아직 없으면(첫 사용) 경고 없이 빈 메모리로 진행")
+    func noWarningWhenMemoryAbsent() async throws {
+        let input = try await withDependencies {
+            $0.date = .constant(Self.fixedNow)
+            $0.conversationStore.loadAll = { [] }
+            $0.githubClient.loadFile = { _, _ in throw GitHubError.notFound }
+        } operation: {
+            try await ConsolidationCollector.liveValue.collect()
+        }
+
+        #expect(input.memoryWarning == nil)
+        #expect(input.memoryIndex.isEmpty)
+        #expect(input.memoryFiles.isEmpty)
+    }
+
+    @Test("collect: 인증 실패는 삼키지 않고 경고로 올림")
+    func warnsWhenMemoryLoadFails() async throws {
+        let input = try await withDependencies {
+            $0.date = .constant(Self.fixedNow)
+            $0.conversationStore.loadAll = { [] }
+            $0.githubClient.loadFile = { _, _ in throw GitHubError.unauthorized }
+        } operation: {
+            try await ConsolidationCollector.liveValue.collect()
+        }
+
+        let warning = try #require(input.memoryWarning)
+        #expect(warning.contains(GitHubError.unauthorized.localizedMessage))
+        #expect(input.memoryIndex.isEmpty)
+    }
+
+    @Test("collect: 인덱스는 읽었지만 참조 파일이 빠지면 누락 경로를 경고에 담음")
+    func warnsWhenReferencedFileMissing() async throws {
+        let index = """
+        - [a](a.md)
+        - [b](b.md)
+        """
+        let input = try await withDependencies {
+            $0.date = .constant(Self.fixedNow)
+            $0.conversationStore.loadAll = { [] }
+            $0.githubClient.loadFile = { _, path in
+                switch path {
+                case "MEMORY.md": return Self.file(path, index)
+                case "a.md": return Self.file(path, "A 내용")
+                default: throw GitHubError.notFound
+                }
+            }
+        } operation: {
+            try await ConsolidationCollector.liveValue.collect()
+        }
+
+        let warning = try #require(input.memoryWarning)
+        #expect(warning.contains("b.md"))
+        #expect(input.memoryFiles.map(\.path) == ["a.md"])
     }
 }

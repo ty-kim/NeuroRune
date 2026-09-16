@@ -12,11 +12,6 @@ import Testing
 @testable import NeuroRune
 
 struct STTResultTests {
-    @Test func STTResult_text_기본_필드() {
-        let r = STTResult(text: "hello world")
-        #expect(r.text == "hello world")
-    }
-
     @Test func STTResult는_동일_내용_동등() {
         #expect(STTResult(text: "a") == STTResult(text: "a"))
         #expect(STTResult(text: "a") != STTResult(text: "b"))

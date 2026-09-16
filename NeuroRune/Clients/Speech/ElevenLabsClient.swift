@@ -24,8 +24,11 @@ nonisolated extension ElevenLabsClient {
         components.scheme = "https"
         components.host = endpointHost
         components.path = "/v1/voices"
-        // swiftlint:disable:next force_unwrapping
-        var request = URLRequest(url: components.url!)
+        // scheme·host·path 를 모두 채웠으므로 실패할 수 없지만, 억제 대신 실패를 드러낸다.
+        guard let url = components.url else {
+            preconditionFailure("ElevenLabs voices URL 구성 실패")
+        }
+        var request = URLRequest(url: url)
         request.httpMethod = "GET"
         request.setValue(credentials.apiKey, forHTTPHeaderField: "xi-api-key")
         request.setValue("application/json", forHTTPHeaderField: "Accept")

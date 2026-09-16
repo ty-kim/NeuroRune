@@ -19,10 +19,13 @@ nonisolated struct ConsolidationFeature: Reducer {
         var resultAt: Date?
         /// accept/ reject 진행 중인 제안 id. UI에서 해당 카드에 스피너/비활성화 처리.
         var acceptingId: UUID?
+        /// 메모리를 읽지 못한 경우의 안내. 제안이 대화만 보고 만들어졌음을 알린다.
+        var memoryWarning: String?
     }
 
     enum Action: Equatable {
         case consolidateTapped
+        case memoryWarningRaised(String)
         case generateFinished(ConsolidationResult)
         case generateFailed(ConsolidationError)
         case proposalAccepted(UUID)
@@ -44,9 +47,13 @@ nonisolated struct ConsolidationFeature: Reducer {
                 guard !state.isLoading else { return .none }
                 state.isLoading = true
                 state.error = nil
+                state.memoryWarning = nil
                 return .run { send in
                     do {
                         let input = try await collector.collect()
+                        if let warning = input.memoryWarning {
+                            await send(.memoryWarningRaised(warning))
+                        }
                         let result = try await client.generate(input)
                         await send(.generateFinished(result))
                     } catch let e as ConsolidationError {
@@ -55,6 +62,10 @@ nonisolated struct ConsolidationFeature: Reducer {
                         await send(.generateFailed(.llmFailed(error.localizedDescription)))
                     }
                 }
+
+            case let .memoryWarningRaised(message):
+                state.memoryWarning = message
+                return .none
 
             case let .generateFinished(result):
                 state.isLoading = false

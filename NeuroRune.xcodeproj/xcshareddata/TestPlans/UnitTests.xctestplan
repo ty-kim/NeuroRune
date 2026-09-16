@@ -1,0 +1,25 @@
+{
+  "configurations" : [
+    {
+      "id" : "3F2A1B0C-7D8E-4F9A-B1C2-5D6E7F8A9B0C",
+      "name" : "Configuration 1",
+      "options" : {
+
+      }
+    }
+  ],
+  "defaultOptions" : {
+    "testTimeoutsEnabled" : true,
+    "defaultTestExecutionTimeAllowance" : 60
+  },
+  "testTargets" : [
+    {
+      "target" : {
+        "containerPath" : "container:NeuroRune.xcodeproj",
+        "identifier" : "FC48E7052F896D4D00BDAF8F",
+        "name" : "NeuroRuneTests"
+      }
+    }
+  ],
+  "version" : 1
+}

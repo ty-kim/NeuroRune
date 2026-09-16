@@ -8,8 +8,13 @@
 import Foundation
 
 nonisolated enum AnthropicAPI {
-    // swiftlint:disable:next force_unwrapping
-    static let endpoint = URL(string: "https://api.anthropic.com/v1/messages")!
+    /// 리터럴이라 실패할 수 없지만, 린터 버전에 따라 force unwrap 취급이 달라져 guard 로 고정한다.
+    static let endpoint: URL = {
+        guard let url = URL(string: "https://api.anthropic.com/v1/messages") else {
+            preconditionFailure("Anthropic endpoint URL 이 잘못되었다")
+        }
+        return url
+    }()
     static let apiVersion = "2023-06-01"
     static let defaultMaxTokens = 4096
 }

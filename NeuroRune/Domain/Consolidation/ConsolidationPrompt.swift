@@ -23,6 +23,21 @@ nonisolated struct ConsolidationInput: Sendable, Equatable {
     var conversations: [Transcript]
     var memoryIndex: String
     var memoryFiles: [MemoryFile]
+    /// 메모리를 읽지 못했을 때의 사용자 안내. 정제 제안이 대화만 보고 만들어졌음을 뜻한다.
+    /// 메모리가 아직 없는 경우(첫 사용)는 정상이므로 nil 이다.
+    var memoryWarning: String?
+
+    init(
+        conversations: [Transcript],
+        memoryIndex: String,
+        memoryFiles: [MemoryFile],
+        memoryWarning: String? = nil
+    ) {
+        self.conversations = conversations
+        self.memoryIndex = memoryIndex
+        self.memoryFiles = memoryFiles
+        self.memoryWarning = memoryWarning
+    }
 }
 
 nonisolated enum ConsolidationPrompt {
