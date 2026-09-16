@@ -15,12 +15,6 @@ import ComposableArchitecture
 
 extension ChatFeatureTests {
 
-    @Test("초기 state.rateLimit은 nil이다")
-    func initialRateLimitIsNil() {
-        let state = makeState()
-        #expect(state.rateLimit == nil)
-    }
-
     @Test("rateLimitUpdated는 state.rateLimit에 저장한다")
     func rateLimitUpdatedStoresState() async {
         let quota = RateLimitState.Quota(

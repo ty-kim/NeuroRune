@@ -14,15 +14,6 @@ import ComposableArchitecture
 
 extension ChatFeatureTests {
 
-    // MARK: - State 초기값
-
-    @Test("초기 state.isRecording == false, sttError == nil")
-    func initialSTTState() {
-        let s = makeState()
-        #expect(s.isRecording == false)
-        #expect(s.sttError == nil)
-    }
-
     // MARK: - 권한 거부
 
     @Test("권한 거부 시 micTapped → sttError.microphonePermissionDenied")
@@ -280,8 +271,9 @@ extension ChatFeatureTests {
 
     @Test("autoSendTick: countdown nil이면 no-op")
     func autoSendTickNoopWhenNil() async {
+        // exhaustivity를 끄지 않는다. TestStore가 상태 변화와 미처리 이펙트를 강제 검증하므로,
+        // 정말 no-op일 때만 통과한다.
         let store = TestStore(initialState: makeState()) { ChatFeature() }
-        store.exhaustivity = .off
         await store.send(.autoSendTick)
     }
 

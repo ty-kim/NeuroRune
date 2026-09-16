@@ -84,14 +84,6 @@ struct ConversationTests {
 
 struct LLMModelTests {
 
-    @Test("LLMModel은 id, displayName을 저장한다")
-    func llmModelStoresProperties() {
-        let model = LLMModel(id: "claude-opus-4-6", displayName: "Claude Opus 4.6")
-
-        #expect(model.id == "claude-opus-4-6")
-        #expect(model.displayName == "Claude Opus 4.6")
-    }
-
     @Test("LLMModel.allSupported는 opus47, opus46, sonnet46, haiku45 4개 상수를 포함한다")
     func llmModelAllSupportedHasFourModels() {
         let all = LLMModel.allSupported

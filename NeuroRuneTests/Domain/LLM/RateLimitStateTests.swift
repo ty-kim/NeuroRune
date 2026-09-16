@@ -13,14 +13,6 @@ struct RateLimitStateTests {
 
     // MARK: - Quota 기본
 
-    @Test func Quota는_limit_remaining_resetsAt을_가진다() {
-        let date = Date(timeIntervalSince1970: 1_700_000_000)
-        let quota = RateLimitState.Quota(limit: 1000, remaining: 800, resetsAt: date)
-        #expect(quota.limit == 1000)
-        #expect(quota.remaining == 800)
-        #expect(quota.resetsAt == date)
-    }
-
     @Test func percentRemaining은_remaining을_limit으로_나눈_값이다() {
         let quota = RateLimitState.Quota(limit: 1000, remaining: 250, resetsAt: .now)
         #expect(quota.percentRemaining == 0.25)

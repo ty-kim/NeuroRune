@@ -77,7 +77,17 @@ Kent Beck의 TDD와 Tidy First를 따르는 시니어 엔지니어로서 개발�
 
 # 테스트도 Tidy First (Phase 단위 솎아내기)
 
-**테스트도 Tidy First 대상.** AI 생성 테스트에는 tautology/change detection/flaky가 일정 비율 섞인다.
+**테스트도 Tidy First 대상.** AI 생성 테스트에는 tautology/change detection/flaky가 섞인다.
+개인 프로젝트 두 개(579개)를 5유형 체크리스트로 훑었을 때 11개(약 2%)가 걸렸다.
+표본이 작고 한 사람이 같은 방식으로 만든 코드라 일반화할 수치는 아니지만, 0은 아니다.
+
+**테스트 개수는 README.md 한 곳에만 둔다.** 여러 문서에 흩어두면 반드시 어긋난다.
+추가·삭제했으면 아래로 다시 세어 README만 갱신한다.
+
+```bash
+grep -rh '@Test' NeuroRuneTests | wc -l          # 단위
+grep -rh 'func test' NeuroRuneUITests | wc -l    # UI 스모크
+```
 
 ## Phase/Sprint 종료 시 반드시
 
